@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:dotnotes/features/notes/models/note.dart';
 import 'package:dotnotes/features/reminders/models/reminder.dart';
 import 'package:dotnotes/core/database/boxes.dart' as boxes;
 import 'package:dotnotes/core/services/notification_service.dart';
@@ -75,10 +76,19 @@ class RemindersNotifier extends StateNotifier<AsyncValue<List<Reminder>>> {
   }
 
   Future<void> _scheduleNotification(Reminder reminder) async {
+    final notesBox = Hive.box<Note>(boxes.notesBox);
+    final note = notesBox.get(reminder.noteId);
+    final title = note != null && note.title.trim().isNotEmpty
+        ? note.title.trim()
+        : 'Reminder';
+    final body = note != null && note.content.trim().isNotEmpty
+        ? note.content.trim()
+        : 'Waktunya pengingat catatan!';
+
     await NotificationService().scheduleNotification(
       id: reminder.id.hashCode,
-      title: 'Reminder',
-      body: reminder.noteId,
+      title: title,
+      body: body,
       scheduledTime: reminder.scheduledAt,
     );
   }

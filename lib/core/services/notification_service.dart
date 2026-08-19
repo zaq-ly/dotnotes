@@ -14,6 +14,7 @@ class NotificationService {
 
   Future<void> init() async {
     tz.initializeTimeZones();
+    _initLocalTimeZone();
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidSettings);
@@ -24,6 +25,18 @@ class NotificationService {
     );
 
     await _requestPermissions();
+  }
+
+  void _initLocalTimeZone() {
+    try {
+      final offset = DateTime.now().timeZoneOffset.inMilliseconds;
+      for (final loc in tz.timeZoneDatabase.locations.values) {
+        if (loc.currentTimeZone.offset == offset) {
+          tz.setLocalLocation(loc);
+          return;
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _requestPermissions() async {
@@ -43,14 +56,22 @@ class NotificationService {
     required String body,
     required DateTime scheduledTime,
   }) async {
+    final scheduledTz = tz.TZDateTime.from(scheduledTime, tz.local);
+    if (scheduledTz.isBefore(tz.TZDateTime.now(tz.local))) {
+      return;
+    }
+
     const androidDetails = AndroidNotificationDetails(
-      'reminders',
-      'Reminders',
-      channelDescription: 'Reminder notifications',
+      'reminders_alarm_channel',
+      'Reminders & Alarms',
+      channelDescription: 'Pengingat jadwal dan alarm catatan',
       importance: Importance.max,
-      priority: Priority.high,
+      priority: Priority.max,
       enableVibration: true,
       playSound: true,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
     );
 
     const details = NotificationDetails(android: androidDetails);
@@ -59,7 +80,7 @@ class NotificationService {
       id,
       title,
       body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
+      scheduledTz,
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
@@ -73,13 +94,16 @@ class NotificationService {
     required String body,
   }) async {
     const androidDetails = AndroidNotificationDetails(
-      'reminders',
-      'Reminders',
-      channelDescription: 'Reminder notifications',
+      'reminders_alarm_channel',
+      'Reminders & Alarms',
+      channelDescription: 'Pengingat jadwal dan alarm catatan',
       importance: Importance.max,
-      priority: Priority.high,
+      priority: Priority.max,
       enableVibration: true,
       playSound: true,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
     );
 
     const details = NotificationDetails(android: androidDetails);
