@@ -1,0 +1,30 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dotnotes/features/notes/models/note.dart';
+import 'package:dotnotes/features/notes/providers/notes_provider.dart';
+
+class HomeData {
+  final List<Note> recentNotes;
+  final List<dynamic> todayReminders;
+  final List<dynamic> upcomingReminders;
+
+  HomeData({
+    required this.recentNotes,
+    required this.todayReminders,
+    required this.upcomingReminders,
+  });
+}
+
+final homeDataProvider = Provider<HomeData>((ref) {
+  final notesAsync = ref.watch(notesProvider);
+  final notes = notesAsync.valueOrNull ?? [];
+  
+  final activeNotes = notes.where((note) => !note.isArchived).toList();
+  activeNotes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  final recentNotes = activeNotes.take(5).toList();
+
+  return HomeData(
+    recentNotes: recentNotes,
+    todayReminders: [],
+    upcomingReminders: [],
+  );
+});
