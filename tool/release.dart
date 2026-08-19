@@ -111,6 +111,14 @@ void main(List<String> args) async {
     notesBuffer.writeln();
   }
 
+  notesBuffer.writeln('---');
+  notesBuffer.writeln('### Panduan Memilih File APK:');
+  notesBuffer.writeln('| File APK | Untuk Perangkat | Rekomendasi |');
+  notesBuffer.writeln('| :--- | :--- | :--- |');
+  notesBuffer.writeln('| **`app-arm64-v8a-release.apk`** | **HP Android Modern (64-bit)** | **Pilihan Utama (99% HP sekarang)** |');
+  notesBuffer.writeln('| **`app-armeabi-v7a-release.apk`** | HP Android Jadul (32-bit) | Khusus HP model lama |');
+  notesBuffer.writeln('| **`app-x86_64-release.apk`** | Emulator PC / Laptop | Khusus testing emulator di PC |');
+
   final releaseNotes = notesBuffer.toString().trim();
   print('--- Release Notes ---\n$releaseNotes\n---------------------');
 
