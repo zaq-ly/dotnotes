@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dotnotes/features/reminders/models/reminder.dart';
-import 'package:dotnotes/features/reminders/providers/reminders_provider.dart';
+import 'package:dotnotes/app/theme.dart';
 import 'package:dotnotes/features/notes/models/note.dart';
 import 'package:dotnotes/features/notes/providers/notes_provider.dart';
+import 'package:dotnotes/features/reminders/models/reminder.dart';
+import 'package:dotnotes/features/reminders/providers/reminders_provider.dart';
+import 'package:dotnotes/shared/widgets/brand.dart';
 import 'package:dotnotes/shared/widgets/confirm_dialog.dart';
-import 'package:dotnotes/app/theme.dart';
+import 'package:dotnotes/shared/widgets/paper_card.dart';
 
 class ReminderEditorScreen extends ConsumerStatefulWidget {
   final String noteId;
@@ -172,92 +174,120 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
         title: Text(widget.reminderId == null ? 'New Reminder' : 'Edit Reminder'),
         actions: [
           IconButton(
+            tooltip: 'Save reminder',
             icon: const Icon(Icons.check),
             onPressed: _saveReminder,
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_note != null) ...[
-              Text(
-                'Note',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              Card(
-                child: ListTile(
-                  title: Text(_note!.title.isEmpty ? 'Untitled' : _note!.title),
-                  subtitle: Text(
-                    _note!.content,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+              const _SectionHeader(text: 'Note', count: 1, active: true),
+              const SizedBox(height: 12),
+              PaperCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _note!.title.isEmpty ? 'Untitled' : _note!.title,
+                      style: const TextStyle(
+                        fontFamily: AppFonts.body,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (_note!.content.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _note!.content,
+                        style: const TextStyle(
+                          fontFamily: AppFonts.body,
+                          fontSize: 13,
+                          height: 1.4,
+                          color: AppColors.inkSoft,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
             ],
-            Text(
-              'Schedule',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
+            const _SectionHeader(text: 'Schedule', count: 1, active: true),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _selectDate,
-                    icon: const Icon(Icons.calendar_today),
+                    icon: const Icon(Icons.calendar_today, size: 16),
                     label: Text(
-                      '${_scheduledDate.day}/${_scheduledDate.month}/${_scheduledDate.year}',
+                      '${_scheduledDate.day.toString().padLeft(2, '0')}.${_scheduledDate.month.toString().padLeft(2, '0')}.${_scheduledDate.year}',
+                      style: const TextStyle(
+                        fontFamily: AppFonts.mono,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _selectTime,
-                    icon: const Icon(Icons.access_time),
+                    icon: const Icon(Icons.access_time, size: 16),
                     label: Text(
                       '${_scheduledTime.hour.toString().padLeft(2, '0')}:${_scheduledTime.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontFamily: AppFonts.mono,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            Text(
-              'Priority',
-              style: Theme.of(context).textTheme.titleSmall,
+            const _SectionHeader(text: 'Priority', count: 1, active: true),
+            const SizedBox(height: 12),
+            _PriorityMeter(
+              priority: _priority,
+              onChanged: (priority) {
+                setState(() {
+                  _priority = priority;
+                });
+              },
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: Priority.values.map((priority) {
-                return ChoiceChip(
-                  label: Text(_priorityLabel(priority)),
-                  selected: _priority == priority,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() {
-                        _priority = priority;
-                      });
-                    }
-                  },
-                );
-              }).toList(),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 2),
+              child: Text(
+                _priorityMode(_priority),
+                style: const TextStyle(
+                  fontFamily: AppFonts.mono,
+                  fontSize: 11,
+                  letterSpacing: 1.2,
+                  color: AppColors.muted,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Repeat',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
+            const _SectionHeader(text: 'Repeat', count: 1, active: true),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
+              runSpacing: 8,
               children: RepeatType.values.map((repeat) {
                 return ChoiceChip(
                   label: Text(_repeatLabel(repeat)),
@@ -274,8 +304,9 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
             ),
             const SizedBox(height: 24),
             SwitchListTile(
+              contentPadding: EdgeInsets.zero,
               title: const Text('Alarm'),
-              subtitle: const Text('Trigger notification at scheduled time'),
+              subtitle: const Text('Ring at the scheduled time'),
               value: _alarmEnabled,
               onChanged: (value) {
                 setState(() {
@@ -284,8 +315,9 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
               },
             ),
             SwitchListTile(
+              contentPadding: EdgeInsets.zero,
               title: const Text('Gmail'),
-              subtitle: const Text('Send email reminder (Phase 3)'),
+              subtitle: const Text('Send an email when it fires'),
               value: _gmailEnabled,
               onChanged: (value) {
                 setState(() {
@@ -294,8 +326,9 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
               },
             ),
             SwitchListTile(
+              contentPadding: EdgeInsets.zero,
               title: const Text('Calendar'),
-              subtitle: const Text('Create calendar event (Phase 3)'),
+              subtitle: const Text('Add the moment to your calendar'),
               value: _calendarEnabled,
               onChanged: (value) {
                 setState(() {
@@ -304,7 +337,7 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
               },
             ),
             if (widget.reminderId != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -312,9 +345,8 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
                   icon: const Icon(Icons.delete),
                   label: const Text('Delete Reminder'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppColors.danger,
+                    foregroundColor: AppColors.paper,
                   ),
                 ),
               ),
@@ -325,16 +357,16 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
     );
   }
 
-  String _priorityLabel(Priority priority) {
+  String _priorityMode(Priority priority) {
     switch (priority) {
       case Priority.low:
-        return 'Low';
+        return 'SILENT';
       case Priority.normal:
-        return 'Normal';
+        return 'ALARM';
       case Priority.high:
-        return 'High';
+        return 'ALARM + NOTIFICATION';
       case Priority.urgent:
-        return 'Urgent';
+        return 'ALARM + GMAIL + CALENDAR';
     }
   }
 
@@ -349,5 +381,96 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
       case RepeatType.monthly:
         return 'Monthly';
     }
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String text;
+  final int count;
+  final bool active;
+
+  const _SectionHeader({
+    required this.text,
+    required this.count,
+    required this.active,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionLabel(text: text, count: count, active: active);
+  }
+}
+
+class _PriorityMeter extends StatelessWidget {
+  final Priority priority;
+  final ValueChanged<Priority> onChanged;
+
+  const _PriorityMeter({
+    required this.priority,
+    required this.onChanged,
+  });
+
+  String get _label {
+    switch (priority) {
+      case Priority.low:
+        return 'LOW';
+      case Priority.normal:
+        return 'NORMAL';
+      case Priority.high:
+        return 'HIGH';
+      case Priority.urgent:
+        return 'URGENT';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final level = priority.index;
+
+    return Row(
+      children: [
+        for (int i = 0; i < Priority.values.length; i++)
+          GestureDetector(
+            onTap: () => onChanged(Priority.values[i]),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: i <= level
+                      ? AppColors.signal.withValues(alpha: 0.16)
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: i <= level ? AppColors.signal : AppColors.line,
+                    width: 1.5,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: i <= level ? AppColors.signal : AppColors.line,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(width: 8),
+        Text(
+          _label,
+          style: const TextStyle(
+            fontFamily: AppFonts.mono,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1,
+            color: AppColors.signal,
+          ),
+        ),
+      ],
+    );
   }
 }

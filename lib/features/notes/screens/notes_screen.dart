@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dotnotes/app/theme.dart';
 import 'package:dotnotes/features/notes/providers/notes_provider.dart';
 import 'package:dotnotes/features/notes/widgets/note_card.dart';
-import 'package:dotnotes/app/theme.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final tabIndexProvider = StateProvider<int>((ref) => 0);
@@ -20,29 +20,25 @@ class NotesScreen extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: TextField(
-            decoration: InputDecoration(
-              hintText: AppStrings.searchPlaceholder,
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        ref.read(searchQueryProvider.notifier).state = '';
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: AppColors.surfaceVariant,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+          title: Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: AppStrings.searchPlaceholder,
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          ref.read(searchQueryProvider.notifier).state = '';
+                        },
+                      )
+                    : null,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              onChanged: (value) {
+                ref.read(searchQueryProvider.notifier).state = value;
+              },
             ),
-            onChanged: (value) {
-              ref.read(searchQueryProvider.notifier).state = value;
-            },
           ),
           bottom: TabBar(
             onTap: (index) {
@@ -69,11 +65,13 @@ class NotesScreen extends ConsumerWidget {
             }
 
             return RefreshIndicator(
+              color: AppColors.signal,
+              backgroundColor: AppColors.raise,
               onRefresh: () async {
                 await ref.read(notesProvider.notifier).loadNotes();
               },
               child: ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                 itemCount: filteredNotes.length,
                 itemBuilder: (context, index) {
                   final note = filteredNotes[index];
@@ -97,6 +95,7 @@ class NotesScreen extends ConsumerWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton(
+          tooltip: 'New note',
           onPressed: () {
             Navigator.pushNamed(context, '/note-editor');
           },
@@ -141,25 +140,32 @@ class NotesScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.note_add_outlined,
-            size: 80,
-            color: AppColors.textMuted,
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.line, width: 1.5),
+            ),
           ),
-          const SizedBox(height: 16),
-          Text(
+          const SizedBox(height: 20),
+          const Text(
             AppStrings.emptyStateTitle,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+            style: TextStyle(
+              fontFamily: AppFonts.body,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.paper,
+            ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             AppStrings.emptyStateSubtitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textMuted,
-                ),
+            style: TextStyle(
+              fontFamily: AppFonts.mono,
+              fontSize: 13,
+              color: AppColors.muted,
+            ),
           ),
         ],
       ),
