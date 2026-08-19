@@ -27,7 +27,7 @@ class ConfirmDialog extends StatelessWidget {
           },
           child: Text(
             cancelText,
-            style: TextStyle(color: AppColors.textMuted),
+            style: const TextStyle(color: AppColors.textMuted),
           ),
         ),
         TextButton(

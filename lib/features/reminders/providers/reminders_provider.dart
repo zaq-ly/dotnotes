@@ -3,7 +3,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:dotnotes/features/reminders/models/reminder.dart';
 import 'package:dotnotes/core/database/boxes.dart' as boxes;
-import 'package:dotnotes/core/services/alarm_service.dart';
 import 'package:dotnotes/core/services/notification_service.dart';
 
 class RemindersNotifier extends StateNotifier<AsyncValue<List<Reminder>>> {
@@ -31,7 +30,7 @@ class RemindersNotifier extends StateNotifier<AsyncValue<List<Reminder>>> {
     await _box.put(newReminder.id, newReminder);
 
     if (newReminder.alarmEnabled) {
-      await _scheduleAlarm(newReminder);
+      await _scheduleNotification(newReminder);
     }
 
     await loadReminders();
@@ -40,17 +39,16 @@ class RemindersNotifier extends StateNotifier<AsyncValue<List<Reminder>>> {
   Future<void> updateReminder(Reminder reminder) async {
     await _box.put(reminder.id, reminder);
 
-    await AlarmService().cancelAlarm(reminder.id.hashCode);
+    await NotificationService().cancelNotification(reminder.id.hashCode);
 
     if (reminder.alarmEnabled && reminder.status != ReminderStatus.completed) {
-      await _scheduleAlarm(reminder);
+      await _scheduleNotification(reminder);
     }
 
     await loadReminders();
   }
 
   Future<void> deleteReminder(String id) async {
-    await AlarmService().cancelAlarm(id.hashCode);
     await NotificationService().cancelNotification(id.hashCode);
     await _box.delete(id);
     await loadReminders();
@@ -76,41 +74,13 @@ class RemindersNotifier extends StateNotifier<AsyncValue<List<Reminder>>> {
     }
   }
 
-  Future<void> _scheduleAlarm(Reminder reminder) async {
-    await AlarmService().scheduleAlarm(
+  Future<void> _scheduleNotification(Reminder reminder) async {
+    await NotificationService().scheduleNotification(
       id: reminder.id.hashCode,
-      scheduledTime: reminder.scheduledAt,
       title: 'Reminder',
       body: reminder.noteId,
-      repeat: reminder.repeat != RepeatType.once,
+      scheduledTime: reminder.scheduledAt,
     );
-  }
-
-  List<Reminder> getTodayReminders() {
-    final reminders = state.valueOrNull ?? [];
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-
-    return reminders
-        .where((r) =>
-            r.scheduledAt.isAfter(today) &&
-            r.scheduledAt.isBefore(tomorrow) &&
-            r.status != ReminderStatus.completed)
-        .toList();
-  }
-
-  List<Reminder> getUpcomingReminders() {
-    final reminders = state.valueOrNull ?? [];
-    final now = DateTime.now();
-    final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
-
-    return reminders
-        .where((r) =>
-            r.scheduledAt.isAfter(tomorrow) &&
-            r.status != ReminderStatus.completed)
-        .take(5)
-        .toList();
   }
 }
 
@@ -127,10 +97,12 @@ final todayRemindersProvider = Provider<List<Reminder>>((ref) {
   final tomorrow = today.add(const Duration(days: 1));
 
   return reminders
-      .where((r) =>
-          r.scheduledAt.isAfter(today) &&
-          r.scheduledAt.isBefore(tomorrow) &&
-          r.status != ReminderStatus.completed)
+      .where(
+        (r) =>
+            r.scheduledAt.isAfter(today) &&
+            r.scheduledAt.isBefore(tomorrow) &&
+            r.status != ReminderStatus.completed,
+      )
       .toList();
 });
 
@@ -141,9 +113,11 @@ final upcomingRemindersProvider = Provider<List<Reminder>>((ref) {
   final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
 
   return reminders
-      .where((r) =>
-          r.scheduledAt.isAfter(tomorrow) &&
-          r.status != ReminderStatus.completed)
+      .where(
+        (r) =>
+            r.scheduledAt.isAfter(tomorrow) &&
+            r.status != ReminderStatus.completed,
+      )
       .take(5)
       .toList();
 });

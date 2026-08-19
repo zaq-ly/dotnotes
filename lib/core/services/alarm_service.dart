@@ -1,4 +1,3 @@
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:dotnotes/core/services/notification_service.dart';
 
 class AlarmService {
@@ -7,7 +6,7 @@ class AlarmService {
   AlarmService._internal();
 
   Future<void> init() async {
-    await AndroidAlarmManager.initialize();
+    await NotificationService().init();
   }
 
   Future<void> scheduleAlarm({
@@ -22,30 +21,15 @@ class AlarmService {
       return;
     }
 
-    await AndroidAlarmManager.oneShotAt(
-      scheduledTime,
-      id,
-      _alarmCallback,
-      exact: true,
-      wakeup: true,
-      rescheduleOnReboot: true,
-      params: {'title': title, 'body': body, 'id': id},
+    await NotificationService().scheduleNotification(
+      id: id,
+      title: title,
+      body: body,
+      scheduledTime: scheduledTime,
     );
   }
 
   Future<void> cancelAlarm(int id) async {
-    await AndroidAlarmManager.cancel(id);
-  }
-
-  static void _alarmCallback(int id, Map<String, dynamic> params) {
-    final title = params['title'] as String;
-    final body = params['body'] as String;
-    final notifId = params['id'] as int;
-
-    NotificationService().showNotification(
-      id: notifId,
-      title: title,
-      body: body,
-    );
+    await NotificationService().cancelNotification(id);
   }
 }

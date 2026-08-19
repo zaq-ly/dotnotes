@@ -12,13 +12,12 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.light(
+        colorScheme: const ColorScheme.light(
           primary: AppColors.primary,
           primaryContainer: AppColors.primaryContainer,
           secondary: AppColors.secondary,
           secondaryContainer: AppColors.secondaryContainer,
           surface: AppColors.surface,
-          background: AppColors.background,
           error: AppColors.error,
         ),
         scaffoldBackgroundColor: AppColors.background,
@@ -28,7 +27,7 @@ class App extends StatelessWidget {
           backgroundColor: AppColors.background,
           foregroundColor: AppColors.textPrimary,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 1,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

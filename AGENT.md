@@ -6,126 +6,59 @@ Automate versioning, commit, push, tag, and GitHub release with APK artifact.
 
 When user says: "commit", "push", "release", "update version"
 
-## Workflow
+## Quick Release (1 Command)
 
-1. **Check changes**
+```bash
+# Otomatis: patch bump + generate notes + build APK + git commit/tag + push + GitHub release
+dart run tool/release.dart patch
+
+# Atau tentukan bump type:
+dart run tool/release.dart minor
+dart run tool/release.dart major
+
+# Preview tanpa eksekusi:
+dart run tool/release.dart patch --dry-run
+```
+
+## Step-by-Step Manual Workflow
+
+1. **Check changes & analyze**
    ```bash
    git status
    git diff --stat
    git log --oneline HEAD...origin/master
    ```
 
-2. **Auto-analyze changes**
-   - Parse file changes:
-     - `lib/features/` → feature changes
-     - `lib/core/` → core/infrastructure changes
-     - `*.md`, `README` → docs only
-     - `pubspec.yaml` → dependency updates
-   - Classify commits since last tag:
-     - Added files → "feat"
-     - Bug fixes in code → "fix"
-     - Refactor → "refactor"
-     - Docs → "docs"
-     - Config/build → "chore"
+2. **Version bump in `pubspec.yaml`**
+   - Major (`x.0.0+n`): Breaking changes
+   - Minor (`0.x.0+n`): New features
+   - Patch (`0.0.x+n`): Bug fixes
 
-3. **Version bump**
-   - Read current version from `pubspec.yaml`
-   - Auto-decide or ask user:
-     - Breaking changes → major (x.0.0)
-     - New features → minor (0.x.0)
-     - Bug fixes only → patch (0.0.x)
-   - Update `pubspec.yaml`: version + versionCode
-
-4. **Build APK**
+3. **Build APK**
    ```bash
    flutter clean
    flutter pub get
-   flutter pub run build_runner build --delete-conflicting-outputs
+   dart run build_runner build --delete-conflicting-outputs
    flutter build apk --release --split-per-abi
    ```
-   - APK: `build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk`
+   - APKs: `build/app/outputs/flutter-apk/*-release.apk`
 
-5. **Auto-generate release notes**
-   Format:
-   ```
-   ## What's New
-   
-   ### Features
-   - Added reminder snooze (10min/1hr/custom)
-   - Notification priority modes
-   
-   ### Bug Fixes
-   - Fixed alarm not rescheduling after device reboot
-   - Fixed notification permission on Android 13+
-   
-   ### Improvements
-   - Better date picker UX
-   - Reduced APK size by 2MB
-   ```
-
-6. **Git commit**
-   - Auto-generate commit message from changes
-   - `git add .`
-   - `git commit -m "<auto-message>"`
-
-7. **Git tag**
-   - `git tag -a v<version> -m "<release notes>"`
-
-8. **Push**
+4. **Git commit & tag**
    ```bash
-   git push origin master
-   git push origin v<version>
+   git add .
+   git commit -m "chore(release): v<version>"
+   git tag -a v<version> -m "<release notes>"
+   git push origin master --tags
    ```
 
-9. **GitHub Release**
+5. **GitHub Release**
    ```bash
    gh release create v<version> \
-     build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+     build/app/outputs/flutter-apk/*-release.apk \
      --title "v<version>" \
      --notes "<release notes>"
    ```
 
-## Example Flow
+## CI/CD Workflow
 
-Current state (v0.0.1):
-- Added Phase 1: Notes (CRUD, search, pin, archive, categories)
-- Added Phase 2: Reminders + Alarm
-- Added AGENT.md
-
-User: "release new version"
-
-Agent output:
-```
-Changes detected:
-- lib/features/reminders/ (new files: reminder.dart, provider, screens)
-- lib/core/services/ (new files: notification_service.dart, alarm_service.dart)
-- AGENT.md (new file)
-- README.md (updated)
-
-Version bump: v0.0.1 → v0.0.2 (patch)
-
-Release notes:
-## v0.0.2
-- Added: Reminder scheduling with date/time
-- Added: Alarm notifications (offline capable)
-- Added: Priority modes (Low/Normal/High/Urgent)
-- Added: Repeat options (Once/Daily/Weekly/Monthly)
-- Added: Snooze functionality
-- Added: AGENT.md for automated release workflow
-```
-
-Buat release: `v0.0.2` dengan APK attached
-
-## Requirements
-
-- `gh` CLI installed and authenticated: `gh auth login`
-- Flutter SDK installed
-- Git configured with remote `origin`
-
-## Notes
-
-- APK split by ABI (armeabi-v7a for most Android devices)
-- Release notes can be:
-  - User-provided
-  - Auto-generated from git diff summary
-  - Template: "feat: ...", "fix: ...", "chore: ..."
+File `.github/workflows/release.yml` otomatis membangun APK dan menerbitkan GitHub Release setiap kali tag `v*` di-push atau di-trigger manual lewat Actions tab.

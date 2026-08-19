@@ -1,23 +1,23 @@
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:dotnotes/core/database/boxes.dart';
+import 'package:dotnotes/core/database/boxes.dart' as boxes;
+import 'package:dotnotes/features/notes/models/note.dart';
+import 'package:dotnotes/features/reminders/models/reminder.dart';
 
 class HiveService {
-  static late Box notesBox;
-  static late Box remindersBox;
-  static late Box categoriesBox;
-
-  Future<void> init() async {
+  static Future<void> init() async {
     await Hive.initFlutter();
+    
     Hive.registerAdapter(NoteAdapter());
     Hive.registerAdapter(ReminderAdapter());
-    Hive.registerAdapter(CategoryAdapter());
+    Hive.registerAdapter(PriorityAdapter());
+    Hive.registerAdapter(RepeatTypeAdapter());
+    Hive.registerAdapter(ReminderStatusAdapter());
     
-    notesBox = await Hive.openBox(notesBox);
-    remindersBox = await Hive.openBox(remindersBox);
-    categoriesBox = await Hive.openBox(categoriesBox);
+    await Hive.openBox<Note>(boxes.notesBox);
+    await Hive.openBox<Reminder>(boxes.remindersBox);
   }
 
-  void closeBoxes() {
+  static void closeBoxes() {
     Hive.close();
   }
 }

@@ -125,8 +125,36 @@ class Reminder extends HiveObject {
   }
 }
 
-enum Priority { low, normal, high, urgent }
+@HiveType(typeId: 2)
+enum Priority {
+  @HiveField(0)
+  low,
+  @HiveField(1)
+  normal,
+  @HiveField(2)
+  high,
+  @HiveField(3)
+  urgent,
+}
 
-enum RepeatType { once, daily, weekly, monthly }
+@HiveType(typeId: 3)
+enum RepeatType {
+  @HiveField(0)
+  once,
+  @HiveField(1)
+  daily,
+  @HiveField(2)
+  weekly,
+  @HiveField(3)
+  monthly,
+}
 
-enum ReminderStatus { pending, completed, snoozed }
+@HiveType(typeId: 4)
+enum ReminderStatus {
+  @HiveField(0)
+  pending,
+  @HiveField(1)
+  completed,
+  @HiveField(2)
+  snoozed,
+}

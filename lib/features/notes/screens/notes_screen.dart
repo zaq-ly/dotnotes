@@ -141,7 +141,7 @@ class NotesScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.note_add_outlined,
             size: 80,
             color: AppColors.textMuted,

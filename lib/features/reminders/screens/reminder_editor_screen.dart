@@ -44,17 +44,17 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
   void _loadData() {
     final notesAsync = ref.read(notesProvider);
     final notes = notesAsync.valueOrNull ?? [];
-    _note = notes.firstWhere((n) => n.id == widget.noteId, orElse: () => Note.empty());
+    final matchingNotes = notes.where((n) => n.id == widget.noteId);
+    if (matchingNotes.isNotEmpty) {
+      _note = matchingNotes.first;
+    }
 
     if (widget.reminderId != null) {
       final remindersAsync = ref.read(remindersProvider);
       final reminders = remindersAsync.valueOrNull ?? [];
-      _currentReminder = reminders.firstWhere(
-        (r) => r.id == widget.reminderId,
-        orElse: () => Reminder.empty(),
-      );
-
-      if (_currentReminder != null) {
+      final matchingReminders = reminders.where((r) => r.id == widget.reminderId);
+      if (matchingReminders.isNotEmpty) {
+        _currentReminder = matchingReminders.first;
         _scheduledDate = _currentReminder!.scheduledAt;
         _scheduledTime = TimeOfDay.fromDateTime(_currentReminder!.scheduledAt);
         _priority = _currentReminder!.priority;
@@ -63,9 +63,9 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
         _gmailEnabled = _currentReminder!.gmailEnabled;
         _calendarEnabled = _currentReminder!.calendarEnabled;
         _gmailRecipient = _currentReminder!.gmailRecipient;
-        setState(() {});
       }
     }
+    setState(() {});
   }
 
   Future<void> _selectDate() async {
@@ -112,28 +112,30 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
       return;
     }
 
-    final reminder = _currentReminder?.copyWith(
-          scheduledAt: scheduledAt,
-          priority: _priority,
-          repeat: _repeat,
-          alarmEnabled: _alarmEnabled,
-          gmailEnabled: _gmailEnabled,
-          calendarEnabled: _calendarEnabled,
-          gmailRecipient: _gmailRecipient,
-        ) ??
-        Reminder(
-          id: '',
-          noteId: widget.noteId,
-          scheduledAt: scheduledAt,
-          priority: _priority,
-          repeat: _repeat,
-          alarmEnabled: _alarmEnabled,
-          gmailEnabled: _gmailEnabled,
-          calendarEnabled: _calendarEnabled,
-          gmailRecipient: _gmailRecipient,
-        );
+    final isEditing = _currentReminder != null && _currentReminder!.id.isNotEmpty;
+    final reminder = isEditing
+        ? _currentReminder!.copyWith(
+            scheduledAt: scheduledAt,
+            priority: _priority,
+            repeat: _repeat,
+            alarmEnabled: _alarmEnabled,
+            gmailEnabled: _gmailEnabled,
+            calendarEnabled: _calendarEnabled,
+            gmailRecipient: _gmailRecipient,
+          )
+        : Reminder(
+            id: '',
+            noteId: widget.noteId,
+            scheduledAt: scheduledAt,
+            priority: _priority,
+            repeat: _repeat,
+            alarmEnabled: _alarmEnabled,
+            gmailEnabled: _gmailEnabled,
+            calendarEnabled: _calendarEnabled,
+            gmailRecipient: _gmailRecipient,
+          );
 
-    if (_currentReminder != null) {
+    if (isEditing) {
       await ref.read(remindersProvider.notifier).updateReminder(reminder);
     } else {
       await ref.read(remindersProvider.notifier).createReminder(reminder);
@@ -145,7 +147,7 @@ class _ReminderEditorScreenState extends ConsumerState<ReminderEditorScreen> {
   }
 
   Future<void> _deleteReminder() async {
-    if (_currentReminder == null) return;
+    if (_currentReminder == null || _currentReminder!.id.isEmpty) return;
 
     final confirmed = await showDialog<bool>(
       context: context,

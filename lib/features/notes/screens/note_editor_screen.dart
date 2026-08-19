@@ -4,6 +4,7 @@ import 'package:dotnotes/features/notes/models/note.dart';
 import 'package:dotnotes/features/notes/providers/notes_provider.dart';
 import 'package:dotnotes/shared/widgets/confirm_dialog.dart';
 import 'package:dotnotes/app/theme.dart';
+import 'package:dotnotes/app/routes.dart';
 
 class NoteEditorScreen extends ConsumerStatefulWidget {
   final String? noteId;
@@ -38,12 +39,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     if (widget.noteId != null) {
       final notesAsync = ref.read(notesProvider);
       final notes = notesAsync.valueOrNull ?? [];
-      _currentNote = notes.firstWhere(
-        (note) => note.id == widget.noteId,
-        orElse: () => Note.empty(),
-      );
-
-      if (_currentNote != null) {
+      final matches = notes.where((note) => note.id == widget.noteId);
+      if (matches.isNotEmpty) {
+        _currentNote = matches.first;
         _titleController.text = _currentNote!.title;
         _contentController.text = _currentNote!.content;
         _categoryController.text = _currentNote!.category ?? '';
@@ -73,30 +71,32 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       return;
     }
 
-    final note = _currentNote?.copyWith(
-          title: title,
-          content: content,
-          category: _categoryController.text.trim().isEmpty
-              ? null
-              : _categoryController.text.trim(),
-          isPinned: _isPinned,
-          isArchived: _isArchived,
-        ) ??
-        Note(
-          id: '',
-          userId: 'default_user',
-          title: title,
-          content: content,
-          category: _categoryController.text.trim().isEmpty
-              ? null
-              : _categoryController.text.trim(),
-          isPinned: _isPinned,
-          isArchived: _isArchived,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
+    final isEditing = _currentNote != null && _currentNote!.id.isNotEmpty;
+    final note = isEditing
+        ? _currentNote!.copyWith(
+            title: title,
+            content: content,
+            category: _categoryController.text.trim().isEmpty
+                ? null
+                : _categoryController.text.trim(),
+            isPinned: _isPinned,
+            isArchived: _isArchived,
+          )
+        : Note(
+            id: '',
+            userId: 'default_user',
+            title: title,
+            content: content,
+            category: _categoryController.text.trim().isEmpty
+                ? null
+                : _categoryController.text.trim(),
+            isPinned: _isPinned,
+            isArchived: _isArchived,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
 
-    if (_currentNote != null) {
+    if (isEditing) {
       await ref.read(notesProvider.notifier).updateNote(note);
     } else {
       await ref.read(notesProvider.notifier).createNote(note);
@@ -108,7 +108,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   }
 
   Future<void> _deleteNote() async {
-    if (_currentNote == null) return;
+    if (_currentNote == null || _currentNote!.id.isEmpty) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -243,10 +243,10 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
-                  if (widget.noteId != null) {
+                  if (widget.noteId != null && widget.noteId!.isNotEmpty) {
                     Navigator.pushNamed(
                       context,
-                      '/reminder-editor',
+                      AppRoutes.reminderEditor,
                       arguments: {'noteId': widget.noteId},
                     );
                   } else {
