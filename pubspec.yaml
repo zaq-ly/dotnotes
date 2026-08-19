@@ -37,10 +37,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: false
-  image_path: "assets/Logo dotnotes.jpg"
+  image_path: "assets/logo_foreground.png"
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/Logo dotnotes.jpg"
+  adaptive_icon_foreground: "assets/logo_foreground.png"
 
 flutter:
   uses-material-design: true
