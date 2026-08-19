@@ -8,8 +8,21 @@ void main(List<String> args) async {
   final isDryRun = args.contains('--dry-run');
   final skipBuild = args.contains('--skip-build');
 
+  // Extract custom release description from -m or --message or --notes
+  String? customMessage;
+  for (int i = 0; i < args.length; i++) {
+    if ((args[i] == '-m' || args[i] == '--message' || args[i] == '--notes') && i + 1 < args.length) {
+      customMessage = args[i + 1];
+      break;
+    }
+  }
+
   print('=== Release Manager (.notes) ===');
-  print('Bump type: $bumpType | Dry run: $isDryRun | Skip build: $skipBuild\n');
+  print('Bump type: $bumpType | Dry run: $isDryRun | Skip build: $skipBuild');
+  if (customMessage != null) {
+    print('Custom notes: "$customMessage"');
+  }
+  print('');
 
   // 1. Read pubspec.yaml
   final pubspecFile = File('pubspec.yaml');
@@ -56,7 +69,18 @@ void main(List<String> args) async {
   print('Current: ${match.group(0)}');
   print('New:     version: $newVersionFull (Tag: $tag)\n');
 
-  // 2. Fetch latest tag & generate release notes from git log
+  // 2. Detect uncommitted file changes for auto-summary
+  final diffResult = await Process.run('git', ['status', '--porcelain'], runInShell: true);
+  final uncommittedLines = diffResult.stdout.toString().split('\n').where((l) => l.trim().isNotEmpty).toList();
+  final changedFilesSummary = <String>[];
+  for (final l in uncommittedLines) {
+    final clean = l.trim().substring(2).trim();
+    if (clean.isNotEmpty && !clean.startsWith('tool/') && !clean.startsWith('.github/')) {
+      changedFilesSummary.add(clean);
+    }
+  }
+
+  // 3. Fetch latest tag & generate release notes from git log
   final lastTagResult = await Process.run('git', ['describe', '--tags', '--abbrev=0'], runInShell: true);
   final lastTag = lastTagResult.exitCode == 0 ? lastTagResult.stdout.toString().trim() : '';
 
@@ -84,8 +108,14 @@ void main(List<String> args) async {
   final notesBuffer = StringBuffer();
   notesBuffer.writeln('## What\'s New in $tag\n');
 
+  if (customMessage != null && customMessage.isNotEmpty) {
+    notesBuffer.writeln('### 📝 Ringkasan Perubahan');
+    notesBuffer.writeln(customMessage);
+    notesBuffer.writeln();
+  }
+
   if (featList.isNotEmpty) {
-    notesBuffer.writeln('### Features');
+    notesBuffer.writeln('### ✨ Fitur Baru');
     for (final f in featList) {
       notesBuffer.writeln('- $f');
     }
@@ -93,26 +123,32 @@ void main(List<String> args) async {
   }
 
   if (fixList.isNotEmpty) {
-    notesBuffer.writeln('### Bug Fixes');
+    notesBuffer.writeln('### 🐛 Perbaikan Bug');
     for (final f in fixList) {
       notesBuffer.writeln('- $f');
     }
     notesBuffer.writeln();
   }
 
-  if (featList.isEmpty && fixList.isEmpty) {
-    notesBuffer.writeln('### Updates');
-    for (final o in otherList.take(5)) {
-      notesBuffer.writeln('- $o');
-    }
-    if (otherList.isEmpty) {
-      notesBuffer.writeln('- Maintenance and stability improvements.');
+  if (customMessage == null && featList.isEmpty && fixList.isEmpty) {
+    notesBuffer.writeln('### 🚀 Pembaruan & Peningkatan');
+    if (changedFilesSummary.isNotEmpty) {
+      for (final f in changedFilesSummary.take(5)) {
+        notesBuffer.writeln('- Perubahan pada `$f`');
+      }
+    } else {
+      for (final o in otherList.take(5)) {
+        notesBuffer.writeln('- $o');
+      }
+      if (otherList.isEmpty) {
+        notesBuffer.writeln('- Pemeliharaan dan peningkatan stabilitas aplikasi.');
+      }
     }
     notesBuffer.writeln();
   }
 
   notesBuffer.writeln('---');
-  notesBuffer.writeln('### Panduan Memilih File APK Berdasarkan Seri Android:');
+  notesBuffer.writeln('### 📱 Panduan Memilih File APK:');
   notesBuffer.writeln('| File APK | Versi / Seri Android | Jenis Perangkat | Keterangan |');
   notesBuffer.writeln('| :--- | :--- | :--- | :--- |');
   notesBuffer.writeln('| **`dotnotes-$tag-arm64-v8a.apk`** | **Android 10, 11, 12, 13, 14, 15+** | **HP Android Modern (64-bit)** | **Pilihan Utama (Wajib untuk HP sekarang)** |');
@@ -127,7 +163,7 @@ void main(List<String> args) async {
     return;
   }
 
-  // 3. Update pubspec.yaml
+  // 4. Update pubspec.yaml
   final updatedPubspec = pubspecContent.replaceFirst(
     versionRegex,
     'version: $newVersionFull',
@@ -135,7 +171,7 @@ void main(List<String> args) async {
   pubspecFile.writeAsStringSync(updatedPubspec);
   print('Updated pubspec.yaml -> version: $newVersionFull');
 
-  // 4. Build APKs
+  // 5. Build APKs
   if (!skipBuild) {
     print('\nCleaning and building APKs...');
     await _runCmd('flutter', ['clean']);
@@ -143,17 +179,20 @@ void main(List<String> args) async {
     await _runCmd('flutter', ['build', 'apk', '--release', '--split-per-abi']);
   }
 
-  // 5. Commit & Tag
+  // 6. Commit & Tag
   print('\nCreating Git commit and tag...');
+  final commitMsg = customMessage != null && customMessage.isNotEmpty
+      ? 'chore(release): $tag - $customMessage'
+      : 'chore(release): $tag';
   await _runCmd('git', ['add', '.']);
-  await _runCmd('git', ['commit', '-m', 'chore(release): $tag']);
+  await _runCmd('git', ['commit', '-m', commitMsg]);
   await _runCmd('git', ['tag', '-a', tag, '-m', releaseNotes]);
 
-  // 6. Push
+  // 7. Push
   print('\nPushing to remote origin...');
   await _runCmd('git', ['push', 'origin', 'master', '--tags']);
 
-  // 7. GitHub Release via gh CLI
+  // 8. GitHub Release via gh CLI
   print('\nPublishing GitHub Release...');
   final apkDir = Directory('build/app/outputs/flutter-apk');
   final uploadFiles = <String>[];

@@ -9,56 +9,25 @@ When user says: "commit", "push", "release", "update version"
 ## Quick Release (1 Command)
 
 ```bash
-# Otomatis: patch bump + generate notes + build APK + git commit/tag + push + GitHub release
-dart run tool/release.dart patch
+# Rilis otomatis dengan deskripsi kustom:
+dart run tool/release.dart patch -m "Perbaikan alarm, update logo baru, dan optimasi performa"
 
-# Atau tentukan bump type:
-dart run tool/release.dart minor
-dart run tool/release.dart major
+# Atau pilihan bump lainnya:
+dart run tool/release.dart minor -m "Fitur Google Calendar & Gmail integration"
+dart run tool/release.dart major -m "Rilis besar v2.0.0"
 
-# Preview tanpa eksekusi:
-dart run tool/release.dart patch --dry-run
+# Preview changelog tanpa merilis:
+dart run tool/release.dart patch -m "Testing changelog" --dry-run
 ```
 
-## Step-by-Step Manual Workflow
-
-1. **Check changes & analyze**
-   ```bash
-   git status
-   git diff --stat
-   git log --oneline HEAD...origin/master
-   ```
-
-2. **Version bump in `pubspec.yaml`**
-   - Major (`x.0.0+n`): Breaking changes
-   - Minor (`0.x.0+n`): New features
-   - Patch (`0.0.x+n`): Bug fixes
-
-3. **Build APK**
-   ```bash
-   flutter clean
-   flutter pub get
-   dart run build_runner build --delete-conflicting-outputs
-   flutter build apk --release --split-per-abi
-   ```
-   - APKs: `build/app/outputs/flutter-apk/*-release.apk`
-
-4. **Git commit & tag**
-   ```bash
-   git add .
-   git commit -m "chore(release): v<version>"
-   git tag -a v<version> -m "<release notes>"
-   git push origin master --tags
-   ```
-
-5. **GitHub Release**
-   ```bash
-   gh release create v<version> \
-     build/app/outputs/flutter-apk/*-release.apk \
-     --title "v<version>" \
-     --notes "<release notes>"
-   ```
+## Apa yang Dilakukan Otomatis:
+1. **Version bump**: Memperbarui versi & build number di `pubspec.yaml`.
+2. **Release Notes Generator**: Menyusun changelog rapi dari deskripsi pesan `-m`, riwayat commit `feat:` / `fix:`, dan file yang diubah.
+3. **Build APK**: Menghasilkan split APK (`arm64-v8a`, `armeabi-v7a`, `x86_64`) dan menamainya `dotnotes-v<version>-<abi>.apk`.
+4. **Git Commit & Tag**: `git add .`, commit dengan pesan rilis, dan buat tag berversi.
+5. **Git Push**: Push kode dan tag ke `origin master`.
+6. **GitHub Release**: Mengunggah file APK ke GitHub Release lengkap dengan deskripsi dan tabel panduan seri Android.
 
 ## CI/CD Workflow
 
-File `.github/workflows/release.yml` otomatis membangun APK dan menerbitkan GitHub Release setiap kali tag `v*` di-push atau di-trigger manual lewat Actions tab.
+File `.github/workflows/release.yml` otomatis membangun APK dan menerbitkan GitHub Release setiap kali tag `v*` di-push ke GitHub.
