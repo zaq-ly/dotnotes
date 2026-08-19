@@ -90,7 +90,21 @@ class RemindersNotifier extends StateNotifier<AsyncValue<List<Reminder>>> {
       title: title,
       body: body,
       scheduledTime: reminder.scheduledAt,
+      matchDateTimeComponents: _matchDateTimeComponents(reminder.repeat),
     );
+  }
+
+  DateTimeComponents? _matchDateTimeComponents(RepeatType repeat) {
+    switch (repeat) {
+      case RepeatType.once:
+        return null;
+      case RepeatType.daily:
+        return DateTimeComponents.time;
+      case RepeatType.weekly:
+        return DateTimeComponents.dayOfWeekAndTime;
+      case RepeatType.monthly:
+        return DateTimeComponents.dayOfMonthAndTime;
+    }
   }
 }
 

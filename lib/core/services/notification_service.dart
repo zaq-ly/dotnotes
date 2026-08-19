@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -43,7 +44,6 @@ class NotificationService {
     final android = _notifications
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await android?.requestNotificationsPermission();
-    await android?.requestExactAlarmsPermission();
   }
 
   void _onNotificationTap(NotificationResponse response) {
@@ -55,6 +55,7 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime scheduledTime,
+    DateTimeComponents? matchDateTimeComponents,
   }) async {
     final scheduledTz = tz.TZDateTime.from(scheduledTime, tz.local);
     if (scheduledTz.isBefore(tz.TZDateTime.now(tz.local))) {
@@ -76,16 +77,40 @@ class NotificationService {
 
     const details = NotificationDetails(android: androidDetails);
 
-    await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledTz,
-      details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+    final android = _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final canExact = await android?.canScheduleExactNotifications() ?? false;
+
+    try {
+      await _notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledTz,
+        details,
+        androidScheduleMode: canExact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: matchDateTimeComponents,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } on PlatformException {
+      if (!canExact) {
+        rethrow;
+      }
+      await _notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledTz,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: matchDateTimeComponents,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    }
   }
 
   Future<void> showNotification({
