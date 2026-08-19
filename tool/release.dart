@@ -112,12 +112,12 @@ void main(List<String> args) async {
   }
 
   notesBuffer.writeln('---');
-  notesBuffer.writeln('### Panduan Memilih File APK:');
-  notesBuffer.writeln('| File APK | Untuk Perangkat | Rekomendasi |');
-  notesBuffer.writeln('| :--- | :--- | :--- |');
-  notesBuffer.writeln('| **`app-arm64-v8a-release.apk`** | **HP Android Modern (64-bit)** | **Pilihan Utama (99% HP sekarang)** |');
-  notesBuffer.writeln('| **`app-armeabi-v7a-release.apk`** | HP Android Jadul (32-bit) | Khusus HP model lama |');
-  notesBuffer.writeln('| **`app-x86_64-release.apk`** | Emulator PC / Laptop | Khusus testing emulator di PC |');
+  notesBuffer.writeln('### Panduan Memilih File APK Berdasarkan Seri Android:');
+  notesBuffer.writeln('| File APK | Versi / Seri Android | Jenis Perangkat | Keterangan |');
+  notesBuffer.writeln('| :--- | :--- | :--- | :--- |');
+  notesBuffer.writeln('| **`app-arm64-v8a-release.apk`** | **Android 10, 11, 12, 13, 14, 15+** | **HP Android Modern (64-bit)** | **Pilihan Utama (Wajib untuk HP sekarang)** |');
+  notesBuffer.writeln('| **`app-armeabi-v7a-release.apk`** | **Android 5.0 s/d Android 9.0** | HP Android Jadul (32-bit) | Khusus HP model lama |');
+  notesBuffer.writeln('| **`app-x86_64-release.apk`** | **Android 7.0 s/d Android 14** (di PC) | Emulator PC / Laptop | Khusus emulator Android Studio / BlueStacks / LDPlayer |');
 
   final releaseNotes = notesBuffer.toString().trim();
   print('--- Release Notes ---\n$releaseNotes\n---------------------');
