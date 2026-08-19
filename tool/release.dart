@@ -115,9 +115,9 @@ void main(List<String> args) async {
   notesBuffer.writeln('### Panduan Memilih File APK Berdasarkan Seri Android:');
   notesBuffer.writeln('| File APK | Versi / Seri Android | Jenis Perangkat | Keterangan |');
   notesBuffer.writeln('| :--- | :--- | :--- | :--- |');
-  notesBuffer.writeln('| **`app-arm64-v8a-release.apk`** | **Android 10, 11, 12, 13, 14, 15+** | **HP Android Modern (64-bit)** | **Pilihan Utama (Wajib untuk HP sekarang)** |');
-  notesBuffer.writeln('| **`app-armeabi-v7a-release.apk`** | **Android 5.0 s/d Android 9.0** | HP Android Jadul (32-bit) | Khusus HP model lama |');
-  notesBuffer.writeln('| **`app-x86_64-release.apk`** | **Android 7.0 s/d Android 14** (di PC) | Emulator PC / Laptop | Khusus emulator Android Studio / BlueStacks / LDPlayer |');
+  notesBuffer.writeln('| **`dotnotes-$tag-arm64-v8a.apk`** | **Android 10, 11, 12, 13, 14, 15+** | **HP Android Modern (64-bit)** | **Pilihan Utama (Wajib untuk HP sekarang)** |');
+  notesBuffer.writeln('| **`dotnotes-$tag-armeabi-v7a.apk`** | **Android 5.0 s/d Android 9.0** | HP Android Jadul (32-bit) | Khusus HP model lama |');
+  notesBuffer.writeln('| **`dotnotes-$tag-x86_64.apk`** | **Android 7.0 s/d Android 14** (di PC) | Emulator PC / Laptop | Khusus emulator Android Studio / BlueStacks / LDPlayer |');
 
   final releaseNotes = notesBuffer.toString().trim();
   print('--- Release Notes ---\n$releaseNotes\n---------------------');
@@ -156,20 +156,24 @@ void main(List<String> args) async {
   // 7. GitHub Release via gh CLI
   print('\nPublishing GitHub Release...');
   final apkDir = Directory('build/app/outputs/flutter-apk');
-  final apkFiles = apkDir.existsSync()
-      ? apkDir
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.endsWith('-release.apk'))
-          .map((f) => f.path)
-          .toList()
-      : <String>[];
+  final uploadFiles = <String>[];
+  if (apkDir.existsSync()) {
+    for (final file in apkDir.listSync().whereType<File>()) {
+      final name = file.uri.pathSegments.last;
+      if (name.startsWith('app-') && name.endsWith('-release.apk')) {
+        final abi = name.replaceFirst('app-', '').replaceFirst('-release.apk', '');
+        final targetPath = '${apkDir.path}/dotnotes-$tag-$abi.apk';
+        file.copySync(targetPath);
+        uploadFiles.add(targetPath);
+      }
+    }
+  }
 
   final ghArgs = [
     'release',
     'create',
     tag,
-    ...apkFiles,
+    ...uploadFiles,
     '--title',
     tag,
     '--notes',
