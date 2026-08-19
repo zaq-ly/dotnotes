@@ -1,7 +1,7 @@
 name: dotnotes
 description: Notes, Reminders, and Alarms with Gmail & Calendar integration
 publish_to: 'none'
-version: 1.0.2+102
+version: 1.0.3+103
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -32,6 +32,17 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   hive_generator: ^2.0.1
   build_runner: ^2.4.9
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/Logo dotnotes.jpg"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/Logo dotnotes.jpg"
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/
