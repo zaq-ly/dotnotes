@@ -203,6 +203,7 @@ void main(List<String> args) async {
         final abi = name.replaceFirst('app-', '').replaceFirst('-release.apk', '');
         final targetPath = '${apkDir.path}/dotnotes-$tag-$abi.apk';
         file.copySync(targetPath);
+        file.deleteSync(); // Hapus file mentah app-*-release.apk agar tidak double
         uploadFiles.add(targetPath);
       }
     }
