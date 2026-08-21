@@ -15,10 +15,27 @@ class NotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
     tz.initializeTimeZones();
+
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidSettings);
     await _notifications.initialize(initSettings, onDidReceiveNotificationResponse: _onNotificationTapped);
+
+    // Create notification channel explicitly
+    await _createNotificationChannel();
+
     _initialized = true;
+  }
+
+  Future<void> _createNotificationChannel() async {
+    const channel = AndroidNotificationChannel(
+      'reminder_channel',
+      'Reminders',
+      description: 'Notification reminders for notes',
+      importance: Importance.high,
+    );
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
   }
 
   void _onNotificationTapped(NotificationResponse response) {}
