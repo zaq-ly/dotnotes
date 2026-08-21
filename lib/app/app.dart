@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'theme/app_theme.dart';
+
 import '../features/auth/presentation/auth_screen.dart';
 import '../features/notes_list/presentation/notes_list_screen.dart';
 import '../features/note_editor/presentation/note_editor_screen.dart';
@@ -41,13 +44,7 @@ class App extends StatelessWidget {
       case '/settings':
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
       default:
-        return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(
-              child: Text('Page not found'),
-            ),
-          ),
-        );
+        return MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('Page not found'))));
     }
   }
 }
