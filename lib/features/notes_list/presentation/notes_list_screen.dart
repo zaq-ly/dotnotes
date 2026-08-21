@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/extensions.dart';
 import '../../../domain/entities/note.dart';
-import '../../../data/local/notes_database.dart';
 import '../../../data/models/note_entity.dart';
-import 'notes_list_notifier.dart';
-import 'note_editor_provider.dart';
+import '../application/notes_list_notifier.dart';
+import '../../note_editor/application/note_editor_provider.dart';
 
 class NotesListScreen extends ConsumerWidget {
   const NotesListScreen({super.key});
@@ -54,6 +53,6 @@ class _NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(margin: const EdgeInsets.only(bottom: 8), child: InkWell(onTap: onTap, child: Row(children: [Container(width: 3, height: 60, decoration: BoxDecoration(color: _indicatorColor(), borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)))), Expanded(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(note.title, style: context.textTheme.titleMedium), const SizedBox(height: 4), Text(note.description, style: context.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis)])))]));
+    return Card(margin: const EdgeInsets.only(bottom: 8), child: InkWell(onTap: onTap, child: Row(children: [Container(width: 3, height: 60, decoration: BoxDecoration(color: _indicatorColor(), borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)))), Expanded(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(note.title, style: context.textTheme.titleMedium), const SizedBox(height: 4), Text(note.description, style: context.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis)])))])));
   }
 }

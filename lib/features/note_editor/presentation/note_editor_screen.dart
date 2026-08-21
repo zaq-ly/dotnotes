@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/extensions.dart';
-import '../../../data/local/notes_database.dart';
 import '../../../data/models/note_entity.dart';
 import '../application/note_editor_provider.dart';
 

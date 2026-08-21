@@ -106,4 +106,32 @@ class NoteEntity {
         return 1;
     }
   }
+
+  NoteEntity copyWith({
+    String? id,
+    String? userId,
+    String? title,
+    String? description,
+    int? reminderDatetime,
+    int? priorityLevel,
+    bool? isCompleted,
+    int? createdAt,
+    int? updatedAt,
+    bool? isSynced,
+    bool? isDeleted,
+  }) {
+    return NoteEntity(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      reminderDatetime: reminderDatetime ?? this.reminderDatetime,
+      priorityLevel: priorityLevel ?? this.priorityLevel,
+      isCompleted: isCompleted ?? this.isCompleted,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isSynced: isSynced ?? this.isSynced,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
+  }
 }

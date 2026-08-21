@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/note.dart';
-import '../local/notes_database.dart';
-import '../models/note_entity.dart';
+import '../../../data/local/notes_database.dart';
+import '../../../data/models/note_entity.dart';
 
 class NoteEditorNotifier extends StateNotifier<NoteEntity?> {
   final NotesDatabase _db;
