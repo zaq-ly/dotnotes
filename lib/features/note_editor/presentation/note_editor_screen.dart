@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/extensions.dart';
 import '../../../data/models/note_entity.dart';
 import '../application/note_editor_provider.dart';
+import '../../reminder/notification_service.dart';
+import '../../notes_list/application/notes_list_notifier.dart';
 
 class NoteEditorScreen extends ConsumerStatefulWidget {
   const NoteEditorScreen({super.key});
@@ -75,6 +77,14 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     } else {
       await notifier.update();
     }
+    // Schedule or cancel notification based on reminder
+    final domainNote = note.toDomain();
+    if (_reminderDate != null && !_reminderDate!.isBefore(DateTime.now())) {
+      await NotificationService().scheduleNotification(domainNote);
+    } else {
+      await NotificationService().cancelNotification(note.id);
+    }
+    ref.invalidate(notesListProvider);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -91,7 +101,10 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         const SizedBox(height: 8),
         SegmentedButton<int>(segments: const [ButtonSegment(value: 1, label: Text('Normal'), icon: Icon(Icons.notifications_outlined)), ButtonSegment(value: 2, label: Text('Email'), icon: Icon(Icons.email_outlined)), ButtonSegment(value: 3, label: Text('Alarm'), icon: Icon(Icons.alarm_outlined))], selected: {_priorityLevel}, onSelectionChanged: (selection) => setState(() => _priorityLevel = selection.first)),
         const SizedBox(height: 24),
-        ListTile(contentPadding: EdgeInsets.zero, title: const Text('Reminder'), subtitle: Text(_reminderDate == null ? 'Not set' : '${_reminderDate!.day}/${_reminderDate!.month}/${_reminderDate!.year} ${_reminderDate!.hour.toString().padLeft(2, '0')}:${_reminderDate!.minute.toString().padLeft(2, '0')}'), trailing: const Icon(Icons.chevron_right), onTap: _pickDateTime),
+        ListTile(contentPadding: EdgeInsets.zero, title: const Text('Reminder'), subtitle: Text(_reminderDate == null ? 'Not set' : '${_reminderDate!.day}/${_reminderDate!.month}/${_reminderDate!.year} ${_reminderDate!.hour.toString().padLeft(2, '0')}:${_reminderDate!.minute.toString().padLeft(2, '0')}'), trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (_reminderDate != null) IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => setState(() => _reminderDate = null)),
+          const Icon(Icons.chevron_right),
+        ]), onTap: _pickDateTime),
       ]),
     );
   }
