@@ -20,6 +20,10 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _continueAsGuest() {
+    Navigator.of(context).pushReplacementNamed('/home');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,6 +44,15 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _signInWithGoogle,
                     child: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Sign in with Google'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: _continueAsGuest,
+                    child: const Text('Continue as Guest'),
                   ),
                 ),
               ],
