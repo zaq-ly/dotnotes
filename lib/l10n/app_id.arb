@@ -1,0 +1,17 @@
+{
+  "@@locale": "id",
+  "title": ".notes",
+  "subtitle": "Catatan dengan pengingat bertingkat",
+  "sign_in": "Masuk dengan Google",
+  "create_note": "Buat Catatan",
+  "edit_note": "Edit Catatan",
+  "delete": "Hapus",
+  "reminder": "Pengingat",
+  "no_notes": "Belum ada catatan",
+  "add_reminder": "Tambah pengingat",
+  "priority_normal": "Biasa",
+  "priority_email": "Email",
+  "priority_alarm": "Alarm",
+  "save": "Simpan",
+  "cancel": "Batal"
+}

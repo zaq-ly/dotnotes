@@ -1,0 +1,17 @@
+{
+  "@@locale": "en",
+  "title": ".notes",
+  "subtitle": "Notes with tiered reminders",
+  "sign_in": "Sign in with Google",
+  "create_note": "Create Note",
+  "edit_note": "Edit Note",
+  "delete": "Delete",
+  "reminder": "Reminder",
+  "no_notes": "No notes yet",
+  "add_reminder": "Add reminder",
+  "priority_normal": "Normal",
+  "priority_email": "Email",
+  "priority_alarm": "Alarm",
+  "save": "Save",
+  "cancel": "Cancel"
+}
