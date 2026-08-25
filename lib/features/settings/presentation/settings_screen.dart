@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/application/auth_notifier.dart';
 import '../application/settings_notifier.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -13,6 +14,8 @@ class SettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final settings = ref.watch(settingsNotifierProvider);
     final notifier = ref.read(settingsNotifierProvider.notifier);
+    final user = ref.watch(authNotifierProvider);
+    final authNotifier = ref.read(authNotifierProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -21,6 +24,75 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
+          // Google Account Section
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: user != null
+                  ? Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: user.photoUrl != null
+                              ? NetworkImage(user.photoUrl!)
+                              : null,
+                          child: user.photoUrl == null
+                              ? Text(user.displayName?.substring(0, 1) ?? 'U')
+                              : null,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.displayName ?? 'Google User',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                user.email,
+                                style: theme.textTheme.bodySmall,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        OutlinedButton(
+                          onPressed: () => authNotifier.signOut(),
+                          child: Text(l10n.signOut),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Google Account',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Sign in to enable automatic email reminders via Google Calendar.',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            icon: const Icon(Icons.login),
+                            label: Text(l10n.signInWithGoogle),
+                            onPressed: () => authNotifier.signIn(),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Theme Section
           Card(
             child: Column(

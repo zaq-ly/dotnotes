@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../../data/remote/google/google_calendar_service.dart';
 import '../../../domain/entities/note.dart';
 import '../../../domain/usecases/create_note.dart';
 import '../../../domain/usecases/delete_note.dart';
@@ -67,6 +68,7 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
   final DeleteNoteUseCase _deleteNote;
   final NotificationService _notificationService;
   final AlarmService _alarmService;
+  final GoogleCalendarService _calendarService;
 
   NoteEditorNotifier({
     required CreateNoteUseCase createNoteUseCase,
@@ -74,12 +76,14 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
     required DeleteNoteUseCase deleteNoteUseCase,
     required NotificationService notificationServiceUseCase,
     required AlarmService alarmServiceUseCase,
+    required GoogleCalendarService calendarServiceUseCase,
     NoteEntity? initialNote,
   })  : _createNote = createNoteUseCase,
         _updateNote = updateNoteUseCase,
         _deleteNote = deleteNoteUseCase,
         _notificationService = notificationServiceUseCase,
         _alarmService = alarmServiceUseCase,
+        _calendarService = calendarServiceUseCase,
         super(
           initialNote != null
               ? NoteEditorState(
@@ -128,45 +132,53 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
 
     try {
       final now = DateTime.now();
-      final String noteId;
-      if (state.isNew) {
-        noteId = const Uuid().v4();
-        final newNote = NoteEntity(
-          id: noteId,
-          title: title.isEmpty ? 'Untitled' : title,
-          description: description,
-          reminderDateTime: state.reminderDateTime,
-          priorityLevel: state.priorityLevel,
-          googleCalendarEventId: state.googleCalendarEventId,
-          isCompleted: state.isCompleted,
-          isSynced: false,
-          createdAt: now,
-          updatedAt: now,
-        );
-        await _createNote(newNote);
-        state = state.copyWith(id: noteId, isSaving: false);
-      } else {
-        noteId = state.id!;
-        final updatedNote = NoteEntity(
-          id: noteId,
-          title: title.isEmpty ? 'Untitled' : title,
-          description: description,
-          reminderDateTime: state.reminderDateTime,
-          priorityLevel: state.priorityLevel,
-          googleCalendarEventId: state.googleCalendarEventId,
-          isCompleted: state.isCompleted,
-          isSynced: false,
-          createdAt: now,
-          updatedAt: now,
-        );
-        await _updateNote(updatedNote);
-        state = state.copyWith(isSaving: false);
-      }
+      final String noteId = state.isNew ? const Uuid().v4() : state.id!;
 
       final isFutureReminder = state.reminderDateTime != null &&
           state.reminderDateTime!.isAfter(DateTime.now());
 
-      // 1. Local Notification
+      // 1. Google Calendar Event Sync (Email Reminder)
+      String? calendarEventId = state.googleCalendarEventId;
+      if (isFutureReminder &&
+          (state.priorityLevel == PriorityLevel.email ||
+              state.priorityLevel == PriorityLevel.alarm)) {
+        calendarEventId = await _calendarService.createOrUpdateEvent(
+          eventId: state.googleCalendarEventId,
+          title: title.isEmpty ? 'Untitled' : title,
+          description: description,
+          reminderTime: state.reminderDateTime!,
+        );
+      } else if (state.googleCalendarEventId != null) {
+        await _calendarService.deleteEvent(state.googleCalendarEventId!);
+        calendarEventId = null;
+      }
+
+      final noteToSave = NoteEntity(
+        id: noteId,
+        title: title.isEmpty ? 'Untitled' : title,
+        description: description,
+        reminderDateTime: state.reminderDateTime,
+        priorityLevel: state.priorityLevel,
+        googleCalendarEventId: calendarEventId,
+        isCompleted: state.isCompleted,
+        isSynced: false,
+        createdAt: state.isNew ? now : (state.reminderDateTime ?? now),
+        updatedAt: now,
+      );
+
+      if (state.isNew) {
+        await _createNote(noteToSave);
+      } else {
+        await _updateNote(noteToSave);
+      }
+
+      state = state.copyWith(
+        id: noteId,
+        googleCalendarEventId: () => calendarEventId,
+        isSaving: false,
+      );
+
+      // 2. Local Notification
       if (isFutureReminder) {
         await _notificationService.scheduleNoteNotification(
           noteId: noteId,
@@ -178,7 +190,7 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
         await _notificationService.cancelNoteNotification(noteId);
       }
 
-      // 2. Alarm Level 3
+      // 3. Alarm Level 3
       if (isFutureReminder && state.priorityLevel == PriorityLevel.alarm) {
         await _alarmService.scheduleAlarm(
           noteId: noteId,
@@ -201,6 +213,9 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
     if (state.id == null) return false;
     state = state.copyWith(isSaving: true);
     try {
+      if (state.googleCalendarEventId != null) {
+        await _calendarService.deleteEvent(state.googleCalendarEventId!);
+      }
       await _notificationService.cancelNoteNotification(state.id!);
       await _alarmService.cancelAlarm(state.id!);
       await _deleteNote(state.id!);
@@ -220,6 +235,7 @@ final noteEditorNotifierProvider = StateNotifierProvider.autoDispose
   final deleteNote = ref.watch(deleteNoteUseCaseProvider);
   final notificationService = ref.watch(notificationServiceProvider);
   final alarmService = ref.watch(alarmServiceProvider);
+  final calendarService = ref.watch(googleCalendarServiceProvider);
 
   return NoteEditorNotifier(
     createNoteUseCase: createNote,
@@ -227,6 +243,7 @@ final noteEditorNotifierProvider = StateNotifierProvider.autoDispose
     deleteNoteUseCase: deleteNote,
     notificationServiceUseCase: notificationService,
     alarmServiceUseCase: alarmService,
+    calendarServiceUseCase: calendarService,
     initialNote: note,
   );
 });
