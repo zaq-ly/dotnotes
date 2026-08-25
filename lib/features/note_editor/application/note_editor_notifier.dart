@@ -4,6 +4,7 @@ import '../../../domain/entities/note.dart';
 import '../../../domain/usecases/create_note.dart';
 import '../../../domain/usecases/delete_note.dart';
 import '../../../domain/usecases/update_note.dart';
+import '../../reminder/alarm_service.dart';
 import '../../reminder/notification_service.dart';
 
 class NoteEditorState {
@@ -65,17 +66,20 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
   final UpdateNoteUseCase _updateNote;
   final DeleteNoteUseCase _deleteNote;
   final NotificationService _notificationService;
+  final AlarmService _alarmService;
 
   NoteEditorNotifier({
     required CreateNoteUseCase createNoteUseCase,
     required UpdateNoteUseCase updateNoteUseCase,
     required DeleteNoteUseCase deleteNoteUseCase,
     required NotificationService notificationServiceUseCase,
+    required AlarmService alarmServiceUseCase,
     NoteEntity? initialNote,
   })  : _createNote = createNoteUseCase,
         _updateNote = updateNoteUseCase,
         _deleteNote = deleteNoteUseCase,
         _notificationService = notificationServiceUseCase,
+        _alarmService = alarmServiceUseCase,
         super(
           initialNote != null
               ? NoteEditorState(
@@ -159,9 +163,11 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
         state = state.copyWith(isSaving: false);
       }
 
-      // Schedule or cancel local notification
-      if (state.reminderDateTime != null &&
-          state.reminderDateTime!.isAfter(DateTime.now())) {
+      final isFutureReminder = state.reminderDateTime != null &&
+          state.reminderDateTime!.isAfter(DateTime.now());
+
+      // 1. Local Notification
+      if (isFutureReminder) {
         await _notificationService.scheduleNoteNotification(
           noteId: noteId,
           title: title.isEmpty ? 'Untitled' : title,
@@ -170,6 +176,18 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
         );
       } else {
         await _notificationService.cancelNoteNotification(noteId);
+      }
+
+      // 2. Alarm Level 3
+      if (isFutureReminder && state.priorityLevel == PriorityLevel.alarm) {
+        await _alarmService.scheduleAlarm(
+          noteId: noteId,
+          scheduledDate: state.reminderDateTime!,
+          title: title.isEmpty ? 'Untitled' : title,
+          description: description,
+        );
+      } else {
+        await _alarmService.cancelAlarm(noteId);
       }
 
       return true;
@@ -184,6 +202,7 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
     state = state.copyWith(isSaving: true);
     try {
       await _notificationService.cancelNoteNotification(state.id!);
+      await _alarmService.cancelAlarm(state.id!);
       await _deleteNote(state.id!);
       state = state.copyWith(isSaving: false);
       return true;
@@ -200,12 +219,14 @@ final noteEditorNotifierProvider = StateNotifierProvider.autoDispose
   final updateNote = ref.watch(updateNoteUseCaseProvider);
   final deleteNote = ref.watch(deleteNoteUseCaseProvider);
   final notificationService = ref.watch(notificationServiceProvider);
+  final alarmService = ref.watch(alarmServiceProvider);
 
   return NoteEditorNotifier(
     createNoteUseCase: createNote,
     updateNoteUseCase: updateNote,
     deleteNoteUseCase: deleteNote,
     notificationServiceUseCase: notificationService,
+    alarmServiceUseCase: alarmService,
     initialNote: note,
   );
 });
