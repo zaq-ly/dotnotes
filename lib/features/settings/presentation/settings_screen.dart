@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/application/auth_notifier.dart';
+import '../../sync/application/sync_notifier.dart';
 import '../application/settings_notifier.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -16,6 +18,8 @@ class SettingsScreen extends ConsumerWidget {
     final notifier = ref.read(settingsNotifierProvider.notifier);
     final user = ref.watch(authNotifierProvider);
     final authNotifier = ref.read(authNotifierProvider.notifier);
+    final syncState = ref.watch(syncNotifierProvider);
+    final syncNotifier = ref.read(syncNotifierProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -75,7 +79,7 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Sign in to enable automatic email reminders via Google Calendar.',
+                          'Sign in to enable automatic email reminders and multi-device cloud sync.',
                           style: theme.textTheme.bodySmall,
                         ),
                         const SizedBox(height: 14),
@@ -92,6 +96,59 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
+
+          // Cloud Sync Section (Google Drive)
+          if (user != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Google Drive Sync',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      syncState.isSyncing
+                          ? l10n.syncing
+                          : syncState.lastSynced != null
+                              ? '${l10n.lastSynced}: ${DateFormat('dd MMM yyyy, HH:mm').format(syncState.lastSynced!)}'
+                              : 'Not synced yet',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.textTheme.bodySmall?.color?.withAlpha(180),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        icon: syncState.isSyncing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.sync),
+                        label: Text(
+                          syncState.isSyncing ? l10n.syncing : l10n.syncNow,
+                        ),
+                        onPressed:
+                            syncState.isSyncing ? null : () => syncNotifier.sync(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
 
           // Theme Section
           Card(
