@@ -36,6 +36,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get done => 'Done';
+
+  @override
   String get settings => 'Settings';
 
   @override
@@ -82,6 +85,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noReminder => 'No Reminder';
+
+  @override
+  String get removeReminder => 'Remove Reminder';
+
+  @override
+  String get selectDate => 'Select Date';
+
+  @override
+  String get selectTime => 'Select Time';
+
+  @override
+  String get priority => 'Priority Level';
 
   @override
   String get reminderNormal => 'Standard Notification';

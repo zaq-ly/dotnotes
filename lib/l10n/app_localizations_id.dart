@@ -36,6 +36,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get cancel => 'Batal';
 
   @override
+  String get done => 'Selesai';
+
+  @override
   String get settings => 'Pengaturan';
 
   @override
@@ -82,6 +85,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get noReminder => 'Tanpa Pengingat';
+
+  @override
+  String get removeReminder => 'Hapus Pengingat';
+
+  @override
+  String get selectDate => 'Pilih Tanggal';
+
+  @override
+  String get selectTime => 'Pilih Jam';
+
+  @override
+  String get priority => 'Tingkat Prioritas';
 
   @override
   String get reminderNormal => 'Notifikasi Biasa';

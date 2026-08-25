@@ -152,6 +152,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
@@ -247,6 +253,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No Reminder'**
   String get noReminder;
+
+  /// No description provided for @removeReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Reminder'**
+  String get removeReminder;
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date'**
+  String get selectDate;
+
+  /// No description provided for @selectTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Time'**
+  String get selectTime;
+
+  /// No description provided for @priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority Level'**
+  String get priority;
 
   /// No description provided for @reminderNormal.
   ///

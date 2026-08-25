@@ -4,6 +4,7 @@ import '../../../domain/entities/note.dart';
 import '../../../domain/usecases/create_note.dart';
 import '../../../domain/usecases/delete_note.dart';
 import '../../../domain/usecases/update_note.dart';
+import '../../reminder/notification_service.dart';
 
 class NoteEditorState {
   final String? id;
@@ -63,15 +64,18 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
   final CreateNoteUseCase _createNote;
   final UpdateNoteUseCase _updateNote;
   final DeleteNoteUseCase _deleteNote;
+  final NotificationService _notificationService;
 
   NoteEditorNotifier({
     required CreateNoteUseCase createNoteUseCase,
     required UpdateNoteUseCase updateNoteUseCase,
     required DeleteNoteUseCase deleteNoteUseCase,
+    required NotificationService notificationServiceUseCase,
     NoteEntity? initialNote,
   })  : _createNote = createNoteUseCase,
         _updateNote = updateNoteUseCase,
         _deleteNote = deleteNoteUseCase,
+        _notificationService = notificationServiceUseCase,
         super(
           initialNote != null
               ? NoteEditorState(
@@ -101,6 +105,13 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
     );
   }
 
+  void removeReminder() {
+    state = state.copyWith(
+      reminderDateTime: () => null,
+      priorityLevel: PriorityLevel.normal,
+    );
+  }
+
   Future<bool> saveNote() async {
     final title = state.title.trim();
     final description = state.description.trim();
@@ -113,10 +124,11 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
 
     try {
       final now = DateTime.now();
+      final String noteId;
       if (state.isNew) {
-        final newId = const Uuid().v4();
+        noteId = const Uuid().v4();
         final newNote = NoteEntity(
-          id: newId,
+          id: noteId,
           title: title.isEmpty ? 'Untitled' : title,
           description: description,
           reminderDateTime: state.reminderDateTime,
@@ -128,10 +140,11 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
           updatedAt: now,
         );
         await _createNote(newNote);
-        state = state.copyWith(id: newId, isSaving: false);
+        state = state.copyWith(id: noteId, isSaving: false);
       } else {
+        noteId = state.id!;
         final updatedNote = NoteEntity(
-          id: state.id!,
+          id: noteId,
           title: title.isEmpty ? 'Untitled' : title,
           description: description,
           reminderDateTime: state.reminderDateTime,
@@ -145,6 +158,20 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
         await _updateNote(updatedNote);
         state = state.copyWith(isSaving: false);
       }
+
+      // Schedule or cancel local notification
+      if (state.reminderDateTime != null &&
+          state.reminderDateTime!.isAfter(DateTime.now())) {
+        await _notificationService.scheduleNoteNotification(
+          noteId: noteId,
+          title: title.isEmpty ? 'Untitled' : title,
+          body: description,
+          scheduledDate: state.reminderDateTime!,
+        );
+      } else {
+        await _notificationService.cancelNoteNotification(noteId);
+      }
+
       return true;
     } catch (e) {
       state = state.copyWith(isSaving: false, error: () => e.toString());
@@ -156,6 +183,7 @@ class NoteEditorNotifier extends StateNotifier<NoteEditorState> {
     if (state.id == null) return false;
     state = state.copyWith(isSaving: true);
     try {
+      await _notificationService.cancelNoteNotification(state.id!);
       await _deleteNote(state.id!);
       state = state.copyWith(isSaving: false);
       return true;
@@ -171,11 +199,13 @@ final noteEditorNotifierProvider = StateNotifierProvider.autoDispose
   final createNote = ref.watch(createNoteUseCaseProvider);
   final updateNote = ref.watch(updateNoteUseCaseProvider);
   final deleteNote = ref.watch(deleteNoteUseCaseProvider);
+  final notificationService = ref.watch(notificationServiceProvider);
 
   return NoteEditorNotifier(
     createNoteUseCase: createNote,
     updateNoteUseCase: updateNote,
     deleteNoteUseCase: deleteNote,
+    notificationServiceUseCase: notificationService,
     initialNote: note,
   );
 });
