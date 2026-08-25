@@ -1,4 +1,4 @@
-name: Auto Release
+name: Build & Release
 
 on:
   push:
@@ -12,7 +12,6 @@ permissions:
 
 jobs:
   release:
-    # Cegah infinite loop: skip run yang dipicu oleh commit bump version dari workflow ini sendiri
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
 
@@ -28,55 +27,13 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Tentukan jenis bump dari pesan commit
-        id: bump
-        run: |
-          MSG="${{ github.event.head_commit.message }}"
-          if echo "$MSG" | grep -qE "^feat(\(.+\))?!:|BREAKING CHANGE"; then
-            echo "type=major" >> "$GITHUB_OUTPUT"
-          elif echo "$MSG" | grep -qE "^feat(\(.+\))?:"; then
-            echo "type=minor" >> "$GITHUB_OUTPUT"
-          else
-            echo "type=patch" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Bump versi di pubspec.yaml
+      - name: Ambil versi dari pubspec.yaml
         id: version
         run: |
           CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          if echo "$CURRENT" | grep -q '+'; then
-            VERSION_NAME=$(echo "$CURRENT" | cut -d'+' -f1)
-            BUILD_NUMBER=$(echo "$CURRENT" | cut -d'+' -f2)
-          else
-            VERSION_NAME="$CURRENT"
-            BUILD_NUMBER=1
-          fi
-          MAJOR=$(echo "$VERSION_NAME" | cut -d. -f1)
-          MINOR=$(echo "$VERSION_NAME" | cut -d. -f2)
-          PATCH=$(echo "$VERSION_NAME" | cut -d. -f3)
-
-          case "${{ steps.bump.outputs.type }}" in
-            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
-            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
-            patch) PATCH=$((PATCH+1)) ;;
-          esac
-
-          NEW_BUILD=$((BUILD_NUMBER+1))
-          NEW_VERSION_NAME="$MAJOR.$MINOR.$PATCH"
-          NEW_FULL_VERSION="$NEW_VERSION_NAME+$NEW_BUILD"
-
-          sed -i "s/^version: .*/version: $NEW_FULL_VERSION/" pubspec.yaml
-
-          echo "version_name=$NEW_VERSION_NAME" >> "$GITHUB_OUTPUT"
-          echo "full_version=$NEW_FULL_VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Commit bump version
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pubspec.yaml
-          git commit -m "chore: bump version to ${{ steps.version.outputs.full_version }} [skip ci]"
-          git push
+          VERSION_NAME=$(echo "$CURRENT" | cut -d'+' -f1)
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "full_version=$CURRENT" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: flutter pub get
@@ -84,12 +41,14 @@ jobs:
       - name: Build APK release
         run: flutter build apk --release
 
-      - name: Buat tag
+      - name: Buat tag jika belum ada
         run: |
-          git tag v${{ steps.version.outputs.version_name }}
-          git push origin v${{ steps.version.outputs.version_name }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -fa v${{ steps.version.outputs.version_name }} -m "Release v${{ steps.version.outputs.version_name }}"
+          git push origin v${{ steps.version.outputs.version_name }} --force
 
-      - name: Buat GitHub Release
+      - name: Buat atau update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version_name }}
