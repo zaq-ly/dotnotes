@@ -163,7 +163,7 @@ fun SettingsScreen(
             // About
             ListItem(
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.1.3") }
+                supportingContent = { Text("dotnotes v1.1.4") }
             )
             HorizontalDivider()
 
@@ -193,7 +193,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.1.3") {
+                    viewModel.checkForUpdate("1.1.4") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
