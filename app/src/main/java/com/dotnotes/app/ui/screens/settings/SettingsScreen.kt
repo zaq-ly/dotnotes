@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -159,27 +160,43 @@ fun SettingsScreen(
             )
             HorizontalDivider()
 
-            // Check for Updates
-            ListItem(
-                headlineContent = { Text(strings.checkForUpdates) },
-                supportingContent = { Text(strings.checkForUpdatesDesc) },
-                trailingContent = {
-                    if (isCheckingUpdate) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
-                },
-                modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.1.2") {
-                        Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-            HorizontalDivider()
-
             // About
             ListItem(
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.1.2") }
+                supportingContent = { Text("dotnotes v1.1.3") }
+            )
+            HorizontalDivider()
+
+            // Check for Updates
+            ListItem(
+                headlineContent = { Text(strings.checkForUpdates) },
+                supportingContent = {
+                    if (availableUpdate != null) {
+                        Text(
+                            "${strings.updateAvailable} (${availableUpdate!!.tagName})",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                        )
+                    } else {
+                        Text(strings.checkForUpdatesDesc)
+                    }
+                },
+                trailingContent = {
+                    if (isCheckingUpdate) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else if (availableUpdate != null) {
+                        Icon(
+                            Icons.Default.NewReleases,
+                            contentDescription = strings.updateAvailable,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
+                    viewModel.checkForUpdate("1.1.3") {
+                        Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
+                    }
+                }
             )
             HorizontalDivider()
         }

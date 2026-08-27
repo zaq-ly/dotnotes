@@ -72,8 +72,10 @@ class AlarmReceiver : BroadcastReceiver() {
                 }
             } catch (e: Exception) {
                 // Fallback if background FGS start is denied by strict OEM OS
+                val appLogoBitmap = android.graphics.BitmapFactory.decodeResource(context.resources, com.dotnotes.app.R.drawable.app_logo)
                 val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
-                    .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                    .setSmallIcon(com.dotnotes.app.R.mipmap.ic_launcher)
+                    .setLargeIcon(appLogoBitmap)
                     .setContentTitle(noteTitle)
                     .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Alarm")
                     .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
@@ -96,8 +98,10 @@ class AlarmReceiver : BroadcastReceiver() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            val appLogoBitmap = android.graphics.BitmapFactory.decodeResource(context.resources, com.dotnotes.app.R.drawable.app_logo)
             val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setSmallIcon(com.dotnotes.app.R.mipmap.ic_launcher)
+                .setLargeIcon(appLogoBitmap)
                 .setContentTitle(noteTitle)
                 .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
                 .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))

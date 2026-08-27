@@ -2,7 +2,7 @@ package com.dotnotes.app.ui.screens.editor
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +18,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.AddAlert
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatListNumbered
@@ -27,14 +29,13 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -131,22 +132,19 @@ fun NoteEditorScreen(
                     .padding(padding)
                     .padding(horizontal = 16.dp)
             ) {
-                // 1. Reminder Section at the TOP
-                ReminderTopSection(
+                // 1. Simplified, Modern Reminder Pill at TOP
+                ModernReminderBar(
                     hasReminder = state.hasReminder,
                     reminderTime = state.reminderTime,
                     priority = state.priority,
                     dateFormat = dateFormat,
                     onToggleReminder = viewModel::setReminder,
-                    onSetTime = {
-                        showDateTimePicker(context) { timeMillis ->
-                            viewModel.setReminderTime(timeMillis)
-                        }
-                    },
-                    onSetPriority = viewModel::setPriority
+                    onSetTime = viewModel::setReminderTime,
+                    onSetPriority = viewModel::setPriority,
+                    context = context
                 )
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // 2. Clean, Borderless Title Input
                 TextField(
@@ -178,33 +176,89 @@ fun NoteEditorScreen(
                     )
                 )
 
-                // 3. Formatting Toolbar
+                // 3. Formatting Toolbar with Active Indicators
+                val isBold = richTextState.currentSpanStyle.fontWeight == FontWeight.Bold
+                val isItalic = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic
+                val isOrderedList = richTextState.isOrderedList
+                val isUnorderedList = richTextState.isUnorderedList
+
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 6.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        IconButton(onClick = {
-                            richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                        }) {
-                            Icon(Icons.Default.FormatBold, contentDescription = "Bold", modifier = Modifier.size(20.dp))
+                        FilledIconToggleButton(
+                            checked = isBold,
+                            onCheckedChange = {
+                                richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                            },
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                checkedContentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.FormatBold, contentDescription = "Bold", modifier = Modifier.size(18.dp))
                         }
-                        IconButton(onClick = {
-                            richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                        }) {
-                            Icon(Icons.Default.FormatItalic, contentDescription = "Italic", modifier = Modifier.size(20.dp))
+
+                        FilledIconToggleButton(
+                            checked = isItalic,
+                            onCheckedChange = {
+                                richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
+                            },
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                checkedContentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.FormatItalic, contentDescription = "Italic", modifier = Modifier.size(18.dp))
                         }
-                        IconButton(onClick = { richTextState.toggleUnorderedList() }) {
-                            Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = "Bullet List", modifier = Modifier.size(20.dp))
+
+                        FilledIconToggleButton(
+                            checked = isUnorderedList,
+                            onCheckedChange = {
+                                richTextState.toggleUnorderedList()
+                            },
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                checkedContentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = "Bullet List", modifier = Modifier.size(18.dp))
                         }
-                        IconButton(onClick = { richTextState.toggleOrderedList() }) {
-                            Icon(Icons.Default.FormatListNumbered, contentDescription = "Numbered List", modifier = Modifier.size(20.dp))
+
+                        FilledIconToggleButton(
+                            checked = isOrderedList,
+                            onCheckedChange = {
+                                richTextState.toggleOrderedList()
+                            },
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                checkedContentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.FormatListNumbered, contentDescription = "Numbered List", modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -234,86 +288,125 @@ fun NoteEditorScreen(
 }
 
 @Composable
-private fun ReminderTopSection(
+private fun ModernReminderBar(
     hasReminder: Boolean,
     reminderTime: Long?,
     priority: Int,
     dateFormat: SimpleDateFormat,
     onToggleReminder: (Boolean) -> Unit,
-    onSetTime: () -> Unit,
-    onSetPriority: (Int) -> Unit
+    onSetTime: (Long) -> Unit,
+    onSetPriority: (Int) -> Unit,
+    context: android.content.Context
 ) {
     val strings = LocalStrings.current
 
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = if (hasReminder)
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-        else
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+    if (!hasReminder) {
+        // Subtle, elegant "Add Reminder" button
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            modifier = Modifier.clickable {
+                showDateTimePicker(context) { timeMillis ->
+                    onSetTime(timeMillis)
+                    onToggleReminder(true)
+                }
+            }
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
                 Icon(
-                    imageVector = if (priority == 2 && hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
+                    imageVector = Icons.Default.AddAlert,
                     contentDescription = null,
-                    tint = if (hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
                 )
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(6.dp))
                 Text(
-                    text = strings.reminder,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = strings.setReminder,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.primary
                 )
-                Spacer(Modifier.weight(1f))
-                Switch(checked = hasReminder, onCheckedChange = onToggleReminder)
             }
-
-            if (hasReminder) {
-                Spacer(Modifier.height(10.dp))
-
-                OutlinedButton(
-                    onClick = onSetTime,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
+        }
+    } else {
+        // Modern, single-line pill bar
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = if (priority == 2) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                // Priority Tag (Click to toggle Notification / Alarm)
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (priority == 2) MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    modifier = Modifier.clickable {
+                        onSetPriority(if (priority == 2) 1 else 2)
+                    }
                 ) {
-                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = if (priority == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = if (priority == 2) strings.alarm else strings.notification,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = if (priority == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                // Date/Time Text (Click to change)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable {
+                            showDateTimePicker(context) { timeMillis ->
+                                onSetTime(timeMillis)
+                            }
+                        }
+                ) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.width(4.dp))
                     Text(
-                        text = if (reminderTime != null) dateFormat.format(Date(reminderTime))
-                        else strings.setReminder,
-                        fontWeight = FontWeight.Medium
+                        text = if (reminderTime != null) dateFormat.format(Date(reminderTime)) else strings.setReminder,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
-                Spacer(Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Clear Button
+                IconButton(
+                    onClick = { onToggleReminder(false) },
+                    modifier = Modifier.size(24.dp)
                 ) {
-                    FilterChip(
-                        selected = priority <= 1,
-                        onClick = { onSetPriority(1) },
-                        label = { Text(strings.notification) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
-                        },
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    FilterChip(
-                        selected = priority == 2,
-                        onClick = { onSetPriority(2) },
-                        label = { Text(strings.alarm) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(16.dp))
-                        },
-                        shape = RoundedCornerShape(8.dp)
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = strings.clearReminder,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
