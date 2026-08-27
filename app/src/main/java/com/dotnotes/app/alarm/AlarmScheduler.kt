@@ -23,6 +23,7 @@ class AlarmScheduler(private val context: Context) {
             putExtra("note_id", note.id)
             putExtra("note_title", note.title)
             putExtra("priority", note.priority)
+            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
 
         val pending = PendingIntent.getBroadcast(
