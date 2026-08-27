@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -24,10 +26,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -59,6 +64,9 @@ fun SettingsScreen(
     val snoozeDuration by viewModel.snoozeDuration.collectAsState()
     val googleEmail by viewModel.googleEmail.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
+    val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsState()
+    val availableUpdate by viewModel.availableUpdate.collectAsState()
+    val downloadProgress by viewModel.downloadProgress.collectAsState()
     
     val context = LocalContext.current
     var showThemeDialog by remember { mutableStateOf(false) }
@@ -182,7 +190,23 @@ fun SettingsScreen(
 
             ListItem(
                 headlineContent = { Text("About") },
-                supportingContent = { Text("dotnotes v1.0.8") }
+                supportingContent = { Text("dotnotes v1.0.9") }
+            )
+            HorizontalDivider()
+
+            ListItem(
+                headlineContent = { Text("Check for Updates") },
+                supportingContent = { Text("Cek & perbarui aplikasi langsung dari GitHub") },
+                trailingContent = {
+                    if (isCheckingUpdate) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                },
+                modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
+                    viewModel.checkForUpdate("1.0.9") {
+                        Toast.makeText(context, "Aplikasi sudah versi terbaru", Toast.LENGTH_SHORT).show()
+                    }
+                }
             )
             HorizontalDivider()
         }
@@ -253,6 +277,53 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {}
+        )
+    }
+
+    if (availableUpdate != null) {
+        val update = availableUpdate!!
+        AlertDialog(
+            onDismissRequest = {
+                if (downloadProgress == null) viewModel.dismissUpdateDialog()
+            },
+            title = { Text("Pembaruan Tersedia (${update.tagName})") },
+            text = {
+                Column {
+                    if (downloadProgress != null) {
+                        Text("Mengunduh pembaruan...")
+                        Spacer(Modifier.height(12.dp))
+                        if (downloadProgress!! > 0f) {
+                            LinearProgressIndicator(
+                                progress = { downloadProgress!! },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = if (update.changelog.isNotBlank()) update.changelog else "Pembaruan versi ${update.tagName} siap diunduh.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                if (downloadProgress == null) {
+                    Button(onClick = { viewModel.downloadAndInstall(context, update) }) {
+                        Text("Update Sekarang")
+                    }
+                }
+            },
+            dismissButton = {
+                if (downloadProgress == null) {
+                    TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
+                        Text("Nanti")
+                    }
+                }
+            }
         )
     }
 }
