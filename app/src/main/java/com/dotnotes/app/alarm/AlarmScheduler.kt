@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.dotnotes.app.MainActivity
 import com.dotnotes.app.data.model.Note
 
 class AlarmScheduler(private val context: Context) {
@@ -29,9 +30,20 @@ class AlarmScheduler(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP, time, pending
-        )
+        if (note.priority == 2) {
+            val showIntent = Intent(context, MainActivity::class.java)
+            val showPending = PendingIntent.getActivity(
+                context, 0, showIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(time, showPending), pending
+            )
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, time, pending
+            )
+        }
     }
 
     fun cancel(noteId: String) {
