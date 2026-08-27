@@ -1,7 +1,11 @@
 package com.dotnotes.app.ui.screens.notelist
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,29 +38,33 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.data.model.Note
 import com.dotnotes.app.ui.i18n.LocalStrings
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,7 +113,7 @@ fun NoteListScreen(
                     .fillMaxSize()
                     .padding(padding),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (pinnedNotes.isNotEmpty()) {
                     item {
@@ -116,7 +125,7 @@ fun NoteListScreen(
                         )
                     }
                     items(pinnedNotes, key = { it.id }) { note ->
-                        SwipeableNoteCard(
+                        TelegramSwipeNoteCard(
                             note = note,
                             onClick = { onNoteClick(note.id) },
                             onDelete = { viewModel.deleteNote(note.id) },
@@ -133,7 +142,7 @@ fun NoteListScreen(
                     }
                 }
                 items(otherNotes, key = { it.id }) { note ->
-                    SwipeableNoteCard(
+                    TelegramSwipeNoteCard(
                         note = note,
                         onClick = { onNoteClick(note.id) },
                         onDelete = { viewModel.deleteNote(note.id) },
@@ -145,109 +154,170 @@ fun NoteListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Telegram-style bouncy swipe container:
+ * - Slide Right: Delete (Spring animation + icon scaling pop)
+ * - Slide Left: Pin / Unpin (Elastic spring bounce back)
+ */
 @Composable
-private fun SwipeableNoteCard(
+private fun TelegramSwipeNoteCard(
     note: Note,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     onTogglePin: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val offsetX = remember { Animatable(0f) }
     val strings = LocalStrings.current
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    // Slide Right -> Delete
-                    onDelete()
-                    true
-                }
-                SwipeToDismissBoxValue.EndToStart -> {
-                    // Slide Left -> Pin / Unpin (Snap back)
-                    onTogglePin()
-                    false
-                }
-                SwipeToDismissBoxValue.Settled -> false
-            }
-        }
-    )
+    val thresholdPx = 220f
 
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = true,
-        enableDismissFromEndToStart = true,
-        backgroundContent = {
-            val direction = dismissState.dismissDirection
-            val color = when (direction) {
-                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.errorContainer
-                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
-                else -> Color.Transparent
-            }
+    val isSwipingRight = offsetX.value > 0
+    val isSwipingLeft = offsetX.value < 0
+    val swipeProgress = (abs(offsetX.value) / thresholdPx).coerceIn(0f, 1.5f)
+    val iconScale = 0.6f + (swipeProgress * 0.5f).coerceAtMost(0.6f)
 
-            val alignment = when (direction) {
-                SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-                SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-                else -> Alignment.Center
-            }
-
-            val icon = when (direction) {
-                SwipeToDismissBoxValue.StartToEnd -> Icons.Default.Delete
-                SwipeToDismissBoxValue.EndToStart -> Icons.Default.PushPin
-                else -> null
-            }
-
-            val iconTint = when (direction) {
-                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.error
-                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primary
-                else -> Color.Transparent
-            }
-
-            val text = when (direction) {
-                SwipeToDismissBoxValue.StartToEnd -> strings.delete
-                SwipeToDismissBoxValue.EndToStart -> if (note.isPinned) strings.unpin else strings.pin
-                else -> ""
-            }
-
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+    ) {
+        // Background Action Layer (Telegram-style revealed actions)
+        if (isSwipingRight) {
+            // Delete Background (Red / Error)
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(color)
+                    .matchParentSize()
+                    .background(MaterialTheme.colorScheme.errorContainer)
                     .padding(horizontal = 20.dp),
-                contentAlignment = alignment
+                contentAlignment = Alignment.CenterStart
             ) {
-                if (icon != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        if (direction == SwipeToDismissBoxValue.StartToEnd) {
-                            Icon(icon, contentDescription = null, tint = iconTint)
-                            Text(text, color = iconTint, fontWeight = FontWeight.SemiBold)
-                        } else {
-                            Text(text, color = iconTint, fontWeight = FontWeight.SemiBold)
-                            Icon(icon, contentDescription = null, tint = iconTint)
-                        }
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.scale(iconScale)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = strings.delete,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = strings.delete,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
+        } else if (isSwipingLeft) {
+            // Pin/Unpin Background (Primary / Accent)
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.scale(iconScale)
+                ) {
+                    Text(
+                        text = if (note.isPinned) strings.unpin else strings.pin,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Icon(
+                        Icons.Default.PushPin,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }
-    ) {
-        NoteCard(
-            note = note,
-            onClick = onClick,
-            onDelete = onDelete,
-            onTogglePin = onTogglePin
-        )
+
+        // Foreground Card with Telegram spring drag gesture
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .fillMaxWidth()
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            coroutineScope.launch {
+                                if (offsetX.value > thresholdPx) {
+                                    // Trigger Delete with smooth glide
+                                    offsetX.animateTo(
+                                        targetValue = 1000f,
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                            stiffness = Spring.StiffnessMedium
+                                        )
+                                    )
+                                    onDelete()
+                                } else if (offsetX.value < -thresholdPx) {
+                                    // Trigger Pin/Unpin and spring bounce back
+                                    onTogglePin()
+                                    offsetX.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+                                    )
+                                } else {
+                                    // Release back to center
+                                    offsetX.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+                                    )
+                                }
+                            }
+                        },
+                        onDragCancel = {
+                            coroutineScope.launch {
+                                offsetX.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    )
+                                )
+                            }
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            coroutineScope.launch {
+                                // Apply resistance when pulling far
+                                val newOffset = offsetX.value + dragAmount * 0.85f
+                                offsetX.snapTo(newOffset)
+                            }
+                        }
+                    )
+                }
+        ) {
+            CleanNoteCard(
+                note = note,
+                onClick = onClick
+            )
+        }
     }
 }
 
+/**
+ * Clean Note Card without cluttered action buttons in footer.
+ */
 @Composable
-fun NoteCard(
+private fun CleanNoteCard(
     note: Note,
-    onClick: () -> Unit,
-    onDelete: () -> Unit,
-    onTogglePin: () -> Unit
+    onClick: () -> Unit
 ) {
     val strings = LocalStrings.current
     val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
@@ -325,30 +395,11 @@ fun NoteCard(
             }
 
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                )
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = onTogglePin, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        Icons.Default.PushPin,
-                        contentDescription = if (note.isPinned) strings.unpin else strings.pin,
-                        modifier = Modifier.size(16.dp),
-                        tint = if (note.isPinned) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                }
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = strings.delete,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
+            Text(
+                text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
         }
     }
 }
