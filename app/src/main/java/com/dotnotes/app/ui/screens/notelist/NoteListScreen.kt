@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -39,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -141,21 +144,24 @@ fun NoteCard(
     onDelete: () -> Unit,
     onTogglePin: () -> Unit
 ) {
+    val strings = LocalStrings.current
     val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
+    val reminderFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (note.isPinned)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            else MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = note.title.ifEmpty { "Untitled" },
-                    style = MaterialTheme.typography.titleMedium,
+                    text = note.title.ifEmpty { strings.untitled },
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
@@ -163,24 +169,45 @@ fun NoteCard(
                 if (note.isPinned) {
                     Icon(
                         Icons.Default.PushPin,
-                        contentDescription = "Pinned",
+                        contentDescription = strings.pinned,
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                if (note.reminderTime != null && !note.isAlarmDismissed) {
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        if (note.priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
-                        contentDescription = "Reminder",
-                        modifier = Modifier.size(16.dp),
-                        tint = if (note.priority == 2) MaterialTheme.colorScheme.error
-                               else MaterialTheme.colorScheme.primary
-                    )
+            }
+
+            if (note.reminderTime != null && !note.isAlarmDismissed) {
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (note.priority == 2)
+                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f)
+                    else
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (note.priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = if (note.priority == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = reminderFormat.format(Date(note.reminderTime)),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
             }
+
             if (note.content.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Text(
                     text = note.content.replace(Regex("<[^>]*>"), ""),
                     style = MaterialTheme.typography.bodyMedium,
@@ -189,18 +216,19 @@ fun NoteCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Spacer(Modifier.height(8.dp))
+
+            Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = dateFormat.format(Date(note.updatedAt)),
+                    text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onTogglePin, modifier = Modifier.size(32.dp)) {
                     Icon(
                         Icons.Default.PushPin,
-                        contentDescription = "Toggle pin",
+                        contentDescription = if (note.isPinned) strings.unpin else strings.pin,
                         modifier = Modifier.size(16.dp),
                         tint = if (note.isPinned) MaterialTheme.colorScheme.primary
                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -209,7 +237,7 @@ fun NoteCard(
                 IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = strings.delete,
                         modifier = Modifier.size(16.dp)
                     )
                 }

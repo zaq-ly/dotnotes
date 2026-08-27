@@ -83,12 +83,23 @@ class AlarmReceiver : BroadcastReceiver() {
                 }
             }
         } else {
+            val dismissIntent = Intent(context, AlarmReceiver::class.java).apply {
+                this.action = ACTION_DISMISS
+                putExtra("note_id", noteId)
+            }
+            val dismissPending = PendingIntent.getBroadcast(
+                context, noteId.hashCode() + 2, dismissIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
             val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle(".notes Reminder")
+                .setContentTitle(".notes")
                 .setContentText(noteTitle)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setContentIntent(openPending)
+                .addAction(android.R.drawable.checkbox_on_background, "Tandai Selesai", dismissPending)
                 .setAutoCancel(true)
                 .build()
 

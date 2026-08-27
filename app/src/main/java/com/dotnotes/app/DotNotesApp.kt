@@ -30,9 +30,10 @@ class DotNotesApp : Application() {
     private fun createNotificationChannels() {
         val notifChannel = NotificationChannel(
             CHANNEL_REMINDER, "Reminders",
-            NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "Note reminders"
+            enableVibration(true)
         }
 
         val alarmChannel = NotificationChannel(
