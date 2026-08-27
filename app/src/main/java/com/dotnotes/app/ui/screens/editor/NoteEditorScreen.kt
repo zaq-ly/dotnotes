@@ -68,6 +68,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +77,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.ui.i18n.LocalStrings
+import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
@@ -103,10 +105,14 @@ fun NoteEditorScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var isContentInitialized by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.content, state.isLoading) {
-        if (!state.isLoading && state.content.isNotEmpty()) {
-            richTextState.setHtml(state.content)
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading && !isContentInitialized) {
+            if (state.content.isNotEmpty()) {
+                richTextState.setHtml(state.content)
+            }
+            isContentInitialized = true
         }
     }
 
@@ -115,9 +121,29 @@ fun NoteEditorScreen(
         backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
     )
 
+    fun applyFormatting(spanStyle: SpanStyle) {
+        val text = richTextState.annotatedString.text
+        val selection = richTextState.selection
+        if (selection.collapsed && text.isNotEmpty()) {
+            val cursor = selection.start.coerceIn(0, text.length)
+            var start = cursor
+            var end = cursor
+            while (start > 0 && !text[start - 1].isWhitespace()) {
+                start--
+            }
+            while (end < text.length && !text[end].isWhitespace()) {
+                end++
+            }
+            if (start < end) {
+                richTextState.selection = TextRange(start, end)
+            }
+        }
+        richTextState.toggleSpanStyle(spanStyle)
+    }
+
     CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
         Scaffold(
-            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 TopAppBar(
                     title = {
@@ -232,7 +258,7 @@ fun NoteEditorScreen(
                                 contentDescription = "Bold",
                                 isActive = isBold,
                                 onClick = {
-                                    richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                                    applyFormatting(SpanStyle(fontWeight = FontWeight.ExtraBold))
                                 }
                             )
 
@@ -241,7 +267,7 @@ fun NoteEditorScreen(
                                 contentDescription = "Italic",
                                 isActive = isItalic,
                                 onClick = {
-                                    richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
+                                    applyFormatting(SpanStyle(fontStyle = FontStyle.Italic))
                                 }
                             )
 
@@ -284,7 +310,7 @@ fun NoteEditorScreen(
                             unfocusedIndicatorColor = Color.Transparent
                         )
                     )
-                    
+
                     Spacer(Modifier.height(32.dp))
                 }
             }
