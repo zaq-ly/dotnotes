@@ -1,8 +1,8 @@
 package com.dotnotes.app.ui.screens.editor
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,37 +18,47 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
-import androidx.compose.material.icons.filled.AddAlert
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -82,8 +92,8 @@ fun NoteEditorScreen(
     val strings = LocalStrings.current
     val state by viewModel.state.collectAsState()
     val richTextState = rememberRichTextState()
-    val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()) }
+    var showDateTimePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.content, state.isLoading) {
         if (!state.isLoading && state.content.isNotEmpty()) {
@@ -132,16 +142,20 @@ fun NoteEditorScreen(
                     .padding(padding)
                     .padding(horizontal = 16.dp)
             ) {
-                // 1. Simplified, Modern Reminder Pill at TOP
-                ModernReminderBar(
+                // 1. Modern Reminder Card (Clean, Intuitive with Switch & Alarm/Notification chips)
+                ModernReminderCard(
                     hasReminder = state.hasReminder,
                     reminderTime = state.reminderTime,
                     priority = state.priority,
                     dateFormat = dateFormat,
-                    onToggleReminder = viewModel::setReminder,
-                    onSetTime = viewModel::setReminderTime,
-                    onSetPriority = viewModel::setPriority,
-                    context = context
+                    onToggleReminder = { enabled ->
+                        viewModel.setReminder(enabled)
+                        if (enabled && state.reminderTime == null) {
+                            showDateTimePicker = true
+                        }
+                    },
+                    onOpenDateTimePicker = { showDateTimePicker = true },
+                    onSetPriority = viewModel::setPriority
                 )
 
                 Spacer(Modifier.height(10.dp))
@@ -176,90 +190,58 @@ fun NoteEditorScreen(
                     )
                 )
 
-                // 3. Formatting Toolbar with Active Indicators
-                val isBold = richTextState.currentSpanStyle.fontWeight == FontWeight.Bold
+                // 3. Formatting Toolbar with Non-Focus-Stealing Controls
+                val isBold = richTextState.currentSpanStyle.fontWeight != null && richTextState.currentSpanStyle.fontWeight!!.weight >= FontWeight.Bold.weight
                 val isItalic = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic
                 val isOrderedList = richTextState.isOrderedList
                 val isUnorderedList = richTextState.isUnorderedList
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 6.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        FilledIconToggleButton(
-                            checked = isBold,
-                            onCheckedChange = {
-                                richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                            },
-                            modifier = Modifier.size(36.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = IconButtonDefaults.filledIconToggleButtonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                checkedContentColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Default.FormatBold, contentDescription = "Bold", modifier = Modifier.size(18.dp))
-                        }
+                        FormattingButton(
+                            icon = Icons.Default.FormatBold,
+                            contentDescription = "Bold",
+                            isActive = isBold,
+                            onClick = {
+                                richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.W900))
+                            }
+                        )
 
-                        FilledIconToggleButton(
-                            checked = isItalic,
-                            onCheckedChange = {
+                        FormattingButton(
+                            icon = Icons.Default.FormatItalic,
+                            contentDescription = "Italic",
+                            isActive = isItalic,
+                            onClick = {
                                 richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                            },
-                            modifier = Modifier.size(36.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = IconButtonDefaults.filledIconToggleButtonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                checkedContentColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Default.FormatItalic, contentDescription = "Italic", modifier = Modifier.size(18.dp))
-                        }
+                            }
+                        )
 
-                        FilledIconToggleButton(
-                            checked = isUnorderedList,
-                            onCheckedChange = {
+                        FormattingButton(
+                            icon = Icons.AutoMirrored.Filled.FormatListBulleted,
+                            contentDescription = "Bullet List",
+                            isActive = isUnorderedList,
+                            onClick = {
                                 richTextState.toggleUnorderedList()
-                            },
-                            modifier = Modifier.size(36.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = IconButtonDefaults.filledIconToggleButtonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                checkedContentColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = "Bullet List", modifier = Modifier.size(18.dp))
-                        }
+                            }
+                        )
 
-                        FilledIconToggleButton(
-                            checked = isOrderedList,
-                            onCheckedChange = {
+                        FormattingButton(
+                            icon = Icons.Default.FormatListNumbered,
+                            contentDescription = "Numbered List",
+                            isActive = isOrderedList,
+                            onClick = {
                                 richTextState.toggleOrderedList()
-                            },
-                            modifier = Modifier.size(36.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = IconButtonDefaults.filledIconToggleButtonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                checkedContentColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Default.FormatListNumbered, contentDescription = "Numbered List", modifier = Modifier.size(18.dp))
-                        }
+                            }
+                        )
                     }
                 }
 
@@ -285,128 +267,166 @@ fun NoteEditorScreen(
             }
         }
     }
+
+    // Modern Material 3 Date & Time Picker Dialogs
+    if (showDateTimePicker) {
+        ModernDateTimePicker(
+            initialTimeMillis = state.reminderTime,
+            onDismiss = { showDateTimePicker = false },
+            onConfirm = { timeMillis ->
+                viewModel.setReminderTime(timeMillis)
+                viewModel.setReminder(true)
+                showDateTimePicker = false
+            }
+        )
+    }
 }
 
 @Composable
-private fun ModernReminderBar(
+private fun FormattingButton(
+    icon: ImageVector,
+    contentDescription: String,
+    isActive: Boolean,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+    val iconTint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(containerColor)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = iconTint,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun ModernReminderCard(
     hasReminder: Boolean,
     reminderTime: Long?,
     priority: Int,
     dateFormat: SimpleDateFormat,
     onToggleReminder: (Boolean) -> Unit,
-    onSetTime: (Long) -> Unit,
-    onSetPriority: (Int) -> Unit,
-    context: android.content.Context
+    onOpenDateTimePicker: () -> Unit,
+    onSetPriority: (Int) -> Unit
 ) {
     val strings = LocalStrings.current
 
-    if (!hasReminder) {
-        // Subtle, elegant "Add Reminder" button
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-            modifier = Modifier.clickable {
-                showDateTimePicker(context) { timeMillis ->
-                    onSetTime(timeMillis)
-                    onToggleReminder(true)
-                }
-            }
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = if (hasReminder)
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        else
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
+            // Header Row: Icon + Label + Switch
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
-                    imageVector = Icons.Default.AddAlert,
+                    imageVector = if (priority == 2 && hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+                    tint = if (hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = strings.setReminder,
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.primary
+                    text = strings.reminder,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.weight(1f))
+                Switch(
+                    checked = hasReminder,
+                    onCheckedChange = onToggleReminder,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                    )
                 )
             }
-        }
-    } else {
-        // Modern, single-line pill bar
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = if (priority == 2) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                    else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                // Priority Tag (Click to toggle Notification / Alarm)
+
+            // Expanded Options when Reminder is Enabled
+            if (hasReminder) {
+                Spacer(Modifier.height(8.dp))
+
+                // Row 1: Date & Time Picker Button
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (priority == 2) MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    modifier = Modifier.clickable {
-                        onSetPriority(if (priority == 2) 1 else 2)
-                    }
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.background,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onOpenDateTimePicker)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                     ) {
                         Icon(
-                            imageVector = if (priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
+                            Icons.Default.Schedule,
                             contentDescription = null,
-                            tint = if (priority == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
-                            text = if (priority == 2) strings.alarm else strings.notification,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = if (priority == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            text = if (reminderTime != null) dateFormat.format(Date(reminderTime)) else strings.setReminder,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
 
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.height(8.dp))
 
-                // Date/Time Text (Click to change)
+                // Row 2: Priority Selection (Notification vs Alarm)
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            showDateTimePicker(context) { timeMillis ->
-                                onSetTime(timeMillis)
-                            }
-                        }
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Default.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    FilterChip(
+                        selected = priority <= 1,
+                        onClick = { onSetPriority(1) },
+                        label = { Text(strings.notification, style = MaterialTheme.typography.labelMedium) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.primary,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                        )
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = if (reminderTime != null) dateFormat.format(Date(reminderTime)) else strings.setReminder,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
 
-                // Clear Button
-                IconButton(
-                    onClick = { onToggleReminder(false) },
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = strings.clearReminder,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    FilterChip(
+                        selected = priority == 2,
+                        onClick = { onSetPriority(2) },
+                        label = { Text(strings.alarm, style = MaterialTheme.typography.labelMedium) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(16.dp))
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.error,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.error
+                        )
                     )
                 }
             }
@@ -414,27 +434,91 @@ private fun ModernReminderBar(
     }
 }
 
-private fun showDateTimePicker(context: android.content.Context, onResult: (Long) -> Unit) {
-    val calendar = Calendar.getInstance()
-    DatePickerDialog(
-        context,
-        { _, year, month, day ->
-            calendar.set(year, month, day)
-            TimePickerDialog(
-                context,
-                { _, hour, minute ->
-                    calendar.set(Calendar.HOUR_OF_DAY, hour)
-                    calendar.set(Calendar.MINUTE, minute)
-                    calendar.set(Calendar.SECOND, 0)
-                    onResult(calendar.timeInMillis)
-                },
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                true
-            ).show()
-        },
-        calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH),
-        calendar.get(Calendar.DAY_OF_MONTH)
-    ).show()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ModernDateTimePicker(
+    initialTimeMillis: Long?,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit
+) {
+    val strings = LocalStrings.current
+    val initialCalendar = remember(initialTimeMillis) {
+        Calendar.getInstance().apply {
+            if (initialTimeMillis != null) timeInMillis = initialTimeMillis
+        }
+    }
+
+    var showTimePicker by remember { mutableStateOf(false) }
+    var selectedDateMillis by remember { mutableStateOf(initialCalendar.timeInMillis) }
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialCalendar.timeInMillis
+    )
+
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialCalendar.get(Calendar.HOUR_OF_DAY),
+        initialMinute = initialCalendar.get(Calendar.MINUTE),
+        is24Hour = true
+    )
+
+    if (!showTimePicker) {
+        DatePickerDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        selectedDateMillis = it
+                    }
+                    showTimePicker = true
+                }) {
+                    Text(strings.save, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(strings.cancel)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    text = strings.selectTime,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+            },
+            text = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TimePicker(state = timePickerState)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val calendar = Calendar.getInstance().apply {
+                        timeInMillis = selectedDateMillis
+                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                        set(Calendar.MINUTE, timePickerState.minute)
+                        set(Calendar.SECOND, 0)
+                    }
+                    onConfirm(calendar.timeInMillis)
+                }) {
+                    Text(strings.save, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text(strings.back)
+                }
+            }
+        )
+    }
 }

@@ -65,10 +65,8 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val appLogoBitmap = android.graphics.BitmapFactory.decodeResource(resources, com.dotnotes.app.R.drawable.app_logo)
         val notification = NotificationCompat.Builder(this, DotNotesApp.CHANNEL_ALARM)
             .setSmallIcon(com.dotnotes.app.R.mipmap.ic_launcher)
-            .setLargeIcon(appLogoBitmap)
             .setContentTitle(noteTitle)
             .setContentText(if (noteContent.isNotBlank()) noteContent else "Alarm Catatan")
             .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))

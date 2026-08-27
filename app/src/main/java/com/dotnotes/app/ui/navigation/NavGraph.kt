@@ -1,15 +1,8 @@
 package com.dotnotes.app.ui.navigation
 
-import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -29,56 +22,33 @@ object Routes {
     fun noteEditor(noteId: String) = "note_editor/$noteId"
 }
 
-// Material 3 Emphasized Decelerate Curve for professional fluid motion
-private val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
-
 @Composable
 fun NavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = Routes.NOTE_LIST,
         enterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { (it * 0.22f).toInt() },
-                animationSpec = tween(320, easing = EmphasizedDecelerate)
-            ) + fadeIn(
-                animationSpec = tween(280, easing = LinearOutSlowInEasing)
-            ) + scaleIn(
-                initialScale = 0.95f,
-                animationSpec = tween(320, easing = EmphasizedDecelerate)
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
             )
         },
         exitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { -(it * 0.12f).toInt() },
-                animationSpec = tween(280, easing = FastOutSlowInEasing)
-            ) + fadeOut(
-                animationSpec = tween(220)
-            ) + scaleOut(
-                targetScale = 0.97f,
-                animationSpec = tween(280, easing = FastOutSlowInEasing)
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
             )
         },
         popEnterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { -(it * 0.12f).toInt() },
-                animationSpec = tween(320, easing = EmphasizedDecelerate)
-            ) + fadeIn(
-                animationSpec = tween(280, easing = LinearOutSlowInEasing)
-            ) + scaleIn(
-                initialScale = 0.97f,
-                animationSpec = tween(320, easing = EmphasizedDecelerate)
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
             )
         },
         popExitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { (it * 0.22f).toInt() },
-                animationSpec = tween(280, easing = FastOutSlowInEasing)
-            ) + fadeOut(
-                animationSpec = tween(220)
-            ) + scaleOut(
-                targetScale = 0.95f,
-                animationSpec = tween(280, easing = FastOutSlowInEasing)
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
             )
         }
     ) {

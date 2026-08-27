@@ -1,5 +1,6 @@
 package com.dotnotes.app.ui.screens.notelist
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
@@ -22,8 +24,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.PushPin
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,25 +33,29 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.data.model.Note
+import com.dotnotes.app.ui.i18n.LocalStrings
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-import com.dotnotes.app.ui.i18n.LocalStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,14 +91,18 @@ fun NoteListScreen(
     ) { padding ->
         if (notes.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 Text(strings.noNotesYet, style = MaterialTheme.typography.bodyLarge)
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -108,7 +116,7 @@ fun NoteListScreen(
                         )
                     }
                     items(pinnedNotes, key = { it.id }) { note ->
-                        NoteCard(
+                        SwipeableNoteCard(
                             note = note,
                             onClick = { onNoteClick(note.id) },
                             onDelete = { viewModel.deleteNote(note.id) },
@@ -125,7 +133,7 @@ fun NoteListScreen(
                     }
                 }
                 items(otherNotes, key = { it.id }) { note ->
-                    NoteCard(
+                    SwipeableNoteCard(
                         note = note,
                         onClick = { onNoteClick(note.id) },
                         onDelete = { viewModel.deleteNote(note.id) },
@@ -134,6 +142,103 @@ fun NoteListScreen(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableNoteCard(
+    note: Note,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    onTogglePin: () -> Unit
+) {
+    val strings = LocalStrings.current
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    // Slide Right -> Delete
+                    onDelete()
+                    true
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    // Slide Left -> Pin / Unpin (Snap back)
+                    onTogglePin()
+                    false
+                }
+                SwipeToDismissBoxValue.Settled -> false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true,
+        backgroundContent = {
+            val direction = dismissState.dismissDirection
+            val color = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.errorContainer
+                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
+                else -> Color.Transparent
+            }
+
+            val alignment = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                else -> Alignment.Center
+            }
+
+            val icon = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> Icons.Default.Delete
+                SwipeToDismissBoxValue.EndToStart -> Icons.Default.PushPin
+                else -> null
+            }
+
+            val iconTint = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.error
+                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primary
+                else -> Color.Transparent
+            }
+
+            val text = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> strings.delete
+                SwipeToDismissBoxValue.EndToStart -> if (note.isPinned) strings.unpin else strings.pin
+                else -> ""
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = alignment
+            ) {
+                if (icon != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                            Icon(icon, contentDescription = null, tint = iconTint)
+                            Text(text, color = iconTint, fontWeight = FontWeight.SemiBold)
+                        } else {
+                            Text(text, color = iconTint, fontWeight = FontWeight.SemiBold)
+                            Icon(icon, contentDescription = null, tint = iconTint)
+                        }
+                    }
+                }
+            }
+        }
+    ) {
+        NoteCard(
+            note = note,
+            onClick = onClick,
+            onDelete = onDelete,
+            onTogglePin = onTogglePin
+        )
     }
 }
 
@@ -149,7 +254,9 @@ fun NoteCard(
     val reminderFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
 
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (note.isPinned)
@@ -231,7 +338,7 @@ fun NoteCard(
                         contentDescription = if (note.isPinned) strings.unpin else strings.pin,
                         modifier = Modifier.size(16.dp),
                         tint = if (note.isPinned) MaterialTheme.colorScheme.primary
-                               else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
