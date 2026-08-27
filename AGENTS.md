@@ -59,16 +59,16 @@ Setiap kali user meminta **"commit"**, **"rilis"**, atau **"update versi"**, jal
    - Sinkronkan argumen fungsi `viewModel.checkForUpdate("[VERSION_NAME]")`.
 
 ### Langkah 2: Build APK Lokal
-Jalankan kompilasi Gradle:
+Jalankan kompilasi Gradle tipe Release bertanda tangan resmi (*signed release*):
 ```powershell
 $env:JAVA_HOME = "C:\Program Files\Zulu\zulu-21"
-.\gradlew.bat assembleDebug --no-daemon
+.\gradlew.bat assembleRelease --no-daemon
 ```
 
 ### Langkah 3: Siapkan File Rilis APK
-Copy APK hasil build ke root workspace dan beri nama sesuai versi:
+Copy APK release hasil build ke root workspace dan beri nama sesuai versi:
 ```powershell
-Copy-Item "app\build\outputs\apk\debug\app-debug.apk" "dotnotes-v.[VERSION_NAME].apk"
+Copy-Item "app\build\outputs\apk\release\app-release.apk" "dotnotes-v.[VERSION_NAME].apk"
 ```
 
 ### Langkah 4: Git Commit & Push

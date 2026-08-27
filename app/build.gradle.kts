@@ -13,13 +13,23 @@ android {
         applicationId = "com.dotnotes.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 16
-        versionName = "1.1.4"
+        versionCode = 17
+        versionName = "1.2.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.jks")
+            storePassword = "dotnotes2026"
+            keyAlias = "dotnotes"
+            keyPassword = "dotnotes2026"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
