@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dotnotes.app.data.preferences.SettingsDataStore
 import com.dotnotes.app.data.local.NoteDao
+import android.net.Uri
+import com.dotnotes.app.sync.BackupManager
 import com.dotnotes.app.sync.DriveSyncManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -49,6 +51,22 @@ class SettingsViewModel(
             val success = syncManager.sync(context, email)
             _isSyncing.value = false
             // Optional: emit success/failure state to show toast
+        }
+    }
+
+    fun exportBackup(context: Context, uri: Uri, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val backupManager = BackupManager(noteDao)
+            val success = backupManager.exportNotes(context, uri)
+            onResult(success)
+        }
+    }
+
+    fun importBackup(context: Context, uri: Uri, onResult: (Int) -> Unit) {
+        viewModelScope.launch {
+            val backupManager = BackupManager(noteDao)
+            val count = backupManager.importNotes(context, uri)
+            onResult(count)
         }
     }
 

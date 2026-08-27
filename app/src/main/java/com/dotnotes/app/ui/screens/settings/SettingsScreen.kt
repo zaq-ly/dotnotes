@@ -1,6 +1,10 @@
 package com.dotnotes.app.ui.screens.settings
 
 import android.app.Activity
+import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -72,6 +76,28 @@ fun SettingsScreen(
         }
     }
 
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.exportBackup(context, uri) { success ->
+                val msg = if (success) "Backup berhasil diekspor" else "Gagal mengekspor backup"
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importBackup(context, uri) { count ->
+                val msg = if (count >= 0) "Berhasil mengimpor $count catatan" else "Gagal mengimpor file backup"
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -100,8 +126,22 @@ fun SettingsScreen(
             HorizontalDivider()
 
             ListItem(
-                headlineContent = { Text("About") },
-                supportingContent = { Text(".notes v1.0.0") }
+                headlineContent = { Text("Export Backup") },
+                supportingContent = { Text("Simpan catatan ke file JSON") },
+                modifier = Modifier.clickable {
+                    val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+                    val dateStr = formatter.format(Date())
+                    exportLauncher.launch("dotnotes_backup_$dateStr.json")
+                }
+            )
+            HorizontalDivider()
+
+            ListItem(
+                headlineContent = { Text("Import Backup") },
+                supportingContent = { Text("Pulihkan catatan dari file JSON") },
+                modifier = Modifier.clickable {
+                    importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
+                }
             )
             HorizontalDivider()
 
@@ -139,6 +179,12 @@ fun SettingsScreen(
                 )
                 HorizontalDivider()
             }
+
+            ListItem(
+                headlineContent = { Text("About") },
+                supportingContent = { Text("dotnotes v1.0.7") }
+            )
+            HorizontalDivider()
         }
     }
 
