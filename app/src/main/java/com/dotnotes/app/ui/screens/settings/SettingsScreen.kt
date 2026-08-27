@@ -182,7 +182,7 @@ fun SettingsScreen(
 
             ListItem(
                 headlineContent = { Text("About") },
-                supportingContent = { Text("dotnotes v1.0.7") }
+                supportingContent = { Text("dotnotes v1.0.8") }
             )
             HorizontalDivider()
         }

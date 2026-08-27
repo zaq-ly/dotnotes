@@ -54,6 +54,15 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val snoozeIntent = Intent(this, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_SNOOZE
+            putExtra("note_id", noteId)
+        }
+        val snoozePending = PendingIntent.getBroadcast(
+            this, noteId.hashCode() + 3, snoozeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(this, DotNotesApp.CHANNEL_ALARM)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle(".notes Alarm")
@@ -62,6 +71,7 @@ class AlarmService : Service() {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setFullScreenIntent(fullScreenPending, true)
             .setContentIntent(openPending)
+            .addAction(android.R.drawable.ic_lock_idle_alarm, "Snooze", snoozePending)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Dismiss", dismissPending)
             .setAutoCancel(false)
             .setOngoing(true)

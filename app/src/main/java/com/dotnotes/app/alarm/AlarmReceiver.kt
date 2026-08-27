@@ -26,6 +26,24 @@ class AlarmReceiver : BroadcastReceiver() {
             return
         }
 
+        if (action == ACTION_SNOOZE) {
+            AlarmService.stop(context)
+            NotificationManagerCompat.from(context).cancel(noteId.hashCode())
+            runBlocking {
+                val note = DotNotesApp.instance.repository.getNoteById(noteId)
+                if (note != null) {
+                    val snoozeMs = note.snoozeDurationMin * 60 * 1000L
+                    val snoozedNote = note.copy(
+                        reminderTime = System.currentTimeMillis() + snoozeMs,
+                        isAlarmDismissed = false
+                    )
+                    DotNotesApp.instance.repository.upsertNote(snoozedNote)
+                    AlarmScheduler(context).schedule(snoozedNote)
+                }
+            }
+            return
+        }
+
         val noteTitle = intent.getStringExtra("note_title") ?: "Reminder"
         val priority = intent.getIntExtra("priority", 1)
 
@@ -83,5 +101,6 @@ class AlarmReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION_DISMISS = "com.dotnotes.app.ACTION_DISMISS"
+        const val ACTION_SNOOZE = "com.dotnotes.app.ACTION_SNOOZE"
     }
 }
