@@ -48,6 +48,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.dotnotes.app.ui.i18n.LocalStrings
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteListScreen(
@@ -58,6 +60,7 @@ fun NoteListScreen(
         factory = NoteListViewModel.Factory(DotNotesApp.instance.repository)
     )
 ) {
+    val strings = LocalStrings.current
     val notes by viewModel.notes.collectAsState()
     val pinnedNotes = notes.filter { it.isPinned }
     val otherNotes = notes.filter { !it.isPinned }
@@ -65,17 +68,17 @@ fun NoteListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(".notes") },
+                title = { Text(strings.appName) },
                 actions = {
                     IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = strings.settings)
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNewNote) {
-                Icon(Icons.Default.Add, contentDescription = "New Note")
+                Icon(Icons.Default.Add, contentDescription = strings.newNote)
             }
         }
     ) { padding ->
@@ -84,7 +87,7 @@ fun NoteListScreen(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No notes yet", style = MaterialTheme.typography.bodyLarge)
+                Text(strings.noNotesYet, style = MaterialTheme.typography.bodyLarge)
             }
         } else {
             LazyColumn(
@@ -95,7 +98,7 @@ fun NoteListScreen(
                 if (pinnedNotes.isNotEmpty()) {
                     item {
                         Text(
-                            "Pinned",
+                            strings.pinned,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 4.dp)
@@ -111,7 +114,7 @@ fun NoteListScreen(
                     }
                     item {
                         Text(
-                            "Others",
+                            strings.others,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)

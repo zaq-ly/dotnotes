@@ -16,6 +16,7 @@ class SettingsDataStore(private val context: Context) {
     companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val SNOOZE_DURATION = intPreferencesKey("snooze_duration")
+        val LANGUAGE = stringPreferencesKey("language")
     }
 
     val themeMode: Flow<String> = context.dataStore.data.map {
@@ -26,10 +27,9 @@ class SettingsDataStore(private val context: Context) {
         it[SNOOZE_DURATION] ?: 5
     }
 
-    val googleEmail: Flow<String?> = context.dataStore.data.map {
-        it[stringPreferencesKey("google_email")]
+    val language: Flow<String> = context.dataStore.data.map {
+        it[LANGUAGE] ?: "en"
     }
-
 
     suspend fun setThemeMode(mode: String) {
         context.dataStore.edit { it[THEME_MODE] = mode }
@@ -39,13 +39,7 @@ class SettingsDataStore(private val context: Context) {
         context.dataStore.edit { it[SNOOZE_DURATION] = minutes }
     }
 
-    suspend fun setGoogleEmail(email: String?) {
-        context.dataStore.edit { prefs ->
-            if (email == null) {
-                prefs.remove(stringPreferencesKey("google_email"))
-            } else {
-                prefs[stringPreferencesKey("google_email")] = email
-            }
-        }
+    suspend fun setLanguage(lang: String) {
+        context.dataStore.edit { it[LANGUAGE] = lang }
     }
 }

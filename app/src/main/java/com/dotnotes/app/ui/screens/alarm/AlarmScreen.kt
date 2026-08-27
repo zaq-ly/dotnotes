@@ -54,12 +54,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.dotnotes.app.ui.i18n.LocalStrings
+
 @Composable
 fun AlarmScreen(
     noteTitle: String,
     onDismiss: () -> Unit,
     onSnooze: () -> Unit
 ) {
+    val strings = LocalStrings.current
     var currentTime by remember {
         mutableStateOf(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date()))
     }
@@ -189,7 +192,7 @@ fun AlarmScreen(
                             color = Color(0xFF334155)
                         ) {
                             Text(
-                                text = "PENGINGAT CATATAN",
+                                text = strings.noteReminder,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF94A3B8),
@@ -201,7 +204,7 @@ fun AlarmScreen(
                         Spacer(Modifier.height(14.dp))
 
                         Text(
-                            text = noteTitle.ifBlank { "Untitled Note" },
+                            text = noteTitle.ifBlank { "Untitled" },
                             fontSize = 22.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White,
@@ -235,12 +238,12 @@ fun AlarmScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Snooze,
-                        contentDescription = "Snooze",
+                        contentDescription = strings.snooze,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Snooze",
+                        text = strings.snooze,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -260,12 +263,12 @@ fun AlarmScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.AlarmOff,
-                        contentDescription = "Dismiss",
+                        contentDescription = strings.dismiss,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Dismiss",
+                        text = strings.dismiss,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )

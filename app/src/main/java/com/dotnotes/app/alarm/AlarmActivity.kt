@@ -12,6 +12,12 @@ import com.dotnotes.app.ui.screens.alarm.AlarmScreen
 import com.dotnotes.app.ui.theme.DotNotesTheme
 import kotlinx.coroutines.runBlocking
 
+import androidx.compose.runtime.CompositionLocalProvider
+import com.dotnotes.app.ui.i18n.EnglishStrings
+import com.dotnotes.app.ui.i18n.IndonesianStrings
+import com.dotnotes.app.ui.i18n.LocalStrings
+import kotlinx.coroutines.flow.first
+
 class AlarmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,13 +26,20 @@ class AlarmActivity : ComponentActivity() {
         val noteId = intent.getStringExtra("note_id") ?: ""
         val noteTitle = intent.getStringExtra("note_title") ?: "Alarm"
 
+        val language = runBlocking {
+            DotNotesApp.instance.settingsDataStore.language.first()
+        }
+        val strings = if (language == "id") IndonesianStrings else EnglishStrings
+
         setContent {
-            DotNotesTheme {
-                AlarmScreen(
-                    noteTitle = noteTitle,
-                    onDismiss = { dismissAlarm(noteId) },
-                    onSnooze = { snoozeAlarm(noteId) }
-                )
+            CompositionLocalProvider(LocalStrings provides strings) {
+                DotNotesTheme {
+                    AlarmScreen(
+                        noteTitle = noteTitle,
+                        onDismiss = { dismissAlarm(noteId) },
+                        onSnooze = { snoozeAlarm(noteId) }
+                    )
+                }
             }
         }
     }

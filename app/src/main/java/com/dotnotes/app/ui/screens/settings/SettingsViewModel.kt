@@ -8,7 +8,6 @@ import com.dotnotes.app.data.preferences.SettingsDataStore
 import com.dotnotes.app.data.local.NoteDao
 import android.net.Uri
 import com.dotnotes.app.sync.BackupManager
-import com.dotnotes.app.sync.DriveSyncManager
 import com.dotnotes.app.update.ReleaseInfo
 import com.dotnotes.app.update.UpdateManager
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,11 +28,8 @@ class SettingsViewModel(
     val snoozeDuration = dataStore.snoozeDuration
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 5)
 
-    val googleEmail = dataStore.googleEmail
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    private val _isSyncing = MutableStateFlow(false)
-    val isSyncing = _isSyncing.asStateFlow()
+    val language = dataStore.language
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
 
     private val _isCheckingUpdate = MutableStateFlow(false)
     val isCheckingUpdate = _isCheckingUpdate.asStateFlow()
@@ -52,19 +48,8 @@ class SettingsViewModel(
         viewModelScope.launch { dataStore.setSnoozeDuration(minutes) }
     }
 
-    fun setGoogleEmail(email: String?) {
-        viewModelScope.launch { dataStore.setGoogleEmail(email) }
-    }
-
-    fun syncNotes(context: Context) {
-        val email = googleEmail.value ?: return
-        viewModelScope.launch {
-            _isSyncing.value = true
-            val syncManager = DriveSyncManager(noteDao)
-            val success = syncManager.sync(context, email)
-            _isSyncing.value = false
-            // Optional: emit success/failure state to show toast
-        }
+    fun setLanguage(lang: String) {
+        viewModelScope.launch { dataStore.setLanguage(lang) }
     }
 
     fun exportBackup(context: Context, uri: Uri, onResult: (Boolean) -> Unit) {

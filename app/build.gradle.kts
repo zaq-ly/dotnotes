@@ -13,8 +13,8 @@ android {
         applicationId = "com.dotnotes.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10
-        versionName = "1.0.9"
+        versionCode = 11
+        versionName = "1.0.10"
     }
 
     buildTypes {
@@ -55,7 +55,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.richeditor.compose)
-    implementation(libs.play.services.auth)
     implementation(libs.gson)
     debugImplementation(libs.androidx.ui.tooling)
 }

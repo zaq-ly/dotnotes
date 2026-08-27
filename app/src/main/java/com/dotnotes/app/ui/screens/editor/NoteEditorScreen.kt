@@ -57,6 +57,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.CircularProgressIndicator
 
+import com.dotnotes.app.ui.i18n.LocalStrings
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorScreen(
@@ -70,6 +72,7 @@ fun NoteEditorScreen(
         )
     )
 ) {
+    val strings = LocalStrings.current
     val state by viewModel.state.collectAsState()
     val richTextState = rememberRichTextState()
     val context = LocalContext.current
@@ -84,14 +87,14 @@ fun NoteEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (noteId == null) "New Note" else "Edit Note") },
+                title = { Text(if (noteId == null) strings.newNote else strings.editNote) },
                 navigationIcon = {
                     IconButton(onClick = {
                         viewModel.updateContent(richTextState.toHtml())
                         viewModel.save()
                         onBack()
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                     }
                 },
                 actions = {
@@ -100,7 +103,7 @@ fun NoteEditorScreen(
                         viewModel.save()
                         onBack()
                     }) {
-                        Icon(Icons.Default.Check, contentDescription = "Save")
+                        Icon(Icons.Default.Check, contentDescription = strings.save)
                     }
                 }
             )
@@ -120,7 +123,7 @@ fun NoteEditorScreen(
                 OutlinedTextField(
                     value = state.title,
                     onValueChange = viewModel::updateTitle,
-                    label = { Text("Title") },
+                    label = { Text(strings.noteTitleHint) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -151,7 +154,7 @@ fun NoteEditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    placeholder = { Text("Write your note...") }
+                    placeholder = { Text(strings.noteContentHint) }
                 )
 
                 HorizontalDivider()
@@ -184,6 +187,7 @@ private fun ReminderSection(
     onSetTime: () -> Unit,
     onSetPriority: (Int) -> Unit
 ) {
+    val strings = LocalStrings.current
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -191,7 +195,7 @@ private fun ReminderSection(
         ) {
             Icon(Icons.Default.Notifications, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Reminder", style = MaterialTheme.typography.titleSmall)
+            Text(strings.reminder, style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.weight(1f))
             Switch(checked = hasReminder, onCheckedChange = onToggleReminder)
         }
@@ -207,13 +211,13 @@ private fun ReminderSection(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     if (reminderTime != null) dateFormat.format(Date(reminderTime))
-                    else "Set date & time"
+                    else strings.setReminder
                 )
             }
 
             Spacer(Modifier.height(8.dp))
 
-            Text("Priority", style = MaterialTheme.typography.labelMedium)
+            Text(strings.reminder, style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
@@ -227,7 +231,7 @@ private fun ReminderSection(
                 FilterChip(
                     selected = priority == 2,
                     onClick = { onSetPriority(2) },
-                    label = { Text("Alarm") },
+                    label = { Text(strings.alarm) },
                     leadingIcon = {
                         Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(18.dp))
                     }
