@@ -22,6 +22,7 @@ class AlarmScheduler(private val context: Context) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("note_id", note.id)
             putExtra("note_title", note.title)
+            putExtra("note_content", note.content)
             putExtra("priority", note.priority)
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }

@@ -21,8 +21,10 @@ class AlarmService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val noteTitle = intent?.getStringExtra("note_title") ?: "Alarm"
         val noteId = intent?.getStringExtra("note_id") ?: ""
+        val noteTitle = intent?.getStringExtra("note_title")?.ifBlank { "Untitled" } ?: "Untitled"
+        val rawContent = intent?.getStringExtra("note_content") ?: ""
+        val noteContent = rawContent.replace(Regex("<[^>]*>"), "").trim()
 
         val alarmIntent = Intent(this, AlarmActivity::class.java).apply {
             putExtra("note_id", noteId)
@@ -65,8 +67,9 @@ class AlarmService : Service() {
 
         val notification = NotificationCompat.Builder(this, DotNotesApp.CHANNEL_ALARM)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(".notes Alarm")
-            .setContentText(noteTitle)
+            .setContentTitle(noteTitle)
+            .setContentText(if (noteContent.isNotBlank()) noteContent else "Alarm Catatan")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setFullScreenIntent(fullScreenPending, true)

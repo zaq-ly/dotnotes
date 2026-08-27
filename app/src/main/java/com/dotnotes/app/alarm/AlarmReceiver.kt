@@ -44,7 +44,9 @@ class AlarmReceiver : BroadcastReceiver() {
             return
         }
 
-        val noteTitle = intent.getStringExtra("note_title") ?: "Reminder"
+        val noteTitle = intent.getStringExtra("note_title")?.ifBlank { "Untitled" } ?: "Untitled"
+        val rawContent = intent.getStringExtra("note_content") ?: ""
+        val noteContent = rawContent.replace(Regex("<[^>]*>"), "").trim()
         val priority = intent.getIntExtra("priority", 1)
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
@@ -60,6 +62,7 @@ class AlarmReceiver : BroadcastReceiver() {
             val serviceIntent = Intent(context, AlarmService::class.java).apply {
                 putExtra("note_id", noteId)
                 putExtra("note_title", noteTitle)
+                putExtra("note_content", noteContent)
             }
             try {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -71,8 +74,9 @@ class AlarmReceiver : BroadcastReceiver() {
                 // Fallback if background FGS start is denied by strict OEM OS
                 val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
                     .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                    .setContentTitle(".notes Alarm (Fallback)")
-                    .setContentText(noteTitle)
+                    .setContentTitle(noteTitle)
+                    .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Alarm")
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentIntent(openPending)
                     .setAutoCancel(true)
@@ -94,8 +98,9 @@ class AlarmReceiver : BroadcastReceiver() {
 
             val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle(".notes")
-                .setContentText(noteTitle)
+                .setContentTitle(noteTitle)
+                .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
+                .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setContentIntent(openPending)

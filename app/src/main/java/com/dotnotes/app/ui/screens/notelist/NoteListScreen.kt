@@ -176,8 +176,19 @@ fun NoteCard(
                 }
             }
 
+            if (note.content.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = note.content.replace(Regex("<[^>]*>"), ""),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             if (note.reminderTime != null && !note.isAlarmDismissed) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = if (note.priority == 2)
@@ -204,17 +215,6 @@ fun NoteCard(
                         )
                     }
                 }
-            }
-
-            if (note.content.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = note.content.replace(Regex("<[^>]*>"), ""),
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             Spacer(Modifier.height(10.dp))
