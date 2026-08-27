@@ -20,6 +20,12 @@ interface NoteDao {
     @Upsert
     suspend fun upsertNote(note: Note)
 
+    @Upsert
+    suspend fun upsertNotes(notes: List<Note>)
+
+    @Query("SELECT * FROM notes")
+    suspend fun getAllNotesList(): List<Note>
+
     @Query("UPDATE notes SET isDeleted = 1, updatedAt = :now WHERE id = :id")
     suspend fun softDeleteNote(id: String, now: Long = System.currentTimeMillis())
 
