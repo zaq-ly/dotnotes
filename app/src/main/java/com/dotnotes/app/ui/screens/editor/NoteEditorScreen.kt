@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,11 +15,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
@@ -77,7 +74,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.ui.i18n.LocalStrings
-import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
@@ -128,10 +124,10 @@ fun NoteEditorScreen(
             val cursor = selection.start.coerceIn(0, text.length)
             var start = cursor
             var end = cursor
-            while (start > 0 && !text[start - 1].isWhitespace()) {
+            while (start > 0 && !text[start - 1].isWhitespace() && text[start - 1] != '\n') {
                 start--
             }
-            while (end < text.length && !text[end].isWhitespace()) {
+            while (end < text.length && !text[end].isWhitespace() && text[end] != '\n') {
                 end++
             }
             if (start < end) {
@@ -178,13 +174,11 @@ fun NoteEditorScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                val scrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
                         .imePadding()
-                        .verticalScroll(scrollState)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     // 1. Google Calendar Style Reminder Card (Split Date & Time Row)
@@ -205,7 +199,7 @@ fun NoteEditorScreen(
 
                     Spacer(Modifier.height(10.dp))
 
-                    // 2. Clean, Borderless Title Input (Supports double-tap selection)
+                    // 2. Clean, Borderless Title Input (Native double-tap selection unblocked)
                     TextField(
                         value = state.title,
                         onValueChange = viewModel::updateTitle,
@@ -291,12 +285,12 @@ fun NoteEditorScreen(
                         }
                     }
 
-                    // 4. Clean, Borderless RichTextEditor (Supports persistent scrolling and double-tap selection)
+                    // 4. Clean, Borderless RichTextEditor (Native double-tap selection and scrolling)
                     RichTextEditor(
                         state = richTextState,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .defaultMinSize(minHeight = 350.dp),
+                            .weight(1f),
                         placeholder = {
                             Text(
                                 strings.noteContentHint,
@@ -311,7 +305,7 @@ fun NoteEditorScreen(
                         )
                     )
 
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(16.dp))
                 }
             }
         }

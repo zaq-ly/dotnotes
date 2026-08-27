@@ -137,9 +137,9 @@ fun NoteListScreen(
                                 badge = {
                                     if (hasUpdate) {
                                         Badge(
-                                            containerColor = MaterialTheme.colorScheme.error,
+                                            containerColor = Color(0xFF00B0FF),
                                             modifier = Modifier
-                                                .size(8.dp)
+                                                .size(9.dp)
                                                 .offset(x = (-2).dp, y = 2.dp)
                                         )
                                     }
