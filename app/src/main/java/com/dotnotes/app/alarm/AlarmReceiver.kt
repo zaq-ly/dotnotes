@@ -43,10 +43,26 @@ class AlarmReceiver : BroadcastReceiver() {
                 putExtra("note_id", noteId)
                 putExtra("note_title", noteTitle)
             }
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent)
+                } else {
+                    context.startService(serviceIntent)
+                }
+            } catch (e: Exception) {
+                // Fallback if background FGS start is denied by strict OEM OS
+                val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
+                    .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                    .setContentTitle(".notes Alarm (Fallback)")
+                    .setContentText(noteTitle)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(openPending)
+                    .setAutoCancel(true)
+                    .build()
+                if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
+                    android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+                    NotificationManagerCompat.from(context).notify(noteId.hashCode(), notification)
+                }
             }
         } else {
             val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)

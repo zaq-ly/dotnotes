@@ -31,20 +31,16 @@ class AlarmScheduler(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        if (note.priority == 2) {
-            val showIntent = Intent(context, MainActivity::class.java)
-            val showPending = PendingIntent.getActivity(
-                context, 0, showIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.setAlarmClock(
-                AlarmManager.AlarmClockInfo(time, showPending), pending
-            )
-        } else {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP, time, pending
-            )
-        }
+        val showIntent = Intent(context, MainActivity::class.java)
+        val showPending = PendingIntent.getActivity(
+            context, 0, showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        // Use AlarmClock for ALL priorities to completely bypass OEM battery optimization limits
+        alarmManager.setAlarmClock(
+            AlarmManager.AlarmClockInfo(time, showPending), pending
+        )
     }
 
     fun cancel(noteId: String) {

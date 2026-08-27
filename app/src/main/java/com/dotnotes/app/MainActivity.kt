@@ -51,23 +51,5 @@ class MainActivity : ComponentActivity() {
                 notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
-        checkBatteryOptimization()
-    }
-
-    private fun checkBatteryOptimization() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = android.content.Intent()
-            val packageName = packageName
-            val pm = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                intent.action = android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-                intent.data = android.net.Uri.parse("package:$packageName")
-                try {
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
     }
 }
