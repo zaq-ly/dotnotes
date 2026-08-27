@@ -29,6 +29,9 @@ interface NoteDao {
     @Query("UPDATE notes SET isDeleted = 1, updatedAt = :now WHERE id = :id")
     suspend fun softDeleteNote(id: String, now: Long = System.currentTimeMillis())
 
+    @Query("UPDATE notes SET isDeleted = 1, updatedAt = :now WHERE id IN (:ids)")
+    suspend fun softDeleteNotes(ids: Collection<String>, now: Long = System.currentTimeMillis())
+
     @Query("UPDATE notes SET isPinned = :isPinned, updatedAt = :now WHERE id = :id")
     suspend fun togglePin(id: String, isPinned: Boolean, now: Long = System.currentTimeMillis())
 

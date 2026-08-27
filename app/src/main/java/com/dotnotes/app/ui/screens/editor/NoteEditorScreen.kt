@@ -169,7 +169,7 @@ fun NoteEditorScreen(
                         onToggleReminder = { enabled ->
                             viewModel.setReminder(enabled)
                             if (enabled && state.reminderTime == null) {
-                                showDatePicker = true
+                                viewModel.setReminderTime(System.currentTimeMillis() + 3600000L)
                             }
                         },
                         onOpenDatePicker = { showDatePicker = true },

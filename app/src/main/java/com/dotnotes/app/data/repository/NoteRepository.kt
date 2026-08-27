@@ -9,6 +9,7 @@ class NoteRepository(private val dao: NoteDao) {
     suspend fun getNotesWithActiveReminders() = dao.getNotesWithActiveReminders()
     suspend fun upsertNote(note: Note) = dao.upsertNote(note)
     suspend fun softDeleteNote(id: String) = dao.softDeleteNote(id)
+    suspend fun softDeleteNotes(ids: Collection<String>) = dao.softDeleteNotes(ids)
     suspend fun togglePin(id: String, isPinned: Boolean) = dao.togglePin(id, isPinned)
     suspend fun dismissAlarm(id: String) = dao.dismissAlarm(id)
 }

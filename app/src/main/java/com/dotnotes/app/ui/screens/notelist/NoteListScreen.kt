@@ -1,10 +1,15 @@
 package com.dotnotes.app.ui.screens.notelist
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,14 +26,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAddCheck
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,18 +54,20 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.data.model.Note
@@ -63,7 +76,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,23 +90,142 @@ fun NoteListScreen(
 ) {
     val strings = LocalStrings.current
     val notes by viewModel.notes.collectAsState()
+    val hasUpdate by viewModel.hasUpdate.collectAsState()
+
+    var selectedNoteIds by remember { mutableStateOf(setOf<String>()) }
+    val isSelectionMode = selectedNoteIds.isNotEmpty()
+
     val pinnedNotes = notes.filter { it.isPinned }
     val otherNotes = notes.filter { !it.isPinned }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(strings.appName) },
-                actions = {
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Default.Settings, contentDescription = strings.settings)
+            if (isSelectionMode) {
+                // TopBar in Selection Mode (Gambar 3)
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = String.format(strings.selectedCount, selectedNoteIds.size),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { selectedNoteIds = emptySet() }) {
+                            Icon(Icons.Default.Close, contentDescription = strings.cancel)
+                        }
+                    },
+                    actions = {
+                        val isAllSelected = selectedNoteIds.size == notes.size && notes.isNotEmpty()
+                        IconButton(onClick = {
+                            selectedNoteIds = if (isAllSelected) emptySet() else notes.map { it.id }.toSet()
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
+                                contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
+                                tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                )
+            } else {
+                // Standard TopBar with Update Notification Dot on Settings
+                TopAppBar(
+                    title = { Text(strings.appName) },
+                    actions = {
+                        IconButton(onClick = onSettingsClick) {
+                            BadgedBox(
+                                badge = {
+                                    if (hasUpdate) {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .offset(x = (-2).dp, y = 2.dp)
+                                        )
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.Settings, contentDescription = strings.settings)
+                            }
+                        }
+                    }
+                )
+            }
+        },
+        bottomBar = {
+            // Bottom Action Bar in Selection Mode (Gambar 2: Batal & Hapus)
+            AnimatedVisibility(
+                visible = isSelectionMode,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Cancel Button
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { selectedNoteIds = emptySet() }
+                                .padding(horizontal = 24.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = strings.cancel,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = strings.cancel,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+
+                        // Delete Button
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    viewModel.deleteNotes(selectedNoteIds)
+                                    selectedNoteIds = emptySet()
+                                }
+                                .padding(horizontal = 24.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = strings.delete,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "${strings.delete} (${selectedNoteIds.size})",
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
                     }
                 }
-            )
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNewNote) {
-                Icon(Icons.Default.Add, contentDescription = strings.newNote)
+            if (!isSelectionMode) {
+                FloatingActionButton(onClick = onNewNote) {
+                    Icon(Icons.Default.Add, contentDescription = strings.newNote)
+                }
             }
         }
     ) { padding ->
@@ -125,9 +256,23 @@ fun NoteListScreen(
                         )
                     }
                     items(pinnedNotes, key = { it.id }) { note ->
-                        TelegramSwipeNoteCard(
+                        val isSelected = selectedNoteIds.contains(note.id)
+                        SolidSwipeNoteCard(
                             note = note,
-                            onClick = { onNoteClick(note.id) },
+                            isSelected = isSelected,
+                            isSelectionMode = isSelectionMode,
+                            onClick = {
+                                if (isSelectionMode) {
+                                    selectedNoteIds = if (isSelected) selectedNoteIds - note.id else selectedNoteIds + note.id
+                                } else {
+                                    onNoteClick(note.id)
+                                }
+                            },
+                            onLongClick = {
+                                if (!isSelectionMode) {
+                                    selectedNoteIds = setOf(note.id)
+                                }
+                            },
                             onDelete = { viewModel.deleteNote(note.id) },
                             onTogglePin = { viewModel.togglePin(note) }
                         )
@@ -142,9 +287,23 @@ fun NoteListScreen(
                     }
                 }
                 items(otherNotes, key = { it.id }) { note ->
-                    TelegramSwipeNoteCard(
+                    val isSelected = selectedNoteIds.contains(note.id)
+                    SolidSwipeNoteCard(
                         note = note,
-                        onClick = { onNoteClick(note.id) },
+                        isSelected = isSelected,
+                        isSelectionMode = isSelectionMode,
+                        onClick = {
+                            if (isSelectionMode) {
+                                selectedNoteIds = if (isSelected) selectedNoteIds - note.id else selectedNoteIds + note.id
+                            } else {
+                                onNoteClick(note.id)
+                            }
+                        },
+                        onLongClick = {
+                            if (!isSelectionMode) {
+                                selectedNoteIds = setOf(note.id)
+                            }
+                        },
                         onDelete = { viewModel.deleteNote(note.id) },
                         onTogglePin = { viewModel.togglePin(note) }
                     )
@@ -155,169 +314,151 @@ fun NoteListScreen(
 }
 
 /**
- * Telegram-style bouncy swipe container:
- * - Slide Right: Delete (Spring animation + icon scaling pop)
- * - Slide Left: Pin / Unpin (Elastic spring bounce back)
+ * Solid, crisp swipe card matching Gambar 1 (Solid colors, centered icons, no bounce, no transparency).
  */
 @Composable
-private fun TelegramSwipeNoteCard(
+private fun SolidSwipeNoteCard(
     note: Note,
+    isSelected: Boolean,
+    isSelectionMode: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onDelete: () -> Unit,
     onTogglePin: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
     val strings = LocalStrings.current
-    val thresholdPx = 220f
+    val thresholdPx = 200f
 
     val isSwipingRight = offsetX.value > 0
     val isSwipingLeft = offsetX.value < 0
-    val swipeProgress = (abs(offsetX.value) / thresholdPx).coerceIn(0f, 1.5f)
-    val iconScale = 0.6f + (swipeProgress * 0.5f).coerceAtMost(0.6f)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
     ) {
-        // Background Action Layer (Telegram-style revealed actions)
-        if (isSwipingRight) {
-            // Delete Background (Red / Error)
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.scale(iconScale)
+        // Solid Action Background (Gambar 1 style: solid color, centered icon + label)
+        if (!isSelectionMode) {
+            if (isSwipingRight) {
+                // Delete Background (Solid Red)
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color(0xFFE53935))
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = strings.delete,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        text = strings.delete,
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = strings.delete,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = strings.delete,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
-            }
-        } else if (isSwipingLeft) {
-            // Pin/Unpin Background (Primary / Accent)
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.scale(iconScale)
+            } else if (isSwipingLeft) {
+                // Pin / Unpin Background (Solid Blue)
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color(0xFF1E88E5))
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.CenterEnd
                 ) {
-                    Text(
-                        text = if (note.isPinned) strings.unpin else strings.pin,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Icon(
-                        Icons.Default.PushPin,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.PushPin,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = if (note.isPinned) strings.unpin else strings.pin,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }
 
-        // Foreground Card with Telegram spring drag gesture
+        // Foreground Solid Card with drag and selection support
         Box(
             modifier = Modifier
-                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .offset { IntOffset(if (isSelectionMode) 0 else offsetX.value.roundToInt(), 0) }
                 .fillMaxWidth()
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            coroutineScope.launch {
-                                if (offsetX.value > thresholdPx) {
-                                    // Trigger Delete with smooth glide
-                                    offsetX.animateTo(
-                                        targetValue = 1000f,
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioNoBouncy,
-                                            stiffness = Spring.StiffnessMedium
-                                        )
-                                    )
-                                    onDelete()
-                                } else if (offsetX.value < -thresholdPx) {
-                                    // Trigger Pin/Unpin and spring bounce back
-                                    onTogglePin()
-                                    offsetX.animateTo(
-                                        targetValue = 0f,
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                            stiffness = Spring.StiffnessMediumLow
-                                        )
-                                    )
-                                } else {
-                                    // Release back to center
-                                    offsetX.animateTo(
-                                        targetValue = 0f,
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                            stiffness = Spring.StiffnessMediumLow
-                                        )
-                                    )
+                .then(
+                    if (!isSelectionMode) {
+                        Modifier.pointerInput(Unit) {
+                            detectHorizontalDragGestures(
+                                onDragEnd = {
+                                    coroutineScope.launch {
+                                        if (offsetX.value > thresholdPx) {
+                                            offsetX.animateTo(1000f, tween(200))
+                                            onDelete()
+                                        } else if (offsetX.value < -thresholdPx) {
+                                            onTogglePin()
+                                            offsetX.animateTo(0f, tween(200))
+                                        } else {
+                                            offsetX.animateTo(0f, tween(180))
+                                        }
+                                    }
+                                },
+                                onDragCancel = {
+                                    coroutineScope.launch { offsetX.animateTo(0f, tween(180)) }
+                                },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    coroutineScope.launch {
+                                        val newOffset = offsetX.value + dragAmount
+                                        offsetX.snapTo(newOffset.coerceIn(-350f, 350f))
+                                    }
                                 }
-                            }
-                        },
-                        onDragCancel = {
-                            coroutineScope.launch {
-                                offsetX.animateTo(
-                                    targetValue = 0f,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessMediumLow
-                                    )
-                                )
-                            }
-                        },
-                        onHorizontalDrag = { change, dragAmount ->
-                            change.consume()
-                            coroutineScope.launch {
-                                // Apply resistance when pulling far
-                                val newOffset = offsetX.value + dragAmount * 0.85f
-                                offsetX.snapTo(newOffset)
-                            }
+                            )
                         }
-                    )
-                }
+                    } else Modifier
+                )
         ) {
-            CleanNoteCard(
+            SelectableNoteCard(
                 note = note,
-                onClick = onClick
+                isSelected = isSelected,
+                isSelectionMode = isSelectionMode,
+                onClick = onClick,
+                onLongClick = onLongClick
             )
         }
     }
 }
 
 /**
- * Clean Note Card without cluttered action buttons in footer.
+ * Solid, opaque note card supporting multi-selection and long press.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CleanNoteCard(
+private fun SelectableNoteCard(
     note: Note,
-    onClick: () -> Unit
+    isSelected: Boolean,
+    isSelectionMode: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     val strings = LocalStrings.current
     val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
@@ -326,12 +467,24 @@ private fun CleanNoteCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clip(RoundedCornerShape(16.dp))
+            .then(
+                if (isSelected) {
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                } else Modifier
+            )
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (note.isPinned)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer
+            else if (note.isPinned)
+                MaterialTheme.colorScheme.surfaceVariant
+            else
+                MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -343,7 +496,31 @@ private fun CleanNoteCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                if (note.isPinned) {
+                if (isSelectionMode) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+                            )
+                            .border(
+                                width = 2.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                } else if (note.isPinned) {
                     Icon(
                         Icons.Default.PushPin,
                         contentDescription = strings.pinned,
@@ -369,9 +546,9 @@ private fun CleanNoteCard(
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = if (note.priority == 2)
-                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f)
+                        MaterialTheme.colorScheme.errorContainer
                     else
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
+                        MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -398,7 +575,7 @@ private fun CleanNoteCard(
             Text(
                 text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
         }
     }
