@@ -530,7 +530,7 @@ fun NoteEditorScreen(
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Text(
-                                        text = if (state.reminderTime != null) dateOnlyFormat.format(Date(state.reminderTime!!)) else strings.selectDate,
+                                        text = state.reminderTime?.let { dateOnlyFormat.format(Date(it)) } ?: strings.selectDate,
                                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
@@ -558,7 +558,7 @@ fun NoteEditorScreen(
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Text(
-                                        text = if (state.reminderTime != null) timeOnlyFormat.format(Date(state.reminderTime!!)) else strings.selectTime,
+                                        text = state.reminderTime?.let { timeOnlyFormat.format(Date(it)) } ?: strings.selectTime,
                                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
@@ -626,7 +626,7 @@ fun NoteEditorScreen(
     // Google Calendar style separate Date & Time pickers
     val currentCalendar = remember(state.reminderTime) {
         Calendar.getInstance().apply {
-            if (state.reminderTime != null) timeInMillis = state.reminderTime!!
+            state.reminderTime?.let { timeInMillis = it }
         }
     }
 
@@ -688,7 +688,7 @@ fun NoteEditorScreen(
             confirmButton = {
                 TextButton(onClick = {
                     val updatedCal = Calendar.getInstance().apply {
-                        if (state.reminderTime != null) timeInMillis = state.reminderTime!!
+                        state.reminderTime?.let { timeInMillis = it }
                         set(Calendar.HOUR_OF_DAY, timePickerState.hour)
                         set(Calendar.MINUTE, timePickerState.minute)
                         set(Calendar.SECOND, 0)

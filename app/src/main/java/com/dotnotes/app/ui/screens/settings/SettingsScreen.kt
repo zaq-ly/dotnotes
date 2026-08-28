@@ -163,7 +163,7 @@ fun SettingsScreen(
             // About
             ListItem(
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.6.6") }
+                supportingContent = { Text("dotnotes v1.6.7") }
             )
             HorizontalDivider()
 
@@ -171,9 +171,10 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = { Text(strings.checkForUpdates) },
                 supportingContent = {
-                    if (availableUpdate != null) {
+                    val update = availableUpdate
+                    if (update != null) {
                         Text(
-                            "${strings.updateAvailable} (${availableUpdate!!.tagName})",
+                            "${strings.updateAvailable} (${update.tagName})",
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                         )
@@ -193,7 +194,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.6.6") {
+                    viewModel.checkForUpdate("1.6.7") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -312,8 +313,7 @@ fun SettingsScreen(
     }
 
     // Update Dialog
-    if (availableUpdate != null) {
-        val update = availableUpdate!!
+    availableUpdate?.let { update ->
         AlertDialog(
             onDismissRequest = {
                 if (downloadProgress == null) viewModel.dismissUpdateDialog()
