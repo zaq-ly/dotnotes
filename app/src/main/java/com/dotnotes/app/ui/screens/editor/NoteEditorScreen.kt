@@ -33,6 +33,8 @@ import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatListNumbered
@@ -132,6 +134,29 @@ fun NoteEditorScreen(
         richTextState.toggleSpanStyle(spanStyle)
     }
 
+    fun toggleCheckbox() {
+        val text = richTextState.annotatedString.text
+        val cursor = richTextState.selection.start.coerceIn(0, text.length)
+        var lineStart = cursor
+        while (lineStart > 0 && text[lineStart - 1] != '\n') {
+            lineStart--
+        }
+        val remaining = text.substring(lineStart)
+        if (remaining.startsWith("☐ ")) {
+            val newText = text.substring(0, lineStart) + "☑ " + remaining.substring(2)
+            richTextState.setText(newText)
+            richTextState.selection = TextRange(cursor)
+        } else if (remaining.startsWith("☑ ")) {
+            val newText = text.substring(0, lineStart) + remaining.substring(2)
+            richTextState.setText(newText)
+            richTextState.selection = TextRange(maxOf(lineStart, cursor - 2))
+        } else {
+            val newText = text.substring(0, lineStart) + "☐ " + remaining
+            richTextState.setText(newText)
+            richTextState.selection = TextRange(cursor + 2)
+        }
+    }
+
     CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -181,6 +206,16 @@ fun NoteEditorScreen(
                     val isOrderedList = richTextState.isOrderedList
                     val isUnorderedList = richTextState.isUnorderedList
 
+                    val currentText = richTextState.annotatedString.text
+                    val currentCursor = richTextState.selection.start.coerceIn(0, currentText.length)
+                    var currentLineStart = currentCursor
+                    while (currentLineStart > 0 && currentText[currentLineStart - 1] != '\n') {
+                        currentLineStart--
+                    }
+                    val currentLine = currentText.substring(currentLineStart)
+                    val isCheckbox = currentLine.startsWith("☐ ") || currentLine.startsWith("☑ ")
+                    val checkboxIcon = if (currentLine.startsWith("☑ ")) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank
+
                     Surface(
                         color = MaterialTheme.colorScheme.surface,
                         tonalElevation = 6.dp,
@@ -198,6 +233,15 @@ fun NoteEditorScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                FormattingButton(
+                                    icon = checkboxIcon,
+                                    contentDescription = "Checkbox",
+                                    isActive = isCheckbox,
+                                    onClick = {
+                                        toggleCheckbox()
+                                    }
+                                )
+
                                 FormattingButton(
                                     icon = Icons.Default.FormatBold,
                                     contentDescription = "Bold",
