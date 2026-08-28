@@ -100,6 +100,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -401,14 +402,16 @@ fun NoteEditorScreen(
                                     blocks = updated
                                 },
                                 onBackspaceOnEmpty = {
+                                    val updated = blocks.toMutableList()
                                     if (block.type != BlockType.PARAGRAPH) {
-                                        val updated = blocks.toMutableList()
-                                        updated[index] = block.copy(type = BlockType.PARAGRAPH)
+                                        // User pressed Backspace on empty formatting -> remove formatting on this specific row only
+                                        updated[index] = block.copy(type = BlockType.PARAGRAPH, text = "")
                                         blocks = updated
+                                        focusedBlockId = block.id
                                     } else if (blocks.size > 1) {
+                                        // Already normal text and empty: delete this line and focus previous line
                                         val prevIndex = (index - 1).coerceAtLeast(0)
                                         val prevId = blocks[prevIndex].id
-                                        val updated = blocks.toMutableList()
                                         updated.removeAt(index)
                                         blocks = updated
                                         focusedBlockId = prevId
@@ -784,7 +787,7 @@ private fun parseContentToBlocks(content: String): List<NoteBlock> {
 private fun blocksToHtml(blocks: List<NoteBlock>): String {
     val sb = StringBuilder()
     for (b in blocks) {
-        var styledText = b.text
+        var styledText = b.text.replace("\u200B", "")
         if (b.isBold) styledText = "<b>$styledText</b>"
         if (b.isItalic) styledText = "<i>$styledText</i>"
 
@@ -817,6 +820,17 @@ private fun NoteBlockRow(
     onCheckedChange: (Boolean) -> Unit,
     onBackspaceOnEmpty: () -> Unit
 ) {
+    // When text is empty, seed with zero-width space (\u200B) so Android soft keyboard backspace always triggers
+    val initialText = if (block.text.isEmpty()) "\u200B" else block.text
+    var textValue by remember(block.id, block.text) {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialText,
+                selection = TextRange(initialText.length)
+            )
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -863,15 +877,33 @@ private fun NoteBlockRow(
         }
 
         BasicTextField(
-            value = block.text,
-            onValueChange = onTextChange,
+            value = textValue,
+            onValueChange = { newTfv ->
+                val raw = newTfv.text
+                if (raw.contains("\n")) {
+                    // Enter key pressed
+                    val cleaned = raw.replace("\u200B", "")
+                    onTextChange(cleaned)
+                } else if (raw.isEmpty()) {
+                    // Soft keyboard Backspace deleted the sentinel on empty field!
+                    onBackspaceOnEmpty()
+                } else {
+                    val cleaned = raw.replace("\u200B", "")
+                    textValue = newTfv.copy(
+                        text = if (cleaned.isEmpty()) "\u200B" else cleaned,
+                        selection = if (cleaned.isEmpty()) TextRange(1) else newTfv.selection
+                    )
+                    onTextChange(cleaned)
+                }
+            },
             modifier = Modifier
                 .weight(1f)
                 .padding(vertical = 4.dp)
                 .focusRequester(focusRequester)
                 .onFocusChanged { if (it.isFocused) onFocus() }
                 .onKeyEvent { keyEvent ->
-                    if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace && block.text.isEmpty()) {
+                    // Hardware backspace fallback
+                    if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace && (block.text.isEmpty() || textValue.text == "\u200B")) {
                         onBackspaceOnEmpty()
                         true
                     } else {
@@ -896,7 +928,8 @@ private fun NoteBlockRow(
                 imeAction = ImeAction.Default
             ),
             decorationBox = { innerTextField ->
-                if (block.text.isEmpty()) {
+                val actual = textValue.text.replace("\u200B", "")
+                if (actual.isEmpty()) {
                     Text(
                         text = when (block.type) {
                             BlockType.CHECKLIST -> "Item checklist..."
