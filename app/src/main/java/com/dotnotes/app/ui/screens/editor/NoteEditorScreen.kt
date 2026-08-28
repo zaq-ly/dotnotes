@@ -83,9 +83,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -123,8 +131,9 @@ fun NoteEditorScreen(
     val state by viewModel.state.collectAsState()
     val richTextState = rememberRichTextState()
 
-    var isChecklistMode by remember { mutableStateOf(false) }
-    var checklistItems by remember { mutableStateOf<List<ChecklistItem>>(listOf(ChecklistItem())) }
+    var blocks by remember { mutableStateOf<List<NoteBlock>>(listOf(NoteBlock())) }
+    var focusedBlockId by remember { mutableStateOf<String?>(null) }
+    val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
 
     var showReminderDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -134,14 +143,15 @@ fun NoteEditorScreen(
     LaunchedEffect(state.isLoading) {
         if (!state.isLoading && !isContentInitialized) {
             if (state.content.isNotEmpty()) {
-                if (isContentChecklist(state.content)) {
-                    isChecklistMode = true
-                    checklistItems = parseChecklist(state.content)
-                } else {
-                    richTextState.setHtml(state.content)
-                }
+                blocks = parseContentToBlocks(state.content)
             }
             isContentInitialized = true
+        }
+    }
+
+    LaunchedEffect(focusedBlockId) {
+        focusedBlockId?.let { id ->
+            focusRequesters[id]?.requestFocus()
         }
     }
 
@@ -150,17 +160,8 @@ fun NoteEditorScreen(
         backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
     )
 
-    fun applyFormatting(spanStyle: SpanStyle) {
-        richTextState.toggleSpanStyle(spanStyle)
-    }
-
     fun saveAndExit() {
-        val contentToSave = if (isChecklistMode) {
-            checklistToHtml(checklistItems)
-        } else {
-            richTextState.toHtml()
-        }
-        viewModel.updateContent(contentToSave)
+        viewModel.updateContent(blocksToHtml(blocks))
         viewModel.save()
         onBack()
     }
@@ -201,10 +202,9 @@ fun NoteEditorScreen(
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                 ) {
-                    val isBold = richTextState.currentSpanStyle.fontWeight != null && richTextState.currentSpanStyle.fontWeight!!.weight >= FontWeight.Bold.weight
-                    val isItalic = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic
-                    val isOrderedList = richTextState.isOrderedList
-                    val isUnorderedList = richTextState.isUnorderedList
+                    val currentFocusedIndex = blocks.indexOfFirst { it.id == focusedBlockId }.let { if (it >= 0) it else blocks.lastIndex.coerceAtLeast(0) }
+                    val currentBlock = blocks.getOrNull(currentFocusedIndex) ?: blocks.first()
+                    val isCurrentChecklist = currentBlock.isChecklist
 
                     Surface(
                         color = MaterialTheme.colorScheme.surface,
@@ -224,55 +224,17 @@ fun NoteEditorScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 FormattingButton(
-                                    icon = if (isChecklistMode) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                    icon = if (isCurrentChecklist) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                                     contentDescription = "Checklist",
-                                    isActive = isChecklistMode,
+                                    isActive = isCurrentChecklist,
                                     onClick = {
-                                        if (isChecklistMode) {
-                                            val text = checklistItems.filter { it.text.isNotEmpty() || checklistItems.size == 1 }.joinToString("\n") { it.text }
-                                            richTextState.setText(text)
-                                            isChecklistMode = false
-                                        } else {
-                                            val currentText = richTextState.annotatedString.text
-                                            checklistItems = parseChecklist(currentText)
-                                            isChecklistMode = true
-                                        }
-                                    }
-                                )
-
-                                FormattingButton(
-                                    icon = Icons.Default.FormatBold,
-                                    contentDescription = "Bold",
-                                    isActive = isBold,
-                                    onClick = {
-                                        applyFormatting(SpanStyle(fontWeight = FontWeight.ExtraBold))
-                                    }
-                                )
-
-                                FormattingButton(
-                                    icon = Icons.Default.FormatItalic,
-                                    contentDescription = "Italic",
-                                    isActive = isItalic,
-                                    onClick = {
-                                        applyFormatting(SpanStyle(fontStyle = FontStyle.Italic))
-                                    }
-                                )
-
-                                FormattingButton(
-                                    icon = Icons.AutoMirrored.Filled.FormatListBulleted,
-                                    contentDescription = "Bullet List",
-                                    isActive = isUnorderedList,
-                                    onClick = {
-                                        richTextState.toggleUnorderedList()
-                                    }
-                                )
-
-                                FormattingButton(
-                                    icon = Icons.Default.FormatListNumbered,
-                                    contentDescription = "Numbered List",
-                                    isActive = isOrderedList,
-                                    onClick = {
-                                        richTextState.toggleOrderedList()
+                                        val updated = blocks.toMutableList()
+                                        val target = updated[currentFocusedIndex]
+                                        updated[currentFocusedIndex] = target.copy(
+                                            isChecklist = !target.isChecklist,
+                                            isChecked = if (!target.isChecklist) false else target.isChecked
+                                        )
+                                        blocks = updated
                                     }
                                 )
                             }
@@ -292,7 +254,7 @@ fun NoteEditorScreen(
                         .padding(padding)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    // 1. Clean, Borderless Title Input
+                    // 1. Title Input
                     TextField(
                         value = state.title,
                         onValueChange = viewModel::updateTitle,
@@ -325,107 +287,78 @@ fun NoteEditorScreen(
 
                     Spacer(Modifier.height(4.dp))
 
-                    if (isChecklistMode) {
-                        // 2. Interactive Material 3 Checklist Mode
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            checklistItems.forEachIndexed { index, item ->
-                                ChecklistItemRow(
-                                    item = item,
-                                    onTextChange = { newText ->
-                                        if (newText.contains("\n")) {
-                                            val parts = newText.split("\n")
-                                            val updated = checklistItems.toMutableList()
-                                            updated[index] = item.copy(text = parts[0])
+                    // 2. Unified Note Canvas (Text paragraphs + Checklists together)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        blocks.forEachIndexed { index, block ->
+                            val requester = focusRequesters.getOrPut(block.id) { FocusRequester() }
+
+                            NoteBlockRow(
+                                block = block,
+                                focusRequester = requester,
+                                onFocus = { focusedBlockId = block.id },
+                                onTextChange = { newText ->
+                                    if (newText.contains("\n")) {
+                                        val parts = newText.split("\n")
+                                        val updated = blocks.toMutableList()
+                                        val firstPart = parts[0]
+                                        if (block.isChecklist && firstPart.isEmpty()) {
+                                            // Empty checkbox -> convert to normal text and add new block
+                                            updated[index] = block.copy(text = "", isChecklist = false)
+                                            val newBlock = NoteBlock(text = "", isChecklist = false)
+                                            updated.add(index + 1, newBlock)
+                                            blocks = updated
+                                            focusedBlockId = newBlock.id
+                                        } else {
+                                            updated[index] = block.copy(text = firstPart)
+                                            val nextIsChecklist = block.isChecklist
+                                            var lastAddedId = block.id
                                             for (i in 1 until parts.size) {
-                                                updated.add(index + i, ChecklistItem(text = parts[i], isChecked = false))
+                                                val newBlock = NoteBlock(
+                                                    text = parts[i],
+                                                    isChecklist = nextIsChecklist,
+                                                    isChecked = false
+                                                )
+                                                updated.add(index + i, newBlock)
+                                                lastAddedId = newBlock.id
                                             }
-                                            checklistItems = updated
-                                        } else {
-                                            val updated = checklistItems.toMutableList()
-                                            updated[index] = item.copy(text = newText)
-                                            checklistItems = updated
+                                            blocks = updated
+                                            focusedBlockId = lastAddedId
                                         }
-                                    },
-                                    onCheckedChange = { checked ->
-                                        val updated = checklistItems.toMutableList()
-                                        updated[index] = item.copy(isChecked = checked)
-                                        checklistItems = updated
-                                    },
-                                    onDelete = {
-                                        if (checklistItems.size > 1) {
-                                            val updated = checklistItems.toMutableList()
-                                            updated.removeAt(index)
-                                            checklistItems = updated
-                                        } else {
-                                            val updated = checklistItems.toMutableList()
-                                            updated[0] = item.copy(text = "", isChecked = false)
-                                            checklistItems = updated
-                                        }
-                                    },
-                                    onEnterPressed = {
-                                        val updated = checklistItems.toMutableList()
-                                        updated.add(index + 1, ChecklistItem(text = "", isChecked = false))
-                                        checklistItems = updated
+                                    } else {
+                                        val updated = blocks.toMutableList()
+                                        updated[index] = block.copy(text = newText)
+                                        blocks = updated
                                     }
-                                )
-                            }
-
-                            // Add Item Button
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        checklistItems = checklistItems + ChecklistItem(text = "", isChecked = false)
+                                },
+                                onCheckedChange = { checked ->
+                                    val updated = blocks.toMutableList()
+                                    updated[index] = block.copy(isChecked = checked)
+                                    blocks = updated
+                                },
+                                onBackspaceOnEmpty = {
+                                    if (block.isChecklist) {
+                                        val updated = blocks.toMutableList()
+                                        updated[index] = block.copy(isChecklist = false)
+                                        blocks = updated
+                                    } else if (blocks.size > 1) {
+                                        val prevIndex = (index - 1).coerceAtLeast(0)
+                                        val prevId = blocks[prevIndex].id
+                                        val updated = blocks.toMutableList()
+                                        updated.removeAt(index)
+                                        blocks = updated
+                                        focusedBlockId = prevId
                                     }
-                                    .padding(vertical = 10.dp, horizontal = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    text = "+ Tambah item",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-
-                            Spacer(Modifier.height(24.dp))
-                        }
-                    } else {
-                        // 2. Clean, Borderless RichTextEditor
-                        RichTextEditor(
-                            state = richTextState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            placeholder = {
-                                Text(
-                                    strings.noteContentHint,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                    fontSize = 16.sp
-                                )
-                            },
-                            colors = RichTextEditorDefaults.richTextEditorColors(
-                                containerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                selectionColors = customTextSelectionColors
+                                }
                             )
-                        )
-                    }
+                        }
 
-                    Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(48.dp))
+                    }
                 }
             }
         }
@@ -715,129 +648,128 @@ private fun FormattingButton(
     }
 }
 
-data class ChecklistItem(
+data class NoteBlock(
     val id: String = java.util.UUID.randomUUID().toString(),
     val text: String = "",
+    val isChecklist: Boolean = false,
     val isChecked: Boolean = false
 )
 
-private fun parseChecklist(content: String): List<ChecklistItem> {
-    val items = mutableListOf<ChecklistItem>()
-    val cleanHtml = content.replace("<br>", "\n").replace("<br/>", "\n").replace("</p>", "\n").replace("</li>", "\n")
-    val rawText = cleanHtml.replace(Regex("<[^>]*>"), "").trimEnd()
+private fun parseContentToBlocks(content: String): List<NoteBlock> {
+    if (content.isEmpty()) {
+        return listOf(NoteBlock())
+    }
+    val cleanHtml = content
+        .replace("<br>", "\n")
+        .replace("<br/>", "\n")
+        .replace("<br />", "\n")
+        .replace("</p>", "\n")
+        .replace("</li>", "\n")
+        .replace("</div>", "\n")
+    val rawText = cleanHtml.replace(Regex("<[^>]*>"), "").trimEnd('\n')
     val lines = rawText.split("\n")
+    val blocks = mutableListOf<NoteBlock>()
     for (line in lines) {
         val trimmed = line.trim()
-        if (trimmed.isEmpty() && lines.size == 1) continue
         val isChecked = trimmed.startsWith("☑") || trimmed.startsWith("[x]") || trimmed.startsWith("[X]") || trimmed.startsWith("✓")
+        val isUnchecked = trimmed.startsWith("☐") || trimmed.startsWith("[ ]")
+        val isChecklist = isChecked || isUnchecked
         val cleanLine = when {
             trimmed.startsWith("☑ ") || trimmed.startsWith("☐ ") -> trimmed.substring(2)
             trimmed.startsWith("☑") || trimmed.startsWith("☐") -> trimmed.substring(1)
             trimmed.startsWith("[x] ") || trimmed.startsWith("[X] ") || trimmed.startsWith("[ ] ") -> trimmed.substring(4)
             trimmed.startsWith("[x]") || trimmed.startsWith("[X]") || trimmed.startsWith("[ ]") -> trimmed.substring(3)
-            else -> trimmed
+            else -> line
         }
-        if (cleanLine.isNotEmpty() || lines.size == 1) {
-            items.add(ChecklistItem(text = cleanLine, isChecked = isChecked))
-        }
+        blocks.add(NoteBlock(text = cleanLine, isChecklist = isChecklist, isChecked = isChecked))
     }
-    if (items.isEmpty()) {
-        items.add(ChecklistItem(text = "", isChecked = false))
-    }
-    return items
+    return if (blocks.isEmpty()) listOf(NoteBlock()) else blocks
 }
 
-private fun checklistToHtml(items: List<ChecklistItem>): String {
+private fun blocksToHtml(blocks: List<NoteBlock>): String {
     val sb = StringBuilder()
-    for (item in items) {
-        if (item.text.isNotEmpty() || items.size == 1) {
-            val prefix = if (item.isChecked) "☑ " else "☐ "
-            sb.append("<p>").append(prefix).append(item.text).append("</p>")
+    for (b in blocks) {
+        if (b.isChecklist) {
+            val prefix = if (b.isChecked) "☑ " else "☐ "
+            sb.append("<p>").append(prefix).append(b.text).append("</p>")
+        } else {
+            sb.append("<p>").append(b.text).append("</p>")
         }
     }
     return sb.toString()
 }
 
-private fun isContentChecklist(content: String): Boolean {
-    return content.contains("☐") || content.contains("☑") || content.contains("[ ]") || content.contains("[x]") || content.contains("[X]")
-}
-
 @Composable
-private fun ChecklistItemRow(
-    item: ChecklistItem,
+private fun NoteBlockRow(
+    block: NoteBlock,
+    focusRequester: FocusRequester,
+    onFocus: () -> Unit,
     onTextChange: (String) -> Unit,
     onCheckedChange: (Boolean) -> Unit,
-    onDelete: () -> Unit,
-    onEnterPressed: () -> Unit
+    onBackspaceOnEmpty: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
+            .padding(vertical = if (block.isChecklist) 1.dp else 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Material 3 Checkbox
-        Checkbox(
-            checked = item.isChecked,
-            onCheckedChange = onCheckedChange,
-            colors = CheckboxDefaults.colors(
-                checkedColor = MaterialTheme.colorScheme.primary,
-                checkmarkColor = MaterialTheme.colorScheme.onPrimary,
-                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            modifier = Modifier.size(36.dp)
-        )
+        if (block.isChecklist) {
+            // Material 3 Checkbox
+            Checkbox(
+                checked = block.isChecked,
+                onCheckedChange = onCheckedChange,
+                colors = CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    checkmarkColor = MaterialTheme.colorScheme.onPrimary,
+                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                modifier = Modifier.size(36.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+        }
 
-        Spacer(Modifier.width(4.dp))
-
-        // Text Field for Item Description
         BasicTextField(
-            value = item.text,
+            value = block.text,
             onValueChange = onTextChange,
             modifier = Modifier
                 .weight(1f)
-                .padding(vertical = 8.dp),
+                .padding(vertical = 4.dp)
+                .focusRequester(focusRequester)
+                .onFocusChanged { if (it.isFocused) onFocus() }
+                .onKeyEvent { keyEvent ->
+                    if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace && block.text.isEmpty()) {
+                        onBackspaceOnEmpty()
+                        true
+                    } else {
+                        false
+                    }
+                },
             textStyle = TextStyle(
                 fontSize = 16.sp,
-                color = if (item.isChecked)
+                color = if (block.isChecked)
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
                 else
                     MaterialTheme.colorScheme.onSurface,
-                textDecoration = if (item.isChecked)
+                textDecoration = if (block.isChecked)
                     TextDecoration.LineThrough
                 else
                     TextDecoration.None
             ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = { onEnterPressed() }
+                imeAction = ImeAction.Default
             ),
             decorationBox = { innerTextField ->
-                if (item.text.isEmpty()) {
+                if (block.text.isEmpty()) {
                     Text(
-                        text = "Item catatan / belanja...",
+                        text = if (block.isChecklist) "Item..." else "Tulis catatan...",
                         fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                     )
                 }
                 innerTextField()
             }
         )
-
-        // Delete button for this item (subtle)
-        IconButton(
-            onClick = onDelete,
-            modifier = Modifier.size(32.dp)
-        ) {
-            Icon(
-                Icons.Default.Close,
-                contentDescription = "Delete",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                modifier = Modifier.size(16.dp)
-            )
-        }
     }
 }
