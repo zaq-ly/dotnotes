@@ -12,8 +12,11 @@ import androidx.navigation.navArgument
 import com.dotnotes.app.ui.screens.editor.NoteEditorScreen
 import com.dotnotes.app.ui.screens.notelist.NoteListScreen
 import com.dotnotes.app.ui.screens.settings.SettingsScreen
+import com.dotnotes.app.ui.screens.splash.SplashScreen
+import androidx.compose.animation.fadeOut
 
 object Routes {
+    const val SPLASH = "splash"
     const val NOTE_LIST = "note_list"
     const val NOTE_EDITOR = "note_editor/{noteId}"
     const val NOTE_EDITOR_NEW = "note_editor/new"
@@ -26,7 +29,7 @@ object Routes {
 fun NavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Routes.NOTE_LIST,
+        startDestination = Routes.SPLASH,
         enterTransition = {
             slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
@@ -52,6 +55,20 @@ fun NavGraph(navController: NavHostController) {
             )
         }
     ) {
+        composable(
+            Routes.SPLASH,
+            exitTransition = {
+                fadeOut(animationSpec = tween(300))
+            }
+        ) {
+            SplashScreen(
+                onSplashFinished = {
+                    navController.navigate(Routes.NOTE_LIST) {
+                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(Routes.NOTE_LIST) {
             NoteListScreen(
                 onNoteClick = { noteId -> navController.navigate(Routes.noteEditor(noteId)) },
