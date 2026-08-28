@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.dotnotes.app"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.dotnotes.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 23
-        versionName = "1.4.0"
+        versionCode = 24
+        versionName = "1.4.1"
     }
 
     signingConfigs {
