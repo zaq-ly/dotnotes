@@ -1,5 +1,10 @@
 package com.dotnotes.app.ui.screens.editor
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.scale
@@ -7,6 +12,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -14,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,6 +45,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,7 +92,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NoteEditorScreen(
     noteId: String?,
@@ -177,6 +185,74 @@ fun NoteEditorScreen(
                         }
                     }
                 )
+            },
+            bottomBar = {
+                AnimatedVisibility(
+                    visible = WindowInsets.isImeVisible,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                ) {
+                    val isBold = richTextState.currentSpanStyle.fontWeight != null && richTextState.currentSpanStyle.fontWeight!!.weight >= FontWeight.Bold.weight
+                    val isItalic = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic
+                    val isOrderedList = richTextState.isOrderedList
+                    val isUnorderedList = richTextState.isUnorderedList
+
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 6.dp,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .imePadding()
+                    ) {
+                        Column {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                FormattingButton(
+                                    icon = Icons.Default.FormatBold,
+                                    contentDescription = "Bold",
+                                    isActive = isBold,
+                                    onClick = {
+                                        applyFormatting(SpanStyle(fontWeight = FontWeight.ExtraBold))
+                                    }
+                                )
+
+                                FormattingButton(
+                                    icon = Icons.Default.FormatItalic,
+                                    contentDescription = "Italic",
+                                    isActive = isItalic,
+                                    onClick = {
+                                        applyFormatting(SpanStyle(fontStyle = FontStyle.Italic))
+                                    }
+                                )
+
+                                FormattingButton(
+                                    icon = Icons.AutoMirrored.Filled.FormatListBulleted,
+                                    contentDescription = "Bullet List",
+                                    isActive = isUnorderedList,
+                                    onClick = {
+                                        richTextState.toggleUnorderedList()
+                                    }
+                                )
+
+                                FormattingButton(
+                                    icon = Icons.Default.FormatListNumbered,
+                                    contentDescription = "Numbered List",
+                                    isActive = isOrderedList,
+                                    onClick = {
+                                        richTextState.toggleOrderedList()
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         ) { padding ->
             if (state.isLoading) {
@@ -188,7 +264,6 @@ fun NoteEditorScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .imePadding()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     // 1. Clean, Borderless Title Input
@@ -222,62 +297,9 @@ fun NoteEditorScreen(
                         )
                     )
 
-                    // 3. Formatting Toolbar with Non-Focus-Stealing Buttons
-                    val isBold = richTextState.currentSpanStyle.fontWeight != null && richTextState.currentSpanStyle.fontWeight!!.weight >= FontWeight.Bold.weight
-                    val isItalic = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic
-                    val isOrderedList = richTextState.isOrderedList
-                    val isUnorderedList = richTextState.isUnorderedList
+                    Spacer(Modifier.height(4.dp))
 
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            FormattingButton(
-                                icon = Icons.Default.FormatBold,
-                                contentDescription = "Bold",
-                                isActive = isBold,
-                                onClick = {
-                                    applyFormatting(SpanStyle(fontWeight = FontWeight.ExtraBold))
-                                }
-                            )
-
-                            FormattingButton(
-                                icon = Icons.Default.FormatItalic,
-                                contentDescription = "Italic",
-                                isActive = isItalic,
-                                onClick = {
-                                    applyFormatting(SpanStyle(fontStyle = FontStyle.Italic))
-                                }
-                            )
-
-                            FormattingButton(
-                                icon = Icons.AutoMirrored.Filled.FormatListBulleted,
-                                contentDescription = "Bullet List",
-                                isActive = isUnorderedList,
-                                onClick = {
-                                    richTextState.toggleUnorderedList()
-                                }
-                            )
-
-                            FormattingButton(
-                                icon = Icons.Default.FormatListNumbered,
-                                contentDescription = "Numbered List",
-                                isActive = isOrderedList,
-                                onClick = {
-                                    richTextState.toggleOrderedList()
-                                }
-                            )
-                        }
-                    }
-
-                    // 4. Clean, Borderless RichTextEditor
+                    // 2. Clean, Borderless RichTextEditor
                     RichTextEditor(
                         state = richTextState,
                         modifier = Modifier
