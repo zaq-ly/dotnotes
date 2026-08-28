@@ -285,7 +285,7 @@ fun NoteEditorScreen(
                         }
                     }
 
-                    // 4. Clean, Borderless RichTextEditor (Native double-tap selection and scrolling)
+                    // 4. Clean, Borderless RichTextEditor
                     RichTextEditor(
                         state = richTextState,
                         modifier = Modifier
@@ -301,7 +301,8 @@ fun NoteEditorScreen(
                         colors = RichTextEditorDefaults.richTextEditorColors(
                             containerColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            selectionColors = customTextSelectionColors
                         )
                     )
 

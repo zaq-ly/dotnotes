@@ -1,15 +1,16 @@
 [versions]
-agp = "8.4.2"
-kotlin = "2.0.0"
-ksp = "2.0.0-1.0.21"
-coreKtx = "1.13.1"
-lifecycleRuntimeKtx = "2.8.3"
-activityCompose = "1.9.0"
-composeBom = "2024.06.00"
-room = "2.6.1"
-navigation = "2.8.0"
-datastore = "1.1.1"
-richeditor = "1.0.0-rc06"
+agp = "9.3.0"
+kotlin = "2.3.21"
+ksp = "2.3.11"
+coreKtx = "1.19.0"
+lifecycleRuntimeKtx = "2.11.0"
+activityCompose = "1.13.0"
+composeBom = "2026.08.00"
+room = "2.8.4"
+navigation = "2.9.8"
+datastore = "1.2.1"
+richeditor = "1.0.0"
+gson = "2.14.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -29,7 +30,7 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 richeditor-compose = { group = "com.mohamedrejeb.richeditor", name = "richeditor-compose", version.ref = "richeditor" }
-gson = { group = "com.google.code.gson", name = "gson", version = "2.10.1" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
