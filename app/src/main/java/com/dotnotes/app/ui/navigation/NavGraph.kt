@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.dotnotes.app.ui.screens.editor.NoteEditorScreen
+import com.dotnotes.app.ui.screens.history.HistoryScreen
 import com.dotnotes.app.ui.screens.notelist.NoteListScreen
 import com.dotnotes.app.ui.screens.settings.SettingsScreen
 import com.dotnotes.app.ui.screens.splash.SplashScreen
@@ -21,6 +22,7 @@ object Routes {
     const val NOTE_EDITOR = "note_editor/{noteId}"
     const val NOTE_EDITOR_NEW = "note_editor/new"
     const val SETTINGS = "settings"
+    const val HISTORY = "history"
 
     fun noteEditor(noteId: String) = "note_editor/$noteId"
 }
@@ -73,7 +75,8 @@ fun NavGraph(navController: NavHostController) {
             NoteListScreen(
                 onNoteClick = { noteId -> navController.navigate(Routes.noteEditor(noteId)) },
                 onNewNote = { navController.navigate(Routes.NOTE_EDITOR_NEW) },
-                onSettingsClick = { navController.navigate(Routes.SETTINGS) }
+                onSettingsClick = { navController.navigate(Routes.SETTINGS) },
+                onHistoryClick = { navController.navigate(Routes.HISTORY) }
             )
         }
         composable(
@@ -88,6 +91,12 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.HISTORY) {
+            HistoryScreen(
+                onBack = { navController.popBackStack() },
+                onNoteClick = { noteId -> navController.navigate(Routes.noteEditor(noteId)) }
+            )
         }
     }
 }
