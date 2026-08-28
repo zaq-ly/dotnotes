@@ -35,21 +35,29 @@ import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -94,6 +102,8 @@ fun NoteListScreen(
 
     var selectedNoteIds by remember { mutableStateOf(setOf<String>()) }
     val isSelectionMode = selectedNoteIds.isNotEmpty()
+    var showHistoryDialog by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     val pinnedNotes = notes.filter { it.isPinned }
     val otherNotes = notes.filter { !it.isPinned }
@@ -128,10 +138,30 @@ fun NoteListScreen(
                     }
                 )
             } else {
-                // Standard TopBar with Update Notification Dot on Settings
+                // Standard TopBar with History Icon and Settings Icon
                 TopAppBar(
                     title = { Text(strings.appName) },
                     actions = {
+                        // History Icon (Belum Selesai / Riwayat Pengingat)
+                        val pendingCount = notes.count { it.reminderTime != null && !it.isAlarmDismissed }
+                        IconButton(onClick = { showHistoryDialog = true }) {
+                            BadgedBox(
+                                badge = {
+                                    if (pendingCount > 0) {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        ) {
+                                            Text(pendingCount.toString())
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.History, contentDescription = strings.reminderHistory)
+                            }
+                        }
+
+                        // Settings Icon
                         IconButton(onClick = onSettingsClick) {
                             BadgedBox(
                                 badge = {
@@ -272,7 +302,8 @@ fun NoteListScreen(
                                 }
                             },
                             onDelete = { viewModel.deleteNote(note.id) },
-                            onTogglePin = { viewModel.togglePin(note) }
+                            onTogglePin = { viewModel.togglePin(note) },
+                            onDismissReminder = { viewModel.dismissReminder(context, note.id) }
                         )
                     }
                     item {
@@ -303,11 +334,24 @@ fun NoteListScreen(
                             }
                         },
                         onDelete = { viewModel.deleteNote(note.id) },
-                        onTogglePin = { viewModel.togglePin(note) }
+                        onTogglePin = { viewModel.togglePin(note) },
+                        onDismissReminder = { viewModel.dismissReminder(context, note.id) }
                     )
                 }
             }
         }
+    }
+
+    if (showHistoryDialog) {
+        ReminderHistoryDialog(
+            notes = notes,
+            onNoteClick = {
+                showHistoryDialog = false
+                onNoteClick(it)
+            },
+            onDismissReminder = { viewModel.dismissReminder(context, it) },
+            onDismissRequest = { showHistoryDialog = false }
+        )
     }
 }
 
@@ -322,7 +366,8 @@ private fun SolidSwipeNoteCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onDelete: () -> Unit,
-    onTogglePin: () -> Unit
+    onTogglePin: () -> Unit,
+    onDismissReminder: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
@@ -440,7 +485,8 @@ private fun SolidSwipeNoteCard(
                 isSelected = isSelected,
                 isSelectionMode = isSelectionMode,
                 onClick = onClick,
-                onLongClick = onLongClick
+                onLongClick = onLongClick,
+                onDismissReminder = onDismissReminder
             )
         }
     }
@@ -456,7 +502,8 @@ private fun SelectableNoteCard(
     isSelected: Boolean,
     isSelectionMode: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
+    onDismissReminder: () -> Unit
 ) {
     val strings = LocalStrings.current
     val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
@@ -541,30 +588,55 @@ private fun SelectableNoteCard(
 
             if (note.reminderTime != null && !note.isAlarmDismissed) {
                 Spacer(Modifier.height(10.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (note.priority == 2)
-                        MaterialTheme.colorScheme.errorContainer
-                    else
-                        MaterialTheme.colorScheme.primaryContainer
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (note.priority == 2)
+                            MaterialTheme.colorScheme.errorContainer
+                        else
+                            MaterialTheme.colorScheme.primaryContainer
                     ) {
-                        Icon(
-                            imageVector = if (note.priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = if (note.priority == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = reminderFormat.format(Date(note.reminderTime)),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (note.priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (note.priority == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = reminderFormat.format(Date(note.reminderTime)),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
+                    if (!isSelectionMode) {
+                        FilledTonalButton(
+                            onClick = onDismissReminder,
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                            modifier = Modifier.height(30.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = strings.markDone,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = strings.markDone,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
                     }
                 }
             }
@@ -577,4 +649,209 @@ private fun SelectableNoteCard(
             )
         }
     }
+}
+
+/**
+ * Modern Material 3 Dialog for viewing reminder history and uncompleted tasks.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReminderHistoryDialog(
+    notes: List<Note>,
+    onNoteClick: (String) -> Unit,
+    onDismissReminder: (String) -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    val strings = LocalStrings.current
+    var selectedTab by remember { mutableStateOf(0) }
+    val reminderFormat = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()) }
+
+    val pendingNotes = notes.filter { it.reminderTime != null && !it.isAlarmDismissed }
+        .sortedBy { it.reminderTime }
+    val completedNotes = notes.filter { it.reminderTime != null && it.isAlarmDismissed }
+        .sortedByDescending { it.updatedAt }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = strings.reminderHistory,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    divider = {}
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = {
+                            Text(
+                                text = "${strings.pendingTasks} (${pendingNotes.size})",
+                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = {
+                            Text(
+                                text = "${strings.completedTasks} (${completedNotes.size})",
+                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                val currentList = if (selectedTab == 0) pendingNotes else completedNotes
+                if (currentList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (selectedTab == 0) strings.noPendingTasks else strings.noCompletedTasks,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 360.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(currentList, key = { it.id }) { note ->
+                            val reminderTime = note.reminderTime ?: 0L
+                            val isOverdue = selectedTab == 0 && reminderTime < System.currentTimeMillis()
+
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onNoteClick(note.id) }
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = note.title.ifEmpty { strings.untitled },
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        if (isOverdue) {
+                                            Surface(
+                                                shape = RoundedCornerShape(4.dp),
+                                                color = MaterialTheme.colorScheme.errorContainer,
+                                                modifier = Modifier.padding(start = 6.dp)
+                                            ) {
+                                                Text(
+                                                    text = strings.overdue,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    if (note.content.isNotEmpty()) {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = note.content.replace(Regex("<[^>]*>"), ""),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = if (selectedTab == 1)
+                                                    Icons.Default.CheckCircle
+                                                else if (note.priority == 2)
+                                                    Icons.Default.Alarm
+                                                else
+                                                    Icons.Default.Notifications,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(13.dp),
+                                                tint = if (selectedTab == 1)
+                                                    MaterialTheme.colorScheme.primary
+                                                else if (isOverdue)
+                                                    MaterialTheme.colorScheme.error
+                                                else
+                                                    MaterialTheme.colorScheme.primary
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                text = if (reminderTime > 0) reminderFormat.format(Date(reminderTime)) else "",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        if (selectedTab == 0) {
+                                            FilledTonalButton(
+                                                onClick = { onDismissReminder(note.id) },
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                                modifier = Modifier.height(26.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Spacer(Modifier.width(2.dp))
+                                                Text(
+                                                    text = strings.markDone,
+                                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(strings.back)
+            }
+        }
+    )
 }

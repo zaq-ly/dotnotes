@@ -69,7 +69,18 @@ data class AppStrings(
     // Alarm Screen
     val noteReminder: String,
     val snooze: String,
-    val dismiss: String
+    val dismiss: String,
+
+    // History & Reminders
+    val history: String,
+    val reminderHistory: String,
+    val pendingTasks: String,
+    val completedTasks: String,
+    val noPendingTasks: String,
+    val noCompletedTasks: String,
+    val markDone: String,
+    val completed: String,
+    val overdue: String
 )
 
 val EnglishStrings = AppStrings(
@@ -130,7 +141,16 @@ val EnglishStrings = AppStrings(
     about = "About",
     noteReminder = "NOTE REMINDER",
     snooze = "Snooze",
-    dismiss = "Dismiss"
+    dismiss = "Dismiss",
+    history = "History",
+    reminderHistory = "Reminder History",
+    pendingTasks = "Unfinished",
+    completedTasks = "Completed",
+    noPendingTasks = "No unfinished reminder tasks",
+    noCompletedTasks = "No completed tasks yet",
+    markDone = "Mark Done",
+    completed = "Completed",
+    overdue = "Overdue"
 )
 
 val IndonesianStrings = AppStrings(
@@ -191,7 +211,16 @@ val IndonesianStrings = AppStrings(
     about = "Tentang",
     noteReminder = "PENGINGAT CATATAN",
     snooze = "Tunda",
-    dismiss = "Matikan"
+    dismiss = "Matikan",
+    history = "Riwayat",
+    reminderHistory = "Riwayat Pengingat",
+    pendingTasks = "Belum Selesai",
+    completedTasks = "Selesai",
+    noPendingTasks = "Tidak ada tugas pengingat yang belum selesai",
+    noCompletedTasks = "Belum ada tugas yang diselesaikan",
+    markDone = "Tandai Selesai",
+    completed = "Selesai",
+    overdue = "Terlewat"
 )
 
 val LocalStrings = staticCompositionLocalOf { EnglishStrings }

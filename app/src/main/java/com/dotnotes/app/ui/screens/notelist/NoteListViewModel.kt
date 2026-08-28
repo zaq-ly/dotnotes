@@ -26,7 +26,7 @@ class NoteListViewModel(
         checkForUpdate()
     }
 
-    fun checkForUpdate(currentVersion: String = "1.7.0") {
+    fun checkForUpdate(currentVersion: String = "1.8.0") {
         viewModelScope.launch {
             val release = updateManager.checkForUpdate(currentVersion)
             _hasUpdate.value = (release != null)
@@ -43,6 +43,13 @@ class NoteListViewModel(
 
     fun togglePin(note: Note) {
         viewModelScope.launch { repository.togglePin(note.id, !note.isPinned) }
+    }
+
+    fun dismissReminder(context: android.content.Context, noteId: String) {
+        viewModelScope.launch {
+            repository.dismissAlarm(noteId)
+            com.dotnotes.app.alarm.AlarmScheduler(context).cancel(noteId)
+        }
     }
 
     class Factory(private val repository: NoteRepository) : ViewModelProvider.Factory {
