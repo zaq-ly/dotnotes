@@ -6,6 +6,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -148,50 +149,70 @@ fun HistoryScreen(
             }
         },
         bottomBar = {
+            // Bottom Action Bar in Selection Mode (Gambar 2: Batal & Hapus)
             AnimatedVisibility(
                 visible = isSelectionMode,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it }
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
             ) {
                 Surface(
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     tonalElevation = 8.dp,
-                    shadowElevation = 8.dp,
-                    color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedButton(
-                            onClick = { selectedNoteIds = emptySet() },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                        // Cancel Button
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { selectedNoteIds = emptySet() }
+                                .padding(horizontal = 24.dp, vertical = 6.dp)
                         ) {
-                            Text(strings.cancel)
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = strings.cancel,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = strings.cancel,
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
-                        Button(
-                            onClick = {
-                                viewModel.deleteHistoryReminders(context, selectedNoteIds)
-                                selectedNoteIds = emptySet()
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            ),
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+
+                        // Delete Button
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    viewModel.deleteHistoryReminders(context, selectedNoteIds)
+                                    selectedNoteIds = emptySet()
+                                }
+                                .padding(horizontal = 24.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = strings.delete,
-                                modifier = Modifier.size(18.dp)
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
-                            Text("${strings.delete} (${selectedNoteIds.size})")
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "${strings.delete} (${selectedNoteIds.size})",
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                     }
                 }
