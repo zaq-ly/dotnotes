@@ -24,9 +24,16 @@ class NoteListViewModel(
 
     init {
         checkForUpdate()
+        cleanExpiredReminders()
     }
 
-    fun checkForUpdate(currentVersion: String = "1.9.0") {
+    fun cleanExpiredReminders() {
+        viewModelScope.launch {
+            repository.cleanExpiredCompletedReminders()
+        }
+    }
+
+    fun checkForUpdate(currentVersion: String = "1.10.0") {
         viewModelScope.launch {
             val release = updateManager.checkForUpdate(currentVersion)
             _hasUpdate.value = (release != null)
@@ -39,6 +46,14 @@ class NoteListViewModel(
 
     fun deleteNotes(noteIds: Collection<String>) {
         viewModelScope.launch { repository.softDeleteNotes(noteIds) }
+    }
+
+    fun deleteHistoryReminders(context: android.content.Context, noteIds: Collection<String>) {
+        viewModelScope.launch {
+            val scheduler = com.dotnotes.app.alarm.AlarmScheduler(context)
+            noteIds.forEach { scheduler.cancel(it) }
+            repository.clearReminders(noteIds)
+        }
     }
 
     fun togglePin(note: Note) {

@@ -12,4 +12,7 @@ class NoteRepository(private val dao: NoteDao) {
     suspend fun softDeleteNotes(ids: Collection<String>) = dao.softDeleteNotes(ids)
     suspend fun togglePin(id: String, isPinned: Boolean) = dao.togglePin(id, isPinned)
     suspend fun dismissAlarm(id: String) = dao.dismissAlarm(id)
+    suspend fun clearReminder(id: String) = dao.clearReminder(id)
+    suspend fun clearReminders(ids: Collection<String>) = dao.clearReminders(ids)
+    suspend fun cleanExpiredCompletedReminders(thresholdTime: Long = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000L) = dao.cleanExpiredCompletedReminders(thresholdTime)
 }

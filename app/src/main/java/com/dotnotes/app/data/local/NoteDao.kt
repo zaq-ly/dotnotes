@@ -37,4 +37,13 @@ interface NoteDao {
 
     @Query("UPDATE notes SET isAlarmDismissed = 1, updatedAt = :now WHERE id = :id")
     suspend fun dismissAlarm(id: String, now: Long = System.currentTimeMillis())
+
+    @Query("UPDATE notes SET reminderTime = NULL, priority = 0, isAlarmDismissed = 0, updatedAt = :now WHERE id = :id")
+    suspend fun clearReminder(id: String, now: Long = System.currentTimeMillis())
+
+    @Query("UPDATE notes SET reminderTime = NULL, priority = 0, isAlarmDismissed = 0, updatedAt = :now WHERE id IN (:ids)")
+    suspend fun clearReminders(ids: Collection<String>, now: Long = System.currentTimeMillis())
+
+    @Query("UPDATE notes SET reminderTime = NULL, priority = 0, isAlarmDismissed = 0, updatedAt = :now WHERE isAlarmDismissed = 1 AND updatedAt <= :thresholdTime")
+    suspend fun cleanExpiredCompletedReminders(thresholdTime: Long, now: Long = System.currentTimeMillis())
 }
