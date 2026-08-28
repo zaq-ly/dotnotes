@@ -2,6 +2,7 @@ package com.dotnotes.app.ui.screens.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -189,7 +190,7 @@ fun NoteEditorScreen(
                         onToggleReminder = { enabled ->
                             viewModel.setReminder(enabled)
                             if (enabled && state.reminderTime == null) {
-                                viewModel.setReminderTime(System.currentTimeMillis() + 3600000L)
+                                viewModel.setReminderTime(System.currentTimeMillis())
                             }
                         },
                         onOpenDatePicker = { showDatePicker = true },
@@ -443,15 +444,15 @@ private fun GoogleCalendarReminderCard(
     val timeOnlyFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
 
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         color = if (hasReminder)
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
         else
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             // Header Row: Icon + Label + Switch
             Row(
@@ -462,18 +463,19 @@ private fun GoogleCalendarReminderCard(
                     imageVector = if (priority == 2 && hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
                     contentDescription = null,
                     tint = if (hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(18.dp)
                 )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(6.dp))
                 Text(
                     text = strings.reminder,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(Modifier.weight(1f))
                 Switch(
                     checked = hasReminder,
                     onCheckedChange = onToggleReminder,
+                    modifier = Modifier.scale(0.8f),
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = MaterialTheme.colorScheme.primary
@@ -483,16 +485,16 @@ private fun GoogleCalendarReminderCard(
 
             // Expanded Options when Reminder is Enabled
             if (hasReminder) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
 
-                // Split Date & Time Row (Google Calendar Style)
+                // Split Date & Time Row (Compact Google Calendar Style)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     // Date Button
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.background,
                         modifier = Modifier
                             .weight(1.3f)
@@ -500,18 +502,18 @@ private fun GoogleCalendarReminderCard(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 Icons.Default.CalendarMonth,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(14.dp)
                             )
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(4.dp))
                             Text(
                                 text = if (reminderTime != null) dateOnlyFormat.format(Date(reminderTime)) else strings.selectDate,
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1
                             )
@@ -520,7 +522,7 @@ private fun GoogleCalendarReminderCard(
 
                     // Time Button
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.background,
                         modifier = Modifier
                             .weight(1f)
@@ -528,18 +530,18 @@ private fun GoogleCalendarReminderCard(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 Icons.Default.Schedule,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(14.dp)
                             )
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(4.dp))
                             Text(
                                 text = if (reminderTime != null) timeOnlyFormat.format(Date(reminderTime)) else strings.selectTime,
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1
                             )
@@ -547,21 +549,22 @@ private fun GoogleCalendarReminderCard(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Priority Selection (Notification vs Alarm)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilterChip(
                         selected = priority <= 1,
                         onClick = { onSetPriority(1) },
-                        label = { Text(strings.notification, style = MaterialTheme.typography.labelSmall) },
+                        modifier = Modifier.height(28.dp),
+                        label = { Text(strings.notification, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)) },
                         leadingIcon = {
-                            Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(12.dp))
                         },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(6.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.primary,
@@ -572,11 +575,12 @@ private fun GoogleCalendarReminderCard(
                     FilterChip(
                         selected = priority == 2,
                         onClick = { onSetPriority(2) },
-                        label = { Text(strings.alarm, style = MaterialTheme.typography.labelSmall) },
+                        modifier = Modifier.height(28.dp),
+                        label = { Text(strings.alarm, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)) },
                         leadingIcon = {
-                            Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(12.dp))
                         },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(6.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.error,
