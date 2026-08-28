@@ -26,7 +26,7 @@ class NoteListViewModel(
         checkForUpdate()
     }
 
-    fun checkForUpdate(currentVersion: String = "1.6.3") {
+    fun checkForUpdate(currentVersion: String = "1.6.4") {
         viewModelScope.launch {
             val release = updateManager.checkForUpdate(currentVersion)
             _hasUpdate.value = (release != null)
