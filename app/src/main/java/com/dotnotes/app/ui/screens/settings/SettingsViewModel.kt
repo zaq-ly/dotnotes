@@ -90,10 +90,12 @@ class SettingsViewModel(
             val file = updateManager.downloadApk(context, releaseInfo.apkDownloadUrl) { progress ->
                 _downloadProgress.value = progress
             }
-            _downloadProgress.value = null
             if (file != null) {
                 _availableUpdate.value = null
+                _downloadProgress.value = null
                 updateManager.installApk(context, file)
+            } else {
+                _downloadProgress.value = null
             }
         }
     }

@@ -163,7 +163,7 @@ fun SettingsScreen(
             // About
             ListItem(
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.6.5") }
+                supportingContent = { Text("dotnotes v1.6.6") }
             )
             HorizontalDivider()
 
@@ -193,7 +193,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.6.5") {
+                    viewModel.checkForUpdate("1.6.6") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -321,12 +321,13 @@ fun SettingsScreen(
             title = { Text("${strings.updateAvailable} (${update.tagName})") },
             text = {
                 Column {
-                    if (downloadProgress != null) {
+                    val progress = downloadProgress
+                    if (progress != null) {
                         Text(strings.downloadingUpdate)
                         Spacer(Modifier.height(12.dp))
-                        if (downloadProgress!! > 0f) {
+                        if (progress > 0f) {
                             LinearProgressIndicator(
-                                progress = { downloadProgress!! },
+                                progress = { (downloadProgress ?: 0f).coerceIn(0f, 1f) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
