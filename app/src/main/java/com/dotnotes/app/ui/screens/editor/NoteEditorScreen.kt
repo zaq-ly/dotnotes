@@ -3,6 +3,7 @@ package com.dotnotes.app.ui.screens.editor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -100,6 +101,7 @@ fun NoteEditorScreen(
     val state by viewModel.state.collectAsState()
     val richTextState = rememberRichTextState()
 
+    var showReminderDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var isContentInitialized by remember { mutableStateOf(false) }
@@ -159,6 +161,13 @@ fun NoteEditorScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = { showReminderDialog = true }) {
+                            Icon(
+                                imageVector = if (state.priority == 2 && state.hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
+                                contentDescription = strings.reminder,
+                                tint = if (state.hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
                         IconButton(onClick = {
                             viewModel.updateContent(richTextState.toHtml())
                             viewModel.save()
@@ -182,25 +191,7 @@ fun NoteEditorScreen(
                         .imePadding()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    // 1. Google Calendar Style Reminder Card (Split Date & Time Row)
-                    GoogleCalendarReminderCard(
-                        hasReminder = state.hasReminder,
-                        reminderTime = state.reminderTime,
-                        priority = state.priority,
-                        onToggleReminder = { enabled ->
-                            viewModel.setReminder(enabled)
-                            if (enabled && state.reminderTime == null) {
-                                viewModel.setReminderTime(System.currentTimeMillis())
-                            }
-                        },
-                        onOpenDatePicker = { showDatePicker = true },
-                        onOpenTimePicker = { showTimePicker = true },
-                        onSetPriority = viewModel::setPriority
-                    )
-
-                    Spacer(Modifier.height(10.dp))
-
-                    // 2. Clean, Borderless Title Input (Native double-tap selection unblocked)
+                    // 1. Clean, Borderless Title Input
                     TextField(
                         value = state.title,
                         onValueChange = viewModel::updateTitle,
@@ -308,6 +299,177 @@ fun NoteEditorScreen(
                     )
 
                     Spacer(Modifier.height(16.dp))
+                }
+            }
+        }
+    }
+
+    val dateOnlyFormat = remember { SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()) }
+    val timeOnlyFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+
+    // Reminder Pop-up Dialog
+    if (showReminderDialog) {
+        Dialog(onDismissRequest = { showReminderDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp)
+                ) {
+                    // Header Row: Icon + Label + Switch
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = if (state.priority == 2 && state.hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = if (state.hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = strings.reminder,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Switch(
+                            checked = state.hasReminder,
+                            onCheckedChange = { enabled ->
+                                viewModel.setReminder(enabled)
+                                if (enabled && state.reminderTime == null) {
+                                    viewModel.setReminderTime(System.currentTimeMillis())
+                                }
+                            },
+                            modifier = Modifier.scale(0.85f),
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+
+                    // Expanded Options when Reminder is Enabled
+                    if (state.hasReminder) {
+                        Spacer(Modifier.height(12.dp))
+
+                        // Split Date & Time Row (Compact Google Calendar Style)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Date Button
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .weight(1.3f)
+                                    .clickable(onClick = { showDatePicker = true })
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.CalendarMonth,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = if (state.reminderTime != null) dateOnlyFormat.format(Date(state.reminderTime!!)) else strings.selectDate,
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+
+                            // Time Button
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable(onClick = { showTimePicker = true })
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = if (state.reminderTime != null) timeOnlyFormat.format(Date(state.reminderTime!!)) else strings.selectTime,
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+
+                        // Priority Selection (Notification vs Alarm)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            FilterChip(
+                                selected = state.priority <= 1,
+                                onClick = { viewModel.setPriority(1) },
+                                modifier = Modifier.height(28.dp),
+                                label = { Text(strings.notification, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(13.dp))
+                                },
+                                shape = RoundedCornerShape(6.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+
+                            FilterChip(
+                                selected = state.priority == 2,
+                                onClick = { viewModel.setPriority(2) },
+                                modifier = Modifier.height(28.dp),
+                                label = { Text(strings.alarm, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(13.dp))
+                                },
+                                shape = RoundedCornerShape(6.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.error,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.error
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showReminderDialog = false }) {
+                            Text(strings.save, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
         }
@@ -423,172 +585,5 @@ private fun FormattingButton(
             tint = iconTint,
             modifier = Modifier.size(20.dp)
         )
-    }
-}
-
-/**
- * Google Calendar style reminder card with split date and time pills.
- */
-@Composable
-private fun GoogleCalendarReminderCard(
-    hasReminder: Boolean,
-    reminderTime: Long?,
-    priority: Int,
-    onToggleReminder: (Boolean) -> Unit,
-    onOpenDatePicker: () -> Unit,
-    onOpenTimePicker: () -> Unit,
-    onSetPriority: (Int) -> Unit
-) {
-    val strings = LocalStrings.current
-    val dateOnlyFormat = remember { SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()) }
-    val timeOnlyFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
-
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = if (hasReminder)
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-        else
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        ) {
-            // Header Row: Icon + Label + Switch
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = if (priority == 2 && hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
-                    contentDescription = null,
-                    tint = if (hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = strings.reminder,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.weight(1f))
-                Switch(
-                    checked = hasReminder,
-                    onCheckedChange = onToggleReminder,
-                    modifier = Modifier.scale(0.8f),
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-            }
-
-            // Expanded Options when Reminder is Enabled
-            if (hasReminder) {
-                Spacer(Modifier.height(4.dp))
-
-                // Split Date & Time Row (Compact Google Calendar Style)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    // Date Button
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.background,
-                        modifier = Modifier
-                            .weight(1.3f)
-                            .clickable(onClick = onOpenDatePicker)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.CalendarMonth,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = if (reminderTime != null) dateOnlyFormat.format(Date(reminderTime)) else strings.selectDate,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1
-                            )
-                        }
-                    }
-
-                    // Time Button
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.background,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable(onClick = onOpenTimePicker)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Schedule,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = if (reminderTime != null) timeOnlyFormat.format(Date(reminderTime)) else strings.selectTime,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(6.dp))
-
-                // Priority Selection (Notification vs Alarm)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    FilterChip(
-                        selected = priority <= 1,
-                        onClick = { onSetPriority(1) },
-                        modifier = Modifier.height(28.dp),
-                        label = { Text(strings.notification, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(12.dp))
-                        },
-                        shape = RoundedCornerShape(6.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.primary,
-                            selectedLeadingIconColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-
-                    FilterChip(
-                        selected = priority == 2,
-                        onClick = { onSetPriority(2) },
-                        modifier = Modifier.height(28.dp),
-                        label = { Text(strings.alarm, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(12.dp))
-                        },
-                        shape = RoundedCornerShape(6.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.error,
-                            selectedLeadingIconColor = MaterialTheme.colorScheme.error
-                        )
-                    )
-                }
-            }
-        }
     }
 }
