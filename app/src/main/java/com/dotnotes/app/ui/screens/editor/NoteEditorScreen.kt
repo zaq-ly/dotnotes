@@ -129,22 +129,6 @@ fun NoteEditorScreen(
     )
 
     fun applyFormatting(spanStyle: SpanStyle) {
-        val text = richTextState.annotatedString.text
-        val selection = richTextState.selection
-        if (selection.collapsed && text.isNotEmpty()) {
-            val cursor = selection.start.coerceIn(0, text.length)
-            var start = cursor
-            var end = cursor
-            while (start > 0 && !text[start - 1].isWhitespace() && text[start - 1] != '\n') {
-                start--
-            }
-            while (end < text.length && !text[end].isWhitespace() && text[end] != '\n') {
-                end++
-            }
-            if (start < end) {
-                richTextState.selection = TextRange(start, end)
-            }
-        }
         richTextState.toggleSpanStyle(spanStyle)
     }
 
