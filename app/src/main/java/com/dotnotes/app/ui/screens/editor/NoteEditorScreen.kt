@@ -204,7 +204,6 @@ fun NoteEditorScreen(
                 ) {
                     val currentFocusedIndex = blocks.indexOfFirst { it.id == focusedBlockId }.let { if (it >= 0) it else blocks.lastIndex.coerceAtLeast(0) }
                     val currentBlock = blocks.getOrNull(currentFocusedIndex) ?: blocks.first()
-                    val isCurrentChecklist = currentBlock.isChecklist
 
                     Surface(
                         color = MaterialTheme.colorScheme.surface,
@@ -223,16 +222,73 @@ fun NoteEditorScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // 1. Checkbox
                                 FormattingButton(
-                                    icon = if (isCurrentChecklist) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                    icon = if (currentBlock.type == BlockType.CHECKLIST) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                                     contentDescription = "Checklist",
-                                    isActive = isCurrentChecklist,
+                                    isActive = currentBlock.type == BlockType.CHECKLIST,
                                     onClick = {
                                         val updated = blocks.toMutableList()
                                         val target = updated[currentFocusedIndex]
                                         updated[currentFocusedIndex] = target.copy(
-                                            isChecklist = !target.isChecklist,
-                                            isChecked = if (!target.isChecklist) false else target.isChecked
+                                            type = if (target.type == BlockType.CHECKLIST) BlockType.PARAGRAPH else BlockType.CHECKLIST,
+                                            isChecked = false
+                                        )
+                                        blocks = updated
+                                    }
+                                )
+
+                                // 2. Bold
+                                FormattingButton(
+                                    icon = Icons.Default.FormatBold,
+                                    contentDescription = "Bold",
+                                    isActive = currentBlock.isBold,
+                                    onClick = {
+                                        val updated = blocks.toMutableList()
+                                        val target = updated[currentFocusedIndex]
+                                        updated[currentFocusedIndex] = target.copy(isBold = !target.isBold)
+                                        blocks = updated
+                                    }
+                                )
+
+                                // 3. Italic
+                                FormattingButton(
+                                    icon = Icons.Default.FormatItalic,
+                                    contentDescription = "Italic",
+                                    isActive = currentBlock.isItalic,
+                                    onClick = {
+                                        val updated = blocks.toMutableList()
+                                        val target = updated[currentFocusedIndex]
+                                        updated[currentFocusedIndex] = target.copy(isItalic = !target.isItalic)
+                                        blocks = updated
+                                    }
+                                )
+
+                                // 4. Bulleted List
+                                FormattingButton(
+                                    icon = Icons.AutoMirrored.Filled.FormatListBulleted,
+                                    contentDescription = "Bullet List",
+                                    isActive = currentBlock.type == BlockType.BULLET,
+                                    onClick = {
+                                        val updated = blocks.toMutableList()
+                                        val target = updated[currentFocusedIndex]
+                                        updated[currentFocusedIndex] = target.copy(
+                                            type = if (target.type == BlockType.BULLET) BlockType.PARAGRAPH else BlockType.BULLET
+                                        )
+                                        blocks = updated
+                                    }
+                                )
+
+                                // 5. Numbered List
+                                FormattingButton(
+                                    icon = Icons.Default.FormatListNumbered,
+                                    contentDescription = "Numbered List",
+                                    isActive = currentBlock.type == BlockType.NUMBERED,
+                                    onClick = {
+                                        val updated = blocks.toMutableList()
+                                        val target = updated[currentFocusedIndex]
+                                        updated[currentFocusedIndex] = target.copy(
+                                            type = if (target.type == BlockType.NUMBERED) BlockType.PARAGRAPH else BlockType.NUMBERED
                                         )
                                         blocks = updated
                                     }
@@ -287,7 +343,7 @@ fun NoteEditorScreen(
 
                     Spacer(Modifier.height(4.dp))
 
-                    // 2. Unified Note Canvas (Text paragraphs + Checklists together)
+                    // 2. Unified Note Canvas (Text paragraphs + Checklists + Lists)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -296,9 +352,11 @@ fun NoteEditorScreen(
                     ) {
                         blocks.forEachIndexed { index, block ->
                             val requester = focusRequesters.getOrPut(block.id) { FocusRequester() }
+                            val numberedIndex = if (block.type == BlockType.NUMBERED) getNumberedIndex(blocks, index) else 1
 
                             NoteBlockRow(
                                 block = block,
+                                numberedIndex = numberedIndex,
                                 focusRequester = requester,
                                 onFocus = { focusedBlockId = block.id },
                                 onTextChange = { newText ->
@@ -306,22 +364,24 @@ fun NoteEditorScreen(
                                         val parts = newText.split("\n")
                                         val updated = blocks.toMutableList()
                                         val firstPart = parts[0]
-                                        if (block.isChecklist && firstPart.isEmpty()) {
-                                            // Empty checkbox -> convert to normal text and add new block
-                                            updated[index] = block.copy(text = "", isChecklist = false)
-                                            val newBlock = NoteBlock(text = "", isChecklist = false)
+                                        if (block.type != BlockType.PARAGRAPH && firstPart.isEmpty()) {
+                                            // Empty list/checkbox item -> revert to normal text and add new line
+                                            updated[index] = block.copy(text = "", type = BlockType.PARAGRAPH)
+                                            val newBlock = NoteBlock(text = "", type = BlockType.PARAGRAPH)
                                             updated.add(index + 1, newBlock)
                                             blocks = updated
                                             focusedBlockId = newBlock.id
                                         } else {
                                             updated[index] = block.copy(text = firstPart)
-                                            val nextIsChecklist = block.isChecklist
+                                            val nextType = block.type
                                             var lastAddedId = block.id
                                             for (i in 1 until parts.size) {
                                                 val newBlock = NoteBlock(
                                                     text = parts[i],
-                                                    isChecklist = nextIsChecklist,
-                                                    isChecked = false
+                                                    type = nextType,
+                                                    isChecked = false,
+                                                    isBold = block.isBold,
+                                                    isItalic = block.isItalic
                                                 )
                                                 updated.add(index + i, newBlock)
                                                 lastAddedId = newBlock.id
@@ -341,9 +401,9 @@ fun NoteEditorScreen(
                                     blocks = updated
                                 },
                                 onBackspaceOnEmpty = {
-                                    if (block.isChecklist) {
+                                    if (block.type != BlockType.PARAGRAPH) {
                                         val updated = blocks.toMutableList()
-                                        updated[index] = block.copy(isChecklist = false)
+                                        updated[index] = block.copy(type = BlockType.PARAGRAPH)
                                         blocks = updated
                                     } else if (blocks.size > 1) {
                                         val prevIndex = (index - 1).coerceAtLeast(0)
@@ -648,12 +708,31 @@ private fun FormattingButton(
     }
 }
 
+enum class BlockType {
+    PARAGRAPH,
+    CHECKLIST,
+    BULLET,
+    NUMBERED
+}
+
 data class NoteBlock(
     val id: String = java.util.UUID.randomUUID().toString(),
     val text: String = "",
-    val isChecklist: Boolean = false,
-    val isChecked: Boolean = false
+    val type: BlockType = BlockType.PARAGRAPH,
+    val isChecked: Boolean = false,
+    val isBold: Boolean = false,
+    val isItalic: Boolean = false
 )
+
+private fun getNumberedIndex(blocks: List<NoteBlock>, index: Int): Int {
+    var count = 1
+    var i = index - 1
+    while (i >= 0 && blocks[i].type == BlockType.NUMBERED) {
+        count++
+        i--
+    }
+    return count
+}
 
 private fun parseContentToBlocks(content: String): List<NoteBlock> {
     if (content.isEmpty()) {
@@ -673,15 +752,31 @@ private fun parseContentToBlocks(content: String): List<NoteBlock> {
         val trimmed = line.trim()
         val isChecked = trimmed.startsWith("☑") || trimmed.startsWith("[x]") || trimmed.startsWith("[X]") || trimmed.startsWith("✓")
         val isUnchecked = trimmed.startsWith("☐") || trimmed.startsWith("[ ]")
-        val isChecklist = isChecked || isUnchecked
+        val isBullet = trimmed.startsWith("•") || trimmed.startsWith("- ") || trimmed.startsWith("* ")
+        val isNumbered = trimmed.matches(Regex("^\\d+\\..*"))
+
+        val type = when {
+            isChecked || isUnchecked -> BlockType.CHECKLIST
+            isBullet -> BlockType.BULLET
+            isNumbered -> BlockType.NUMBERED
+            else -> BlockType.PARAGRAPH
+        }
+
         val cleanLine = when {
             trimmed.startsWith("☑ ") || trimmed.startsWith("☐ ") -> trimmed.substring(2)
             trimmed.startsWith("☑") || trimmed.startsWith("☐") -> trimmed.substring(1)
             trimmed.startsWith("[x] ") || trimmed.startsWith("[X] ") || trimmed.startsWith("[ ] ") -> trimmed.substring(4)
             trimmed.startsWith("[x]") || trimmed.startsWith("[X]") || trimmed.startsWith("[ ]") -> trimmed.substring(3)
+            trimmed.startsWith("• ") || trimmed.startsWith("- ") || trimmed.startsWith("* ") -> trimmed.substring(2)
+            trimmed.startsWith("•") -> trimmed.substring(1)
+            isNumbered -> trimmed.substringAfter(". ").substringAfter(".")
             else -> line
         }
-        blocks.add(NoteBlock(text = cleanLine, isChecklist = isChecklist, isChecked = isChecked))
+
+        val isBold = line.contains("<b>") || line.contains("<strong>")
+        val isItalic = line.contains("<i>") || line.contains("<em>")
+
+        blocks.add(NoteBlock(text = cleanLine, type = type, isChecked = isChecked, isBold = isBold, isItalic = isItalic))
     }
     return if (blocks.isEmpty()) listOf(NoteBlock()) else blocks
 }
@@ -689,11 +784,24 @@ private fun parseContentToBlocks(content: String): List<NoteBlock> {
 private fun blocksToHtml(blocks: List<NoteBlock>): String {
     val sb = StringBuilder()
     for (b in blocks) {
-        if (b.isChecklist) {
-            val prefix = if (b.isChecked) "☑ " else "☐ "
-            sb.append("<p>").append(prefix).append(b.text).append("</p>")
-        } else {
-            sb.append("<p>").append(b.text).append("</p>")
+        var styledText = b.text
+        if (b.isBold) styledText = "<b>$styledText</b>"
+        if (b.isItalic) styledText = "<i>$styledText</i>"
+
+        when (b.type) {
+            BlockType.CHECKLIST -> {
+                val prefix = if (b.isChecked) "☑ " else "☐ "
+                sb.append("<p>").append(prefix).append(styledText).append("</p>")
+            }
+            BlockType.BULLET -> {
+                sb.append("<p>• ").append(styledText).append("</p>")
+            }
+            BlockType.NUMBERED -> {
+                sb.append("<p>1. ").append(styledText).append("</p>")
+            }
+            BlockType.PARAGRAPH -> {
+                sb.append("<p>").append(styledText).append("</p>")
+            }
         }
     }
     return sb.toString()
@@ -702,6 +810,7 @@ private fun blocksToHtml(blocks: List<NoteBlock>): String {
 @Composable
 private fun NoteBlockRow(
     block: NoteBlock,
+    numberedIndex: Int,
     focusRequester: FocusRequester,
     onFocus: () -> Unit,
     onTextChange: (String) -> Unit,
@@ -711,22 +820,46 @@ private fun NoteBlockRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = if (block.isChecklist) 1.dp else 2.dp),
+            .padding(vertical = if (block.type == BlockType.CHECKLIST) 1.dp else 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (block.isChecklist) {
-            // Material 3 Checkbox
-            Checkbox(
-                checked = block.isChecked,
-                onCheckedChange = onCheckedChange,
-                colors = CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.primary,
-                    checkmarkColor = MaterialTheme.colorScheme.onPrimary,
-                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier.size(36.dp)
-            )
-            Spacer(Modifier.width(4.dp))
+        when (block.type) {
+            BlockType.CHECKLIST -> {
+                Checkbox(
+                    checked = block.isChecked,
+                    onCheckedChange = onCheckedChange,
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.primary,
+                        checkmarkColor = MaterialTheme.colorScheme.onPrimary,
+                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    modifier = Modifier.size(36.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+            }
+            BlockType.BULLET -> {
+                Text(
+                    text = "•",
+                    style = TextStyle(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.padding(start = 6.dp, end = 10.dp)
+                )
+            }
+            BlockType.NUMBERED -> {
+                Text(
+                    text = "$numberedIndex.",
+                    style = TextStyle(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.padding(start = 4.dp, end = 8.dp)
+                )
+            }
+            BlockType.PARAGRAPH -> {}
         }
 
         BasicTextField(
@@ -747,11 +880,13 @@ private fun NoteBlockRow(
                 },
             textStyle = TextStyle(
                 fontSize = 16.sp,
-                color = if (block.isChecked)
+                fontWeight = if (block.isBold) FontWeight.Bold else FontWeight.Normal,
+                fontStyle = if (block.isItalic) FontStyle.Italic else FontStyle.Normal,
+                color = if (block.type == BlockType.CHECKLIST && block.isChecked)
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
                 else
                     MaterialTheme.colorScheme.onSurface,
-                textDecoration = if (block.isChecked)
+                textDecoration = if (block.type == BlockType.CHECKLIST && block.isChecked)
                     TextDecoration.LineThrough
                 else
                     TextDecoration.None
@@ -763,7 +898,12 @@ private fun NoteBlockRow(
             decorationBox = { innerTextField ->
                 if (block.text.isEmpty()) {
                     Text(
-                        text = if (block.isChecklist) "Item..." else "Tulis catatan...",
+                        text = when (block.type) {
+                            BlockType.CHECKLIST -> "Item checklist..."
+                            BlockType.BULLET -> "Daftar butir..."
+                            BlockType.NUMBERED -> "Daftar bernomor..."
+                            BlockType.PARAGRAPH -> "Tulis catatan..."
+                        },
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                     )
