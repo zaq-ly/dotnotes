@@ -59,6 +59,21 @@ class AlarmReceiver : BroadcastReceiver() {
         )
 
         if (priority == 2) {
+            val alarmActivityIntent = Intent(context, AlarmActivity::class.java).apply {
+                putExtra("note_id", noteId)
+                putExtra("note_title", noteTitle)
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_NO_USER_ACTION
+                )
+            }
+            try {
+                context.startActivity(alarmActivityIntent)
+            } catch (_: Exception) {
+            }
+
             val serviceIntent = Intent(context, AlarmService::class.java).apply {
                 putExtra("note_id", noteId)
                 putExtra("note_title", noteTitle)

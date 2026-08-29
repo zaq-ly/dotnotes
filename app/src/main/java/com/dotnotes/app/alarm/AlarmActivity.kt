@@ -20,8 +20,8 @@ import kotlinx.coroutines.flow.first
 
 class AlarmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         showOnLockScreen()
+        super.onCreate(savedInstanceState)
 
         val noteId = intent.getStringExtra("note_id") ?: ""
         val noteTitle = intent.getStringExtra("note_title") ?: "Alarm"

@@ -64,7 +64,7 @@ Aplikasi ini dibangun menggunakan arsitektur modern Android (*Modern Android Dev
 Anda dapat mengunduh file installer APK resmi langsung dari repositori GitHub ini:
 
 1. Kunjungi halaman rilis resmi di [**GitHub Releases**](https://github.com/zaq-ly/dotnotes/releases/latest).
-2. Di bagian **Assets**, klik file berekstensi `.apk` (misalnya: `dotnotes-v.1.11.0.apk`).
+2. Di bagian **Assets**, klik file berekstensi `.apk` (misalnya: `dotnotes-v.1.11.1.apk`).
 3. Setelah proses unduh selesai, buka file APK tersebut di ponsel Android Anda.
 4. Jika muncul peringatan keamanan, pilih **"Izinkan dari sumber ini"** (*Allow from this source*).
 5. Tekan **Install** dan buka aplikasi **.notes**.
