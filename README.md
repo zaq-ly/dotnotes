@@ -34,7 +34,7 @@ Aplikasi ini memadukan kemudahan menulis catatan berformat kaya (*Rich Text*) de
 
 | Fitur | Deskripsi |
 | :--- | :--- |
-| ✍️ **Rich Text Editor** | Tulis catatan dengan format tebal (*bold*), miring (*italic*), coret (*strikethrough*), garis bawah (*underline*), serta daftar bertitik (*bulleted*) dan bernomor (*numbered list*). |
+| ✍️ **Rich Text & To-Do Editor** | Tulis catatan dengan kotak centang (*checkbox* / daftar tugas), format tebal (*bold*), miring (*italic*), serta daftar bertitik (*bulleted*) dan bernomor (*numbered list*). |
 | ⏰ **Alarm & Pengingat Layar Penuh** | Pengingat tepat waktu dengan tampilan alarm layar penuh (*Full-Screen Intent*) yang tetap aktif saat layar terkunci, dilengkapi tombol **Tunda (Snooze)** dan **Selesai (Dismiss)** langsung dari notifikasi. |
 | 🔒 **100% Offline & Privasi Terjaga** | Seluruh data catatan dan pengaturan tersimpan secara lokal di database perangkat Anda. Tidak ada server perantara atau analitik data eksternal. |
 | 💾 **Backup & Restore Mandiri** | Ekspor dan impor seluruh data catatan Anda ke format file JSON lokal dengan aman menggunakan Android *Storage Access Framework* (SAF). |
