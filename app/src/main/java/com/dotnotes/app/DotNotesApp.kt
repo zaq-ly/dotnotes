@@ -42,6 +42,8 @@ class DotNotesApp : Application() {
         ).apply {
             description = "Urgent note alarms"
             setBypassDnd(true)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            enableVibration(true)
         }
 
         val mgr = getSystemService(NotificationManager::class.java)

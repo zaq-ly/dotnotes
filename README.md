@@ -4,7 +4,7 @@
 
   # .notes (dotnotes)
   
-  **Aplikasi Catatan Modern, Offline-First dengan Pengingat & Notifikasi Alarm Mengambang.**
+  **Aplikasi Catatan Modern, Offline-First dengan Pengingat & Alarm Layar Penuh (Full-Screen Intent).**
 
   [![Latest Release](https://img.shields.io/github/v/release/zaq-ly/dotnotes?style=for-the-badge&color=2563EB&label=Release)](https://github.com/zaq-ly/dotnotes/releases/latest)
   [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
@@ -26,7 +26,7 @@
 
 **.notes (dotnotes)** adalah aplikasi catatan Android yang dirancang dengan fokus pada kesederhanaan, kecepatan, dan privasi penuh. Berbeda dengan aplikasi catatan berbasis cloud, **.notes** berjalan **100% secara offline** di perangkat Anda—tanpa iklan, tanpa pelacakan data, dan tanpa perlu membuat akun.
 
-Aplikasi ini memadukan kemudahan menulis catatan berformat kaya (*Rich Text*) dan daftar tugas (*to-do list*) dengan sistem notifikasi pengingat mengambang (*Heads-up Notification*) yang memanfaatkan nada dering alarm bawaan perangkat Anda.
+Aplikasi ini memadukan kemudahan menulis catatan berformat kaya (*Rich Text*) dan daftar tugas (*to-do list*) dengan sistem pengingat alarm layar penuh (*Full-Screen Intent*) bersuara nada dering alarm perangkat untuk memastikan Anda tidak pernah melewatkan agenda penting.
 
 ---
 
@@ -35,7 +35,7 @@ Aplikasi ini memadukan kemudahan menulis catatan berformat kaya (*Rich Text*) da
 | Fitur | Deskripsi |
 | :--- | :--- |
 | ✍️ **Rich Text & To-Do Editor** | Tulis catatan dengan kotak centang (*checkbox* / daftar tugas), format tebal (*bold*), miring (*italic*), serta daftar bertitik (*bulleted*) dan bernomor (*numbered list*). |
-| ⏰ **Pengingat & Alarm Mengambang** | Pengingat tepat waktu berupa notifikasi mengambang (*Heads-up Notification*) dengan nada dering alarm default perangkat, dilengkapi tombol **Tandai Selesai** dan **Tunda (Snooze)** langsung dari bilah notifikasi. |
+| ⏰ **Alarm Layar Penuh (Full-Screen Intent)** | Alarm interaktif satu layar penuh yang langsung aktif saat layar ponsel terkunci serta notifikasi mengambang (*heads-up*), dilengkapi tombol **Matikan (Dismiss)** dan **Tunda (Snooze)**. |
 | 🔒 **100% Offline & Privasi Terjaga** | Seluruh data catatan dan pengaturan tersimpan secara lokal di database perangkat Anda. Tidak ada server perantara atau analitik data eksternal. |
 | 💾 **Backup & Restore Mandiri** | Ekspor dan impor seluruh data catatan Anda ke format file JSON lokal dengan aman menggunakan Android *Storage Access Framework* (SAF). |
 | 🔄 **In-App Updater** | Terintegrasi langsung dengan GitHub Releases API untuk memeriksa versi baru dan memperbarui aplikasi langsung dari dalam menu pengaturan. |
@@ -64,7 +64,7 @@ Aplikasi ini dibangun menggunakan arsitektur modern Android (*Modern Android Dev
 Anda dapat mengunduh file installer APK resmi langsung dari repositori GitHub ini:
 
 1. Kunjungi halaman rilis resmi di [**GitHub Releases**](https://github.com/zaq-ly/dotnotes/releases/latest).
-2. Di bagian **Assets**, klik file berekstensi `.apk` (misalnya: `dotnotes-v.1.10.1.apk`).
+2. Di bagian **Assets**, klik file berekstensi `.apk` (misalnya: `dotnotes-v.1.11.0.apk`).
 3. Setelah proses unduh selesai, buka file APK tersebut di ponsel Android Anda.
 4. Jika muncul peringatan keamanan, pilih **"Izinkan dari sumber ini"** (*Allow from this source*).
 5. Tekan **Install** dan buka aplikasi **.notes**.
@@ -77,9 +77,10 @@ Anda dapat mengunduh file installer APK resmi langsung dari repositori GitHub in
 
 Untuk menjalankan fitur alarm dan pengingat secara optimal, aplikasi memerlukan izin berikut:
 
-- `POST_NOTIFICATIONS`: Menampilkan notifikasi pengingat mengambang dan kontrol alarm di bilah status.
-- `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM`: Memastikan pengingat berdering tepat pada waktu yang ditentukan.
-- `FOREGROUND_SERVICE` & `VIBRATE`: Menjalankan pemutaran nada dering alarm dan getaran saat pengingat aktif.
+- `USE_FULL_SCREEN_INTENT`: Menampilkan antarmuka alarm interaktif satu layar penuh saat ponsel dalam kondisi terkunci.
+- `POST_NOTIFICATIONS`: Menampilkan notifikasi pengingat dan kontrol alarm di bilah status.
+- `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM`: Memastikan pengingat dan alarm berdering tepat pada waktu yang ditentukan.
+- `FOREGROUND_SERVICE` & `VIBRATE`: Memutar nada dering alarm dan mengaktifkan getaran secara stabil.
 - `RECEIVE_BOOT_COMPLETED`: Menjadwalkan ulang pengingat yang tertunda secara otomatis setelah perangkat direstart.
 
 ---

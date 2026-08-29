@@ -29,21 +29,14 @@ class AlarmService : Service() {
         val alarmIntent = Intent(this, AlarmActivity::class.java).apply {
             putExtra("note_id", noteId)
             putExtra("note_title", noteTitle)
-            this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_NO_USER_ACTION
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+            )
         }
         val fullScreenPending = PendingIntent.getActivity(
             this, noteId.hashCode() + 1, alarmIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        
-        val openIntent = Intent(this, MainActivity::class.java).apply {
-            putExtra("note_id", noteId)
-            this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val openPending = PendingIntent.getActivity(
-            this, noteId.hashCode(), openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -72,8 +65,9 @@ class AlarmService : Service() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setFullScreenIntent(fullScreenPending, true)
-            .setContentIntent(openPending)
+            .setContentIntent(fullScreenPending)
             .addAction(android.R.drawable.checkbox_on_background, "Tandai Selesai", dismissPending)
             .addAction(android.R.drawable.ic_lock_idle_alarm, "Tunda", snoozePending)
             .setAutoCancel(false)
@@ -83,6 +77,11 @@ class AlarmService : Service() {
         startForeground(noteId.hashCode(), notification)
         startAlarmSound()
         startVibration()
+
+        try {
+            startActivity(alarmIntent)
+        } catch (_: Exception) {
+        }
 
         return START_NOT_STICKY
     }

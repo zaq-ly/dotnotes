@@ -47,8 +47,10 @@
         <activity
             android:name=".alarm.AlarmActivity"
             android:exported="false"
-            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
             android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.DotNotes" />
 
         <receiver
