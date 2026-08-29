@@ -113,6 +113,7 @@ import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import java.util.TimeZone
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -489,8 +490,14 @@ fun NoteEditorScreen(
                             checked = state.hasReminder,
                             onCheckedChange = { enabled ->
                                 viewModel.setReminder(enabled)
-                                if (enabled && state.reminderTime == null) {
-                                    viewModel.setReminderTime(System.currentTimeMillis())
+                                if (enabled && (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis())) {
+                                    // Default to 10 minutes in future rounded to next minute
+                                    val futureCal = Calendar.getInstance().apply {
+                                        add(Calendar.MINUTE, 10)
+                                        set(Calendar.SECOND, 0)
+                                        set(Calendar.MILLISECOND, 0)
+                                    }
+                                    viewModel.setReminderTime(futureCal.timeInMillis)
                                 }
                             },
                             modifier = Modifier.scale(0.85f),
@@ -639,11 +646,20 @@ fun NoteEditorScreen(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { selectedDate ->
-                        val updatedCal = Calendar.getInstance().apply {
+                        val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
                             timeInMillis = selectedDate
-                            set(Calendar.HOUR_OF_DAY, currentCalendar.get(Calendar.HOUR_OF_DAY))
-                            set(Calendar.MINUTE, currentCalendar.get(Calendar.MINUTE))
+                        }
+                        val year = utcCal.get(Calendar.YEAR)
+                        val month = utcCal.get(Calendar.MONTH)
+                        val day = utcCal.get(Calendar.DAY_OF_MONTH)
+
+                        val updatedCal = Calendar.getInstance().apply {
+                            state.reminderTime?.let { timeInMillis = it }
+                            set(Calendar.YEAR, year)
+                            set(Calendar.MONTH, month)
+                            set(Calendar.DAY_OF_MONTH, day)
                             set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
                         }
                         viewModel.setReminderTime(updatedCal.timeInMillis)
                         viewModel.setReminder(true)
@@ -692,6 +708,7 @@ fun NoteEditorScreen(
                         set(Calendar.HOUR_OF_DAY, timePickerState.hour)
                         set(Calendar.MINUTE, timePickerState.minute)
                         set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
                     }
                     viewModel.setReminderTime(updatedCal.timeInMillis)
                     viewModel.setReminder(true)

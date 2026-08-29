@@ -98,7 +98,7 @@ class AlarmReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 // Fallback if background FGS start is denied by strict OEM OS
                 val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
-                    .setSmallIcon(com.dotnotes.app.R.mipmap.ic_launcher)
+                    .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
                     .setContentTitle(noteTitle)
                     .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Alarm")
                     .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
@@ -122,7 +122,7 @@ class AlarmReceiver : BroadcastReceiver() {
             )
 
             val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)
-                .setSmallIcon(com.dotnotes.app.R.mipmap.ic_launcher)
+                .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
                 .setContentTitle(noteTitle)
                 .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
                 .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
