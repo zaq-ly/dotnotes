@@ -62,15 +62,25 @@ class AlarmReceiver : BroadcastReceiver() {
             val alarmActivityIntent = Intent(context, AlarmActivity::class.java).apply {
                 putExtra("note_id", noteId)
                 putExtra("note_title", noteTitle)
+                putExtra("note_content", noteContent)
                 addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_NO_USER_ACTION
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                 )
             }
             try {
-                context.startActivity(alarmActivityIntent)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    val options = android.app.ActivityOptions.makeBasic().apply {
+                        setPendingIntentBackgroundActivityStartMode(
+                            android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                        )
+                    }.toBundle()
+                    context.startActivity(alarmActivityIntent, options)
+                } else {
+                    context.startActivity(alarmActivityIntent)
+                }
             } catch (_: Exception) {
             }
 

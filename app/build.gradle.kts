@@ -12,8 +12,8 @@ android {
         applicationId = "com.dotnotes.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 44
-        versionName = "1.11.1"
+        versionCode = 45
+        versionName = "1.11.2"
     }
 
     signingConfigs {

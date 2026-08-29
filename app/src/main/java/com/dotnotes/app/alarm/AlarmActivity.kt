@@ -25,6 +25,7 @@ class AlarmActivity : ComponentActivity() {
 
         val noteId = intent.getStringExtra("note_id") ?: ""
         val noteTitle = intent.getStringExtra("note_title") ?: "Alarm"
+        val noteContent = intent.getStringExtra("note_content") ?: ""
 
         val language = runBlocking {
             DotNotesApp.instance.settingsDataStore.language.first()
@@ -36,6 +37,7 @@ class AlarmActivity : ComponentActivity() {
                 DotNotesTheme {
                     AlarmScreen(
                         noteTitle = noteTitle,
+                        noteContent = noteContent,
                         onDismiss = { dismissAlarm(noteId) },
                         onSnooze = { snoozeAlarm(noteId) }
                     )

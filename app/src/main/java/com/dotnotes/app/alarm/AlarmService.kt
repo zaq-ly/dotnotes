@@ -29,16 +29,36 @@ class AlarmService : Service() {
         val alarmIntent = Intent(this, AlarmActivity::class.java).apply {
             putExtra("note_id", noteId)
             putExtra("note_title", noteTitle)
+            putExtra("note_content", noteContent)
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
                 Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                Intent.FLAG_ACTIVITY_SINGLE_TOP
+                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             )
         }
-        val fullScreenPending = PendingIntent.getActivity(
-            this, noteId.hashCode() + 1, alarmIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val optionsBundle = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            android.app.ActivityOptions.makeBasic().apply {
+                setPendingIntentBackgroundActivityStartMode(
+                    android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                )
+            }.toBundle()
+        } else {
+            null
+        }
+
+        val fullScreenPending = if (optionsBundle != null) {
+            PendingIntent.getActivity(
+                this, noteId.hashCode() + 1, alarmIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                optionsBundle
+            )
+        } else {
+            PendingIntent.getActivity(
+                this, noteId.hashCode() + 1, alarmIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
 
         val dismissIntent = Intent(this, AlarmReceiver::class.java).apply {
             action = AlarmReceiver.ACTION_DISMISS

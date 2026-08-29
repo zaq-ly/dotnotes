@@ -1,11 +1,5 @@
 package com.dotnotes.app.ui.screens.alarm
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material3.Button
@@ -38,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +48,7 @@ import java.util.Locale
 @Composable
 fun AlarmScreen(
     noteTitle: String,
+    noteContent: String = "",
     onDismiss: () -> Unit,
     onSnooze: () -> Unit
 ) {
@@ -73,103 +68,93 @@ fun AlarmScreen(
         }
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "alarm_pulse")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_alpha"
-    )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1117))
+            .background(Color(0xFF000000))
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 28.dp, vertical = 36.dp),
+                .padding(horizontal = 28.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Top Section: Minimal Status & Time
+            // Top: Time & Date (Monochrome Minimalist)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(top = 16.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.alpha(pulseAlpha)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Alarm,
-                        contentDescription = "Alarm",
-                        tint = Color(0xFFF43F5E),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = strings.noteReminder.uppercase(),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFF43F5E),
-                        letterSpacing = 1.5.sp
-                    )
-                }
+                Text(
+                    text = strings.alarm.uppercase(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF71717A),
+                    letterSpacing = 2.sp
+                )
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
 
                 Text(
                     text = currentTime,
-                    fontSize = 76.sp,
-                    fontWeight = FontWeight.ExtraLight,
+                    fontSize = 80.sp,
+                    fontWeight = FontWeight.Light,
                     color = Color.White,
                     letterSpacing = (-2).sp
                 )
 
                 Text(
                     text = currentDate,
-                    fontSize = 15.sp,
-                    color = Color(0xFF94A3B8),
+                    fontSize = 14.sp,
+                    color = Color(0xFF71717A),
                     fontWeight = FontWeight.Normal
                 )
             }
 
-            // Center Section: Minimal Note Title
+            // Center: Note Title & Note Content (Description)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
+                    .weight(1f, fill = false)
+                    .padding(vertical = 24.dp, horizontal = 8.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
                 Text(
                     text = noteTitle.ifBlank { strings.untitled },
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                     textAlign = TextAlign.Center,
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 32.sp
+                    lineHeight = 30.sp
                 )
+
+                if (noteContent.isNotBlank()) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = noteContent,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = Color(0xFFA1A1AA),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 22.sp,
+                        maxLines = 6,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
-            // Bottom Section: Clean Minimalist Buttons
+            // Bottom: Minimalist Buttons (Snooze & Dismiss)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Snooze Button
+                // Snooze Button (Dark Minimalist Pill)
                 FilledTonalButton(
                     onClick = onSnooze,
                     modifier = Modifier
@@ -177,14 +162,14 @@ fun AlarmScreen(
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = Color(0xFF1E222D),
-                        contentColor = Color(0xFFE2E8F0)
+                        containerColor = Color(0xFF18181B),
+                        contentColor = Color(0xFFE4E4E7)
                     )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Snooze,
                         contentDescription = strings.snooze,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
@@ -194,7 +179,7 @@ fun AlarmScreen(
                     )
                 }
 
-                // Dismiss Button
+                // Dismiss Button (Clean Solid White Pill)
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier
@@ -202,20 +187,20 @@ fun AlarmScreen(
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFE11D48),
-                        contentColor = Color.White
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF09090B)
                     )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = strings.dismiss,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = strings.dismiss,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
