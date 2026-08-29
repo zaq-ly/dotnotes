@@ -4,6 +4,7 @@ import android.widget.Toast
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.dotnotes.app.sync.supabase.SyncResult
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -138,6 +139,94 @@ fun SettingsScreen(
             )
             HorizontalDivider()
 
+            // Google Account (Supabase Auth)
+            val authUser by viewModel.authUserState.collectAsState()
+            val isSyncing by viewModel.isSyncing.collectAsState()
+            val lastSyncTime by viewModel.lastSyncTime.collectAsState()
+
+            ListItem(
+                headlineContent = { 
+                    Text(if (authUser.isLoggedIn && !authUser.displayName.isNullOrBlank()) authUser.displayName!! else strings.googleAccount) 
+                },
+                supportingContent = { 
+                    Text(if (authUser.isLoggedIn) (authUser.email ?: "") else strings.notLoggedIn) 
+                },
+                trailingContent = {
+                    if (authUser.isLoggedIn) {
+                        TextButton(onClick = {
+                            viewModel.signOut(context) {
+                                Toast.makeText(context, strings.signOut, Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Text(strings.signOut, color = MaterialTheme.colorScheme.error)
+                        }
+                    } else {
+                        Button(onClick = {
+                            viewModel.signInWithGoogle(context) { success, err ->
+                                if (success) {
+                                    Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
+                                } else if (err != null) {
+                                    Toast.makeText(context, err, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }) {
+                            Text(strings.signInWithGoogle)
+                        }
+                    }
+                }
+            )
+            HorizontalDivider()
+
+            // Cloud Sync
+            ListItem(
+                headlineContent = { Text(strings.cloudBackup) },
+                supportingContent = {
+                    val lastSyncStr = if (lastSyncTime > 0L) {
+                        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+                        String.format(strings.lastSynced, sdf.format(Date(lastSyncTime)))
+                    } else {
+                        String.format(strings.lastSynced, strings.never)
+                    }
+                    Text("${strings.cloudBackupDesc}\n$lastSyncStr")
+                },
+                trailingContent = {
+                    if (isSyncing) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        Button(
+                            onClick = {
+                                if (!authUser.isLoggedIn) {
+                                    Toast.makeText(context, strings.notLoggedIn, Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+                                viewModel.syncCloud { result ->
+                                    when (result) {
+                                        is SyncResult.Success -> {
+                                            val msg = String.format(strings.syncSuccess, result.syncedCount)
+                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                        }
+                                        is SyncResult.Error -> {
+                                            val msg = "${strings.syncFailed}: ${result.message}"
+                                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                        }
+                                        SyncResult.NotLoggedIn -> {
+                                            Toast.makeText(context, strings.notLoggedIn, Toast.LENGTH_SHORT).show()
+                                        }
+                                        SyncResult.NotConfigured -> {
+                                            Toast.makeText(context, strings.supabaseNotConfigured, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = authUser.isLoggedIn && !isSyncing
+                        ) {
+                            Text(strings.syncNow)
+                        }
+                    }
+                }
+            )
+            HorizontalDivider()
+
             // Export Backup
             ListItem(
                 headlineContent = { Text(strings.exportBackup) },
@@ -163,7 +252,7 @@ fun SettingsScreen(
             // About
             ListItem(
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.11.2") }
+                supportingContent = { Text("dotnotes v1.12.0") }
             )
             HorizontalDivider()
 
@@ -194,7 +283,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.11.2") {
+                    viewModel.checkForUpdate("1.12.0") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }

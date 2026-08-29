@@ -1,19 +1,26 @@
 package com.dotnotes.app.ui.screens.settings
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.dotnotes.app.data.preferences.SettingsDataStore
 import com.dotnotes.app.data.local.NoteDao
-import android.net.Uri
+import com.dotnotes.app.data.preferences.SettingsDataStore
 import com.dotnotes.app.sync.BackupManager
+import com.dotnotes.app.sync.supabase.AuthUserState
+import com.dotnotes.app.sync.supabase.GoogleAuthManager
+import com.dotnotes.app.sync.supabase.SupabaseClientProvider
+import com.dotnotes.app.sync.supabase.SupabaseSyncManager
+import com.dotnotes.app.sync.supabase.SyncResult
 import com.dotnotes.app.update.ReleaseInfo
 import com.dotnotes.app.update.UpdateManager
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
@@ -21,6 +28,7 @@ class SettingsViewModel(
     private val noteDao: NoteDao
 ) : ViewModel() {
     private val updateManager = UpdateManager()
+    private val syncManager = SupabaseSyncManager(noteDao)
 
     val themeMode = dataStore.themeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "system")
@@ -30,6 +38,31 @@ class SettingsViewModel(
 
     val language = dataStore.language
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
+
+    val lastSyncTime = dataStore.lastSyncTime
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+    val authUserState = SupabaseClientProvider.client.auth.sessionStatus.map {
+        val user = SupabaseClientProvider.client.auth.currentUserOrNull()
+        if (user != null) {
+            val metadata = user.userMetadata
+            val name = metadata?.get("full_name")?.toString()?.trim('\"')
+                ?: metadata?.get("name")?.toString()?.trim('\"')
+            val avatar = metadata?.get("avatar_url")?.toString()?.trim('\"')
+                ?: metadata?.get("picture")?.toString()?.trim('\"')
+            AuthUserState(
+                isLoggedIn = true,
+                email = user.email,
+                displayName = name,
+                avatarUrl = avatar
+            )
+        } else {
+            AuthUserState(isLoggedIn = false)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AuthUserState())
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing = _isSyncing.asStateFlow()
 
     private val _isCheckingUpdate = MutableStateFlow(false)
     val isCheckingUpdate = _isCheckingUpdate.asStateFlow()
@@ -50,6 +83,40 @@ class SettingsViewModel(
 
     fun setLanguage(lang: String) {
         viewModelScope.launch { dataStore.setLanguage(lang) }
+    }
+
+    fun signInWithGoogle(context: Context, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            val authManager = GoogleAuthManager(context)
+            val result = authManager.signInWithGoogle()
+            if (result.isSuccess) {
+                syncCloud {
+                    onResult(true, null)
+                }
+            } else {
+                onResult(false, result.exceptionOrNull()?.localizedMessage)
+            }
+        }
+    }
+
+    fun signOut(context: Context, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val authManager = GoogleAuthManager(context)
+            val result = authManager.signOut()
+            onResult(result.isSuccess)
+        }
+    }
+
+    fun syncCloud(onResult: (SyncResult) -> Unit = {}) {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            val result = syncManager.syncNotes()
+            _isSyncing.value = false
+            if (result is SyncResult.Success) {
+                dataStore.setLastSyncTime(System.currentTimeMillis())
+            }
+            onResult(result)
+        }
     }
 
     fun exportBackup(context: Context, uri: Uri, onResult: (Boolean) -> Unit) {

@@ -80,7 +80,22 @@ data class AppStrings(
     val noCompletedTasks: String,
     val markDone: String,
     val completed: String,
-    val overdue: String
+    val overdue: String,
+
+    // Cloud Backup & Auth
+    val cloudBackup: String,
+    val cloudBackupDesc: String,
+    val googleAccount: String,
+    val signInWithGoogle: String,
+    val signOut: String,
+    val syncNow: String,
+    val syncing: String,
+    val syncSuccess: String,
+    val syncFailed: String,
+    val notLoggedIn: String,
+    val supabaseNotConfigured: String,
+    val lastSynced: String,
+    val never: String
 )
 
 val EnglishStrings = AppStrings(
@@ -150,7 +165,20 @@ val EnglishStrings = AppStrings(
     noCompletedTasks = "No completed tasks yet",
     markDone = "Mark Done",
     completed = "Completed",
-    overdue = "Overdue"
+    overdue = "Overdue",
+    cloudBackup = "Cloud Backup & Sync",
+    cloudBackupDesc = "Sync notes to Supabase database",
+    googleAccount = "Google Account",
+    signInWithGoogle = "Sign in with Google",
+    signOut = "Sign Out",
+    syncNow = "Sync Now",
+    syncing = "Syncing...",
+    syncSuccess = "Successfully synced %d notes",
+    syncFailed = "Failed to sync with cloud",
+    notLoggedIn = "Not signed in",
+    supabaseNotConfigured = "Supabase credentials not configured in local.properties",
+    lastSynced = "Last synced: %s",
+    never = "Never"
 )
 
 val IndonesianStrings = AppStrings(
@@ -220,7 +248,20 @@ val IndonesianStrings = AppStrings(
     noCompletedTasks = "Belum ada tugas yang diselesaikan",
     markDone = "Tandai Selesai",
     completed = "Selesai",
-    overdue = "Terlewat"
+    overdue = "Terlewat",
+    cloudBackup = "Cadangan & Sinkronisasi Cloud",
+    cloudBackupDesc = "Sinkronkan catatan ke database Supabase",
+    googleAccount = "Akun Google",
+    signInWithGoogle = "Masuk dengan Google",
+    signOut = "Keluar",
+    syncNow = "Sinkronkan Sekarang",
+    syncing = "Menyinkronkan...",
+    syncSuccess = "Berhasil menyinkronkan %d catatan",
+    syncFailed = "Gagal menyinkronkan dengan cloud",
+    notLoggedIn = "Belum masuk akun",
+    supabaseNotConfigured = "Kredensial Supabase belum diatur di local.properties",
+    lastSynced = "Terakhir sinkron: %s",
+    never = "Belum pernah"
 )
 
 val LocalStrings = staticCompositionLocalOf { EnglishStrings }

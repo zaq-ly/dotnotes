@@ -17,6 +17,7 @@ class SettingsDataStore(private val context: Context) {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val SNOOZE_DURATION = intPreferencesKey("snooze_duration")
         val LANGUAGE = stringPreferencesKey("language")
+        val LAST_SYNC_TIME = androidx.datastore.preferences.core.longPreferencesKey("last_sync_time")
     }
 
     val themeMode: Flow<String> = context.dataStore.data.map {
@@ -31,6 +32,10 @@ class SettingsDataStore(private val context: Context) {
         it[LANGUAGE] ?: "en"
     }
 
+    val lastSyncTime: Flow<Long> = context.dataStore.data.map {
+        it[LAST_SYNC_TIME] ?: 0L
+    }
+
     suspend fun setThemeMode(mode: String) {
         context.dataStore.edit { it[THEME_MODE] = mode }
     }
@@ -41,5 +46,9 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setLanguage(lang: String) {
         context.dataStore.edit { it[LANGUAGE] = lang }
+    }
+
+    suspend fun setLastSyncTime(time: Long) {
+        context.dataStore.edit { it[LAST_SYNC_TIME] = time }
     }
 }
