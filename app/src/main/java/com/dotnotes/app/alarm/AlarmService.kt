@@ -26,6 +26,8 @@ class AlarmService : Service() {
         val rawContent = intent?.getStringExtra("note_content") ?: ""
         val noteContent = rawContent.replace(Regex("<[^>]*>"), "").trim()
 
+        val notifId = Math.abs(noteId.hashCode()) + 1
+
         val alarmIntent = Intent(this, AlarmActivity::class.java).apply {
             putExtra("note_id", noteId)
             putExtra("note_title", noteTitle)
@@ -49,13 +51,13 @@ class AlarmService : Service() {
 
         val fullScreenPending = if (optionsBundle != null) {
             PendingIntent.getActivity(
-                this, noteId.hashCode() + 1, alarmIntent,
+                this, notifId + 1, alarmIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 optionsBundle
             )
         } else {
             PendingIntent.getActivity(
-                this, noteId.hashCode() + 1, alarmIntent,
+                this, notifId + 1, alarmIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         }
@@ -65,7 +67,7 @@ class AlarmService : Service() {
             putExtra("note_id", noteId)
         }
         val dismissPending = PendingIntent.getBroadcast(
-            this, noteId.hashCode() + 2, dismissIntent,
+            this, notifId + 2, dismissIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -74,7 +76,7 @@ class AlarmService : Service() {
             putExtra("note_id", noteId)
         }
         val snoozePending = PendingIntent.getBroadcast(
-            this, noteId.hashCode() + 3, snoozeIntent,
+            this, notifId + 3, snoozeIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -94,7 +96,11 @@ class AlarmService : Service() {
             .setOngoing(true)
             .build()
 
-        startForeground(noteId.hashCode(), notification)
+        try {
+            startForeground(notifId, notification)
+        } catch (_: Exception) {
+        }
+
         startAlarmSound()
         startVibration()
 
@@ -108,29 +114,52 @@ class AlarmService : Service() {
 
     private fun startAlarmSound() {
         if (mediaPlayer != null) return
-        val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        try {
+            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
+            if (alarmUri != null) {
+                mediaPlayer = MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    setDataSource(this@AlarmService, alarmUri)
+                    isLooping = true
+                    prepare()
+                    start()
+                }
+            }
+        } catch (_: Exception) {
+            try {
+                val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                val ringtone = RingtoneManager.getRingtone(this, ringtoneUri)
+                ringtone?.audioAttributes = AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build()
-            )
-            setDataSource(this@AlarmService, alarmUri)
-            isLooping = true
-            prepare()
-            start()
+                ringtone?.play()
+            } catch (_: Exception) {
+            }
         }
     }
 
     @Suppress("DEPRECATION")
     private fun startVibration() {
         if (vibrator != null) return
-        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        val pattern = longArrayOf(0, 500, 500)
-        vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
+        try {
+            vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            val pattern = longArrayOf(0, 800, 400, 800)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
+            } else {
+                vibrator?.vibrate(pattern, 0)
+            }
+        } catch (_: Exception) {
+        }
     }
 
     override fun onDestroy() {

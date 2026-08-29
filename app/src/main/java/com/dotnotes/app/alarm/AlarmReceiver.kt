@@ -58,6 +58,17 @@ class AlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val notifId = Math.abs(noteId.hashCode()) + 1
+
+        val dismissIntent = Intent(context, AlarmReceiver::class.java).apply {
+            this.action = ACTION_DISMISS
+            putExtra("note_id", noteId)
+        }
+        val dismissPending = PendingIntent.getBroadcast(
+            context, notifId + 2, dismissIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         if (priority == 2) {
             val alarmActivityIntent = Intent(context, AlarmActivity::class.java).apply {
                 putExtra("note_id", noteId)
@@ -70,6 +81,42 @@ class AlarmReceiver : BroadcastReceiver() {
                     Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                 )
             }
+
+            val snoozeIntent = Intent(context, AlarmReceiver::class.java).apply {
+                this.action = ACTION_SNOOZE
+                putExtra("note_id", noteId)
+            }
+            val snoozePending = PendingIntent.getBroadcast(
+                context, notifId + 3, snoozeIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val fullScreenPending = PendingIntent.getActivity(
+                context, notifId + 4, alarmActivityIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
+                .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
+                .setContentTitle(noteTitle)
+                .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Alarm")
+                .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setFullScreenIntent(fullScreenPending, true)
+                .setContentIntent(fullScreenPending)
+                .addAction(android.R.drawable.checkbox_on_background, "Tandai Selesai", dismissPending)
+                .addAction(android.R.drawable.ic_lock_idle_alarm, "Tunda", snoozePending)
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .build()
+
+            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
+                android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+                NotificationManagerCompat.from(context).notify(notifId, notification)
+            }
+
             try {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     val options = android.app.ActivityOptions.makeBasic().apply {
@@ -95,39 +142,17 @@ class AlarmReceiver : BroadcastReceiver() {
                 } else {
                     context.startService(serviceIntent)
                 }
-            } catch (e: Exception) {
-                // Fallback if background FGS start is denied by strict OEM OS
-                val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
-                    .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
-                    .setContentTitle(noteTitle)
-                    .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Alarm")
-                    .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setContentIntent(openPending)
-                    .setAutoCancel(true)
-                    .build()
-                if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
-                    android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-                    NotificationManagerCompat.from(context).notify(noteId.hashCode(), notification)
-                }
+            } catch (_: Exception) {
             }
         } else {
-            val dismissIntent = Intent(context, AlarmReceiver::class.java).apply {
-                this.action = ACTION_DISMISS
-                putExtra("note_id", noteId)
-            }
-            val dismissPending = PendingIntent.getBroadcast(
-                context, noteId.hashCode() + 2, dismissIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
             val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)
                 .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
                 .setContentTitle(noteTitle)
                 .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
                 .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setContentIntent(openPending)
                 .addAction(android.R.drawable.checkbox_on_background, "Tandai Selesai", dismissPending)
                 .setAutoCancel(true)
@@ -135,7 +160,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
                 android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-                NotificationManagerCompat.from(context).notify(noteId.hashCode(), notification)
+                NotificationManagerCompat.from(context).notify(notifId, notification)
             }
         }
     }

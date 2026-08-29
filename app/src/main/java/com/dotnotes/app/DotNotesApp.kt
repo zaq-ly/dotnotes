@@ -28,13 +28,29 @@ class DotNotesApp : Application() {
     }
 
     private fun createNotificationChannels() {
+        val soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+        val notifAudioAttributes = android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+
         val notifChannel = NotificationChannel(
             CHANNEL_REMINDER, "Reminders",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "Note reminders"
             enableVibration(true)
+            vibrationPattern = longArrayOf(0, 400, 200, 400)
+            setSound(soundUri, notifAudioAttributes)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
+
+        val alarmSoundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
+            ?: soundUri
+        val alarmAudioAttributes = android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
 
         val alarmChannel = NotificationChannel(
             CHANNEL_ALARM, "Alarms",
@@ -44,16 +60,18 @@ class DotNotesApp : Application() {
             setBypassDnd(true)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             enableVibration(true)
+            vibrationPattern = longArrayOf(0, 800, 400, 800)
+            setSound(alarmSoundUri, alarmAudioAttributes)
         }
 
         val mgr = getSystemService(NotificationManager::class.java)
-        mgr.createNotificationChannel(notifChannel)
-        mgr.createNotificationChannel(alarmChannel)
+        mgr?.createNotificationChannel(notifChannel)
+        mgr?.createNotificationChannel(alarmChannel)
     }
 
     companion object {
         lateinit var instance: DotNotesApp
-        const val CHANNEL_REMINDER = "reminder_channel"
-        const val CHANNEL_ALARM = "alarm_channel"
+        const val CHANNEL_REMINDER = "reminder_channel_v3"
+        const val CHANNEL_ALARM = "alarm_channel_v3"
     }
 }

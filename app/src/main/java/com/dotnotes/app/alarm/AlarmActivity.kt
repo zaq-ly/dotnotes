@@ -65,6 +65,8 @@ class AlarmActivity : ComponentActivity() {
 
     private fun dismissAlarm(noteId: String) {
         AlarmService.stop(this)
+        val notifId = Math.abs(noteId.hashCode()) + 1
+        NotificationManagerCompat.from(this).cancel(notifId)
         NotificationManagerCompat.from(this).cancel(noteId.hashCode())
         runBlocking {
             DotNotesApp.instance.repository.dismissAlarm(noteId)
@@ -74,6 +76,8 @@ class AlarmActivity : ComponentActivity() {
 
     private fun snoozeAlarm(noteId: String) {
         AlarmService.stop(this)
+        val notifId = Math.abs(noteId.hashCode()) + 1
+        NotificationManagerCompat.from(this).cancel(notifId)
         NotificationManagerCompat.from(this).cancel(noteId.hashCode())
         runBlocking {
             val note = DotNotesApp.instance.repository.getNoteById(noteId)
