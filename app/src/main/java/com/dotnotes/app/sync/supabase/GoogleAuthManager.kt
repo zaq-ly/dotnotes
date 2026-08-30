@@ -62,7 +62,7 @@ class GoogleAuthManager(private val context: Context) {
         val targetActivity = context.findActivity() ?: (context as? Activity)
         val reqContext = targetActivity ?: context
 
-        // 1. Coba GetGoogleIdOption (Standar Android 14, 15, 16)
+        // 1. Coba GetGoogleIdOption (Standar Native Android 14, 15, 16)
         val primaryResult = executeCredentialRequest(reqContext, isLegacy = false)
         if (primaryResult.isSuccess) {
             return primaryResult
@@ -73,7 +73,7 @@ class GoogleAuthManager(private val context: Context) {
             return Result.success(AuthUserState(isLoggedIn = false))
         }
 
-        // 2. Fallback ke GetSignInWithGoogleOption (Kompatibilitas Google Play Services)
+        // 2. Fallback ke GetSignInWithGoogleOption (Google Play Services)
         val fallbackResult = executeCredentialRequest(reqContext, isLegacy = true)
         if (fallbackResult.isSuccess) {
             return fallbackResult
@@ -84,7 +84,27 @@ class GoogleAuthManager(private val context: Context) {
             return Result.success(AuthUserState(isLoggedIn = false))
         }
 
-        return Result.failure(fallbackEx ?: primaryEx ?: IllegalStateException("Gagal masuk dengan Google"))
+        // 3. Fallback ke Supabase OAuth Browser Flow jika Credential Manager ditolak sistem OS
+        return try {
+            withContext(Dispatchers.IO) {
+                supabase.auth.signInWith(Google)
+            }
+            val user = supabase.auth.currentUserOrNull()
+            Result.success(
+                AuthUserState(
+                    isLoggedIn = user != null,
+                    email = user?.email,
+                    displayName = user?.userMetadata?.get("full_name")?.toString()?.trim('\"'),
+                    avatarUrl = user?.userMetadata?.get("avatar_url")?.toString()?.trim('\"')
+                )
+            )
+        } catch (e: Exception) {
+            if (isUserCancellation(e)) {
+                Result.success(AuthUserState(isLoggedIn = false))
+            } else {
+                Result.failure(fallbackEx ?: primaryEx ?: e)
+            }
+        }
     }
 
     private suspend fun executeCredentialRequest(reqContext: Context, isLegacy: Boolean): Result<AuthUserState> {
@@ -161,9 +181,10 @@ class GoogleAuthManager(private val context: Context) {
         if (e is GetCredentialCancellationException || e is CancellationException) return true
         val msg = e.message ?: ""
         val name = e.javaClass.simpleName
-        return msg.contains("cancel", ignoreCase = true) ||
+        return (msg.contains("cancel", ignoreCase = true) ||
                 msg.contains("batal", ignoreCase = true) ||
-                name.contains("Cancel", ignoreCase = true)
+                name.contains("Cancel", ignoreCase = true)) &&
+                !msg.contains("ditolak", ignoreCase = true)
     }
 
     suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
