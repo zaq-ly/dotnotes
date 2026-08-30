@@ -1,6 +1,8 @@
 package com.dotnotes.app.sync.supabase
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -8,6 +10,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
@@ -17,8 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
-import java.util.UUID
 
 data class AuthUserState(
     val isLoggedIn: Boolean = false,
@@ -57,57 +58,70 @@ class GoogleAuthManager(private val context: Context) {
             return Result.failure(IllegalStateException("Supabase URL, Anon Key, atau Google Web Client ID belum terpasang"))
         }
 
-        val rawNonce = UUID.randomUUID().toString()
-        val bytes = rawNonce.toByteArray()
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(bytes)
-        val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
-
         try {
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
-                .setNonce(hashedNonce)
                 .setAutoSelectEnabled(false)
                 .build()
 
+            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(
+                serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+            ).build()
+
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(googleIdOption)
+                .addCredentialOption(signInWithGoogleOption)
                 .build()
 
-            val targetContext = context.findActivity() ?: context
-            val response = credentialManager.getCredential(targetContext, request)
+            val targetActivity = context.findActivity() ?: (context as? Activity)
+            val reqContext = targetActivity ?: context
+            val response = credentialManager.getCredential(reqContext, request)
             val credential = response.credential
+
+            var idToken: String? = null
+            var displayName: String? = null
+            var avatarUrl: String? = null
 
             if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                val idToken = googleIdTokenCredential.idToken
-
-                return withContext(Dispatchers.IO) {
-                    supabase.auth.signInWith(IDToken) {
-                        this.idToken = idToken
-                        this.provider = Google
-                        this.nonce = rawNonce
-                    }
-
-                    val user = supabase.auth.currentUserOrNull()
-                    val avatar = googleIdTokenCredential.profilePictureUri?.toString()
-                        ?: user?.userMetadata?.get("avatar_url")?.toString()?.trim('\"')
-                        ?: user?.userMetadata?.get("picture")?.toString()?.trim('\"')
-
-                    Result.success(
-                        AuthUserState(
-                            isLoggedIn = true,
-                            email = user?.email ?: googleIdTokenCredential.id,
-                            displayName = googleIdTokenCredential.displayName
-                                ?: googleIdTokenCredential.givenName
-                                ?: user?.userMetadata?.get("full_name")?.toString()?.trim('\"'),
-                            avatarUrl = avatar
-                        )
-                    )
-                }
+                idToken = googleIdTokenCredential.idToken
+                displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName
+                avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
             } else {
-                return Result.failure(IllegalStateException("Tipe kredensial tidak didukung"))
+                try {
+                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                    idToken = googleIdTokenCredential.idToken
+                    displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName
+                    avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                } catch (_: Exception) {
+                    idToken = credential.data.getString("androidx.credentials.BUNDLE_KEY_ID_TOKEN")
+                }
+            }
+
+            if (idToken.isNullOrBlank()) {
+                return Result.failure(IllegalStateException("Gagal mendapatkan Google ID Token"))
+            }
+
+            return withContext(Dispatchers.IO) {
+                supabase.auth.signInWith(IDToken) {
+                    this.idToken = idToken
+                    this.provider = Google
+                }
+
+                val user = supabase.auth.currentUserOrNull()
+                val finalAvatar = avatarUrl
+                    ?: user?.userMetadata?.get("avatar_url")?.toString()?.trim('\"')
+                    ?: user?.userMetadata?.get("picture")?.toString()?.trim('\"')
+
+                Result.success(
+                    AuthUserState(
+                        isLoggedIn = true,
+                        email = user?.email,
+                        displayName = displayName ?: user?.userMetadata?.get("full_name")?.toString()?.trim('\"'),
+                        avatarUrl = finalAvatar
+                    )
+                )
             }
         } catch (e: GetCredentialCancellationException) {
             return Result.success(AuthUserState(isLoggedIn = false))
@@ -134,10 +148,10 @@ class GoogleAuthManager(private val context: Context) {
         }
     }
 
-    private fun Context.findActivity(): android.app.Activity? {
+    private fun Context.findActivity(): Activity? {
         var current = this
-        while (current is android.content.ContextWrapper) {
-            if (current is android.app.Activity) return current
+        while (current is ContextWrapper) {
+            if (current is Activity) return current
             current = current.baseContext
         }
         return null

@@ -33,7 +33,7 @@ class NoteListViewModel(
     private fun startPeriodicUpdateChecker() {
         viewModelScope.launch {
             while (isActive) {
-                checkForUpdate("1.13.7")
+                checkForUpdate("1.13.8")
                 delay(15 * 60 * 1000L) // 15 menit loop real-time
             }
         }
@@ -45,7 +45,7 @@ class NoteListViewModel(
         }
     }
 
-    fun checkForUpdate(currentVersion: String = "1.13.7") {
+    fun checkForUpdate(currentVersion: String = "1.13.8") {
         viewModelScope.launch {
             val release = updateManager.checkForUpdate(currentVersion)
             _hasUpdate.value = (release != null)
