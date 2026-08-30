@@ -29,7 +29,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Snooze
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
@@ -233,21 +236,32 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                val initial = authUser.displayName?.firstOrNull()?.uppercase()
-                                    ?: authUser.email?.firstOrNull()?.uppercase()
-                                    ?: "U"
-                                Text(
-                                    text = initial,
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                            if (!authUser.avatarUrl.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = authUser.avatarUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
                                 )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val initial = authUser.displayName?.firstOrNull()?.uppercase()
+                                        ?: authUser.email?.firstOrNull()?.uppercase()
+                                        ?: "U"
+                                    Text(
+                                        text = initial,
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
                             }
 
                             Spacer(Modifier.width(12.dp))
@@ -255,14 +269,16 @@ fun SettingsScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = authUser.displayName ?: strings.googleAccount,
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1
                                 )
                                 if (!authUser.email.isNullOrBlank()) {
                                     Text(
                                         text = authUser.email!!,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1
                                     )
                                 }
                             }
@@ -281,68 +297,89 @@ fun SettingsScreen(
                         }
 
                         HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 12.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            modifier = Modifier.padding(vertical = 14.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                         )
 
-                        // Cloud Sync Row
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        // Cloud Sync Section (Responsive: Text on top, full-width button below)
+                        Column(
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudSync,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                val lastSyncStr = if (lastSyncTime > 0L) {
-                                    val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-                                    String.format(strings.lastSynced, sdf.format(Date(lastSyncTime)))
-                                } else {
-                                    String.format(strings.lastSynced, strings.never)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudSync,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    val lastSyncStr = if (lastSyncTime > 0L) {
+                                        val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+                                        String.format(strings.lastSynced, sdf.format(Date(lastSyncTime)))
+                                    } else {
+                                        String.format(strings.lastSynced, strings.never)
+                                    }
+                                    Text(
+                                        text = strings.cloudBackup,
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = lastSyncStr,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
-                                Text(
-                                    text = strings.cloudBackup,
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = lastSyncStr,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
                             }
 
-                            if (isSyncing) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                            } else {
-                                Button(
-                                    onClick = {
-                                        viewModel.syncCloud { result ->
-                                            when (result) {
-                                                is SyncResult.Success -> {
-                                                    val msg = String.format(strings.syncSuccess, result.syncedCount)
-                                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                                }
-                                                is SyncResult.Error -> {
-                                                    val msg = "${strings.syncFailed}: ${result.message}"
-                                                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                                                }
-                                                SyncResult.NotLoggedIn -> {
-                                                    Toast.makeText(context, strings.notLoggedIn, Toast.LENGTH_SHORT).show()
-                                                }
-                                                SyncResult.NotConfigured -> {
-                                                    Toast.makeText(context, strings.supabaseNotConfigured, Toast.LENGTH_LONG).show()
-                                                }
+                            Spacer(Modifier.height(14.dp))
+
+                            Button(
+                                onClick = {
+                                    viewModel.syncCloud { result ->
+                                        when (result) {
+                                            is SyncResult.Success -> {
+                                                val msg = String.format(strings.syncSuccess, result.syncedCount)
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                            }
+                                            is SyncResult.Error -> {
+                                                val msg = "${strings.syncFailed}: ${result.message}"
+                                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                            }
+                                            SyncResult.NotLoggedIn -> {
+                                                Toast.makeText(context, strings.notLoggedIn, Toast.LENGTH_SHORT).show()
+                                            }
+                                            SyncResult.NotConfigured -> {
+                                                Toast.makeText(context, strings.supabaseNotConfigured, Toast.LENGTH_LONG).show()
                                             }
                                         }
-                                    },
-                                    enabled = !isSyncing
-                                ) {
-                                    Text(strings.syncNow)
+                                    }
+                                },
+                                enabled = !isSyncing,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                if (isSyncing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(strings.syncing)
+                                } else {
+                                    Icon(
+                                        Icons.Default.Sync,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(strings.syncNow, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -493,7 +530,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.13.4") {
+                    viewModel.checkForUpdate("1.13.5") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -506,7 +543,7 @@ fun SettingsScreen(
                     Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 },
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.13.4") }
+                supportingContent = { Text("dotnotes v1.13.5") }
             )
         }
     }

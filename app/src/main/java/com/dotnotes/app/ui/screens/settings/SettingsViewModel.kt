@@ -74,7 +74,7 @@ class SettingsViewModel(
     val downloadProgress = _downloadProgress.asStateFlow()
 
     init {
-        checkForUpdate("1.13.4")
+        checkForUpdate("1.13.5")
     }
 
     fun setThemeMode(mode: String) {
@@ -91,14 +91,39 @@ class SettingsViewModel(
 
     fun signInWithGoogle(context: Context, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
-            val authManager = GoogleAuthManager(context)
-            val result = authManager.signInWithGoogle()
-            if (result.isSuccess) {
-                syncCloud {
-                    onResult(true, null)
+            try {
+                val authManager = GoogleAuthManager(context)
+                val result = authManager.signInWithGoogle()
+                if (result.isSuccess) {
+                    val state = result.getOrNull()
+                    if (state != null && state.isLoggedIn) {
+                        syncCloud {
+                            onResult(true, null)
+                        }
+                    } else {
+                        onResult(false, null)
+                    }
+                } else {
+                    val ex = result.exceptionOrNull()
+                    if (ex is kotlinx.coroutines.CancellationException ||
+                        ex?.message?.contains("cancel", ignoreCase = true) == true ||
+                        ex?.message?.contains("batal", ignoreCase = true) == true
+                    ) {
+                        onResult(false, null)
+                    } else {
+                        onResult(false, ex?.localizedMessage)
+                    }
                 }
-            } else {
-                onResult(false, result.exceptionOrNull()?.localizedMessage)
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                onResult(false, null)
+            } catch (e: Exception) {
+                if (e.message?.contains("cancel", ignoreCase = true) == true ||
+                    e.message?.contains("batal", ignoreCase = true) == true
+                ) {
+                    onResult(false, null)
+                } else {
+                    onResult(false, e.localizedMessage)
+                }
             }
         }
     }

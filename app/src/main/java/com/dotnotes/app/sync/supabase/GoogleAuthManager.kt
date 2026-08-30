@@ -12,6 +12,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.IDToken
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -36,8 +37,10 @@ class GoogleAuthManager(private val context: Context) {
             val metadata = user.userMetadata
             val name = metadata?.get("full_name")?.toString()?.trim('\"')
                 ?: metadata?.get("name")?.toString()?.trim('\"')
+                ?: metadata?.get("user_name")?.toString()?.trim('\"')
             val avatar = metadata?.get("avatar_url")?.toString()?.trim('\"')
                 ?: metadata?.get("picture")?.toString()?.trim('\"')
+                ?: metadata?.get("avatar")?.toString()?.trim('\"')
             AuthUserState(
                 isLoggedIn = true,
                 email = user.email,
@@ -87,12 +90,18 @@ class GoogleAuthManager(private val context: Context) {
                     }
 
                     val user = supabase.auth.currentUserOrNull()
+                    val avatar = googleIdTokenCredential.profilePictureUri?.toString()
+                        ?: user?.userMetadata?.get("avatar_url")?.toString()?.trim('\"')
+                        ?: user?.userMetadata?.get("picture")?.toString()?.trim('\"')
+
                     Result.success(
                         AuthUserState(
                             isLoggedIn = true,
-                            email = user?.email,
-                            displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName,
-                            avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                            email = user?.email ?: googleIdTokenCredential.id,
+                            displayName = googleIdTokenCredential.displayName
+                                ?: googleIdTokenCredential.givenName
+                                ?: user?.userMetadata?.get("full_name")?.toString()?.trim('\"'),
+                            avatarUrl = avatar
                         )
                     )
                 }
@@ -100,8 +109,16 @@ class GoogleAuthManager(private val context: Context) {
                 return Result.failure(IllegalStateException("Tipe kredensial tidak didukung"))
             }
         } catch (e: GetCredentialCancellationException) {
-            return Result.failure(e)
+            return Result.success(AuthUserState(isLoggedIn = false))
+        } catch (e: CancellationException) {
+            return Result.success(AuthUserState(isLoggedIn = false))
         } catch (e: Exception) {
+            if (e.message?.contains("cancel", ignoreCase = true) == true ||
+                e.message?.contains("batal", ignoreCase = true) == true ||
+                e.javaClass.simpleName.contains("Cancel", ignoreCase = true)
+            ) {
+                return Result.success(AuthUserState(isLoggedIn = false))
+            }
             return Result.failure(e)
         }
     }
