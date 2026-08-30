@@ -75,7 +75,8 @@ class GoogleAuthManager(private val context: Context) {
                 .addCredentialOption(googleIdOption)
                 .build()
 
-            val response = credentialManager.getCredential(context, request)
+            val targetContext = context.findActivity() ?: context
+            val response = credentialManager.getCredential(targetContext, request)
             val credential = response.credential
 
             if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
@@ -131,5 +132,14 @@ class GoogleAuthManager(private val context: Context) {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun Context.findActivity(): android.app.Activity? {
+        var current = this
+        while (current is android.content.ContextWrapper) {
+            if (current is android.app.Activity) return current
+            current = current.baseContext
+        }
+        return null
     }
 }
