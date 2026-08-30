@@ -8,7 +8,6 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -68,23 +67,13 @@ class GoogleAuthManager(private val context: Context) {
             return primaryResult
         }
 
-        val primaryEx = primaryResult.exceptionOrNull()
-        if (isUserCancellation(primaryEx)) {
-            return Result.success(AuthUserState(isLoggedIn = false))
-        }
-
         // 2. Fallback ke GetSignInWithGoogleOption (Google Play Services)
         val fallbackResult = executeCredentialRequest(reqContext, isLegacy = true)
         if (fallbackResult.isSuccess) {
             return fallbackResult
         }
 
-        val fallbackEx = fallbackResult.exceptionOrNull()
-        if (isUserCancellation(fallbackEx)) {
-            return Result.success(AuthUserState(isLoggedIn = false))
-        }
-
-        // 3. Fallback ke Supabase OAuth Browser Flow jika Credential Manager ditolak sistem OS
+        // 3. Fallback Utama ke Supabase OAuth Browser Flow jika Credential Manager ditolak/dibatalkan oleh OS
         return try {
             withContext(Dispatchers.IO) {
                 supabase.auth.signInWith(Google)
@@ -102,7 +91,7 @@ class GoogleAuthManager(private val context: Context) {
             if (isUserCancellation(e)) {
                 Result.success(AuthUserState(isLoggedIn = false))
             } else {
-                Result.failure(fallbackEx ?: primaryEx ?: e)
+                Result.failure(e)
             }
         }
     }

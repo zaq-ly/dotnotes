@@ -530,7 +530,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.14.0") {
+                    viewModel.checkForUpdate("1.14.1") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -543,7 +543,7 @@ fun SettingsScreen(
                     Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 },
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.14.0") }
+                supportingContent = { Text("dotnotes v1.14.1") }
             )
         }
     }
