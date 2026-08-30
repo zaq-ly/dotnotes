@@ -8,7 +8,6 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
@@ -52,7 +51,7 @@ class GoogleAuthManager(private val context: Context) {
 
     suspend fun signInWithGoogle(): Result<AuthUserState> {
         if (!SupabaseClientProvider.isConfigured || BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank()) {
-            return Result.failure(IllegalStateException("Supabase URL, Anon Key, or Google Web Client ID not configured"))
+            return Result.failure(IllegalStateException("Supabase URL, Anon Key, atau Google Web Client ID belum terpasang"))
         }
 
         val rawNonce = UUID.randomUUID().toString()
@@ -61,14 +60,7 @@ class GoogleAuthManager(private val context: Context) {
         val digest = md.digest(bytes)
         val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
 
-        // 1. Try Credential Manager (Native Google Sign-In)
         try {
-            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(
-                serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
-            )
-                .setNonce(hashedNonce)
-                .build()
-
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
@@ -77,7 +69,6 @@ class GoogleAuthManager(private val context: Context) {
                 .build()
 
             val request = GetCredentialRequest.Builder()
-                .addCredentialOption(signInWithGoogleOption)
                 .addCredentialOption(googleIdOption)
                 .build()
 
@@ -105,30 +96,14 @@ class GoogleAuthManager(private val context: Context) {
                         )
                     )
                 }
+            } else {
+                return Result.failure(IllegalStateException("Tipe kredensial tidak didukung"))
             }
         } catch (e: GetCredentialCancellationException) {
             return Result.failure(e)
         } catch (e: Exception) {
-            // 2. Fallback to Supabase Web Google OAuth if Native Credential Manager fails (e.g. NoCredentialException)
-            try {
-                withContext(Dispatchers.IO) {
-                    supabase.auth.signInWith(Google)
-                }
-                val user = supabase.auth.currentUserOrNull()
-                return Result.success(
-                    AuthUserState(
-                        isLoggedIn = user != null,
-                        email = user?.email,
-                        displayName = user?.userMetadata?.get("full_name")?.toString()?.trim('\"'),
-                        avatarUrl = user?.userMetadata?.get("avatar_url")?.toString()?.trim('\"')
-                    )
-                )
-            } catch (fallbackError: Exception) {
-                return Result.failure(e)
-            }
+            return Result.failure(e)
         }
-
-        return Result.failure(IllegalStateException("Unsupported credential type"))
     }
 
     suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
