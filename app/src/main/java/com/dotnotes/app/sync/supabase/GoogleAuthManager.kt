@@ -51,17 +51,18 @@ class GoogleAuthManager(private val context: Context) {
     }
 
     suspend fun signInWithGoogle(): Result<AuthUserState> {
+        if (!SupabaseClientProvider.isConfigured || BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank()) {
+            return Result.failure(IllegalStateException("Supabase URL, Anon Key, or Google Web Client ID not configured"))
+        }
+
+        val rawNonce = UUID.randomUUID().toString()
+        val bytes = rawNonce.toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+        val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
+
+        // 1. Try Credential Manager (Native Google Sign-In)
         try {
-            if (!SupabaseClientProvider.isConfigured || BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank()) {
-                return Result.failure(IllegalStateException("Supabase URL, Anon Key, or Google Web Client ID not configured"))
-            }
-
-            val rawNonce = UUID.randomUUID().toString()
-            val bytes = rawNonce.toByteArray()
-            val md = MessageDigest.getInstance("SHA-256")
-            val digest = md.digest(bytes)
-            val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
-
             val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(
                 serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
             )
@@ -104,14 +105,30 @@ class GoogleAuthManager(private val context: Context) {
                         )
                     )
                 }
-            } else {
-                return Result.failure(IllegalStateException("Unsupported credential type"))
             }
         } catch (e: GetCredentialCancellationException) {
             return Result.failure(e)
         } catch (e: Exception) {
-            return Result.failure(e)
+            // 2. Fallback to Supabase Web Google OAuth if Native Credential Manager fails (e.g. NoCredentialException)
+            try {
+                withContext(Dispatchers.IO) {
+                    supabase.auth.signInWith(Google)
+                }
+                val user = supabase.auth.currentUserOrNull()
+                return Result.success(
+                    AuthUserState(
+                        isLoggedIn = user != null,
+                        email = user?.email,
+                        displayName = user?.userMetadata?.get("full_name")?.toString()?.trim('\"'),
+                        avatarUrl = user?.userMetadata?.get("avatar_url")?.toString()?.trim('\"')
+                    )
+                )
+            } catch (fallbackError: Exception) {
+                return Result.failure(e)
+            }
         }
+
+        return Result.failure(IllegalStateException("Unsupported credential type"))
     }
 
     suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {

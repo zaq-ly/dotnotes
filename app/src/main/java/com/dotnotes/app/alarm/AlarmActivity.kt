@@ -46,6 +46,11 @@ class AlarmActivity : ComponentActivity() {
         }
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        showOnLockScreen()
+    }
+
     @Suppress("DEPRECATION")
     private fun showOnLockScreen() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -64,6 +69,7 @@ class AlarmActivity : ComponentActivity() {
     }
 
     private fun dismissAlarm(noteId: String) {
+        AlarmPlayer.stop()
         AlarmService.stop(this)
         val notifId = Math.abs(noteId.hashCode()) + 1
         NotificationManagerCompat.from(this).cancel(notifId)
@@ -75,6 +81,7 @@ class AlarmActivity : ComponentActivity() {
     }
 
     private fun snoozeAlarm(noteId: String) {
+        AlarmPlayer.stop()
         AlarmService.stop(this)
         val notifId = Math.abs(noteId.hashCode()) + 1
         NotificationManagerCompat.from(this).cancel(notifId)
@@ -92,5 +99,11 @@ class AlarmActivity : ComponentActivity() {
             }
         }
         finish()
+    }
+
+    override fun onDestroy() {
+        AlarmPlayer.stop()
+        AlarmService.stop(this)
+        super.onDestroy()
     }
 }

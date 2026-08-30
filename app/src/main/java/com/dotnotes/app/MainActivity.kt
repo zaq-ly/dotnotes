@@ -24,6 +24,7 @@ import com.dotnotes.app.ui.i18n.IndonesianStrings
 import com.dotnotes.app.ui.i18n.LocalStrings
 import com.dotnotes.app.ui.navigation.NavGraph
 import com.dotnotes.app.ui.theme.DotNotesTheme
+import io.github.jan.supabase.auth.auth
 
 class MainActivity : ComponentActivity() {
     private val notifPermissionLauncher = registerForActivityResult(

@@ -313,7 +313,7 @@ private fun HistoryCard(
     onDismissReminder: () -> Unit
 ) {
     val strings = LocalStrings.current
-    val reminderFormat = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()) }
+    val reminderFormat = remember { SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()) }
     val reminderTime = note.reminderTime ?: 0L
     val isOverdue = selectedTab == 0 && reminderTime < System.currentTimeMillis()
 

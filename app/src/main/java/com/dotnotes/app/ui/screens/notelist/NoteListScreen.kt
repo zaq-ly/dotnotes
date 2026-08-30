@@ -494,8 +494,8 @@ private fun SelectableNoteCard(
     onDismissReminder: () -> Unit
 ) {
     val strings = LocalStrings.current
-    val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
-    val reminderFormat = remember { SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()) }
+    val dateFormat = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
+    val reminderFormat = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
 
     Card(
         modifier = Modifier

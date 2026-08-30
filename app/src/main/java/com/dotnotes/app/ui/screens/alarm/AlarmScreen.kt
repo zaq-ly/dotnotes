@@ -54,7 +54,7 @@ fun AlarmScreen(
 ) {
     val strings = LocalStrings.current
     var currentTime by remember {
-        mutableStateOf(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date()))
+        mutableStateOf(SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date()))
     }
     var currentDate by remember {
         mutableStateOf(SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault()).format(Date()))
@@ -62,7 +62,7 @@ fun AlarmScreen(
 
     LaunchedEffect(Unit) {
         while (true) {
-            currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
             currentDate = SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault()).format(Date())
             delay(1000)
         }

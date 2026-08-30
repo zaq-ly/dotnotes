@@ -1,10 +1,12 @@
 package com.dotnotes.app.alarm
 
+import android.app.ActivityOptions
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -18,8 +20,10 @@ class AlarmReceiver : BroadcastReceiver() {
         val noteId = intent.getStringExtra("note_id") ?: return
 
         if (action == ACTION_DISMISS) {
+            AlarmPlayer.stop()
             AlarmService.stop(context)
             NotificationManagerCompat.from(context).cancel(noteId.hashCode())
+            NotificationManagerCompat.from(context).cancel(Math.abs(noteId.hashCode()) + 1)
             runBlocking {
                 DotNotesApp.instance.repository.dismissAlarm(noteId)
             }
@@ -27,8 +31,10 @@ class AlarmReceiver : BroadcastReceiver() {
         }
 
         if (action == ACTION_SNOOZE) {
+            AlarmPlayer.stop()
             AlarmService.stop(context)
             NotificationManagerCompat.from(context).cancel(noteId.hashCode())
+            NotificationManagerCompat.from(context).cancel(Math.abs(noteId.hashCode()) + 1)
             runBlocking {
                 val note = DotNotesApp.instance.repository.getNoteById(noteId)
                 if (note != null) {
@@ -70,6 +76,9 @@ class AlarmReceiver : BroadcastReceiver() {
         )
 
         if (priority == 2) {
+            // Start continuous looping sound & vibration immediately
+            AlarmPlayer.play(context)
+
             val alarmActivityIntent = Intent(context, AlarmActivity::class.java).apply {
                 putExtra("note_id", noteId)
                 putExtra("note_title", noteTitle)
@@ -113,34 +122,20 @@ class AlarmReceiver : BroadcastReceiver() {
                 .build()
 
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
-                android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 NotificationManagerCompat.from(context).notify(notifId, notification)
             }
 
             try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    val options = android.app.ActivityOptions.makeBasic().apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    val options = ActivityOptions.makeBasic().apply {
                         setPendingIntentBackgroundActivityStartMode(
-                            android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
                         )
                     }.toBundle()
                     context.startActivity(alarmActivityIntent, options)
                 } else {
                     context.startActivity(alarmActivityIntent)
-                }
-            } catch (_: Exception) {
-            }
-
-            val serviceIntent = Intent(context, AlarmService::class.java).apply {
-                putExtra("note_id", noteId)
-                putExtra("note_title", noteTitle)
-                putExtra("note_content", noteContent)
-            }
-            try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    context.startForegroundService(serviceIntent)
-                } else {
-                    context.startService(serviceIntent)
                 }
             } catch (_: Exception) {
             }
@@ -159,7 +154,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 .build()
 
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
-                android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 NotificationManagerCompat.from(context).notify(notifId, notification)
             }
         }
