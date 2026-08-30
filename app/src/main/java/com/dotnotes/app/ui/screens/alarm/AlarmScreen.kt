@@ -1,5 +1,6 @@
 package com.dotnotes.app.ui.screens.alarm
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,12 +19,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,8 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dotnotes.app.ui.i18n.LocalStrings
@@ -71,90 +75,123 @@ fun AlarmScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF000000))
+            .background(Color(0xFF09090B))
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 28.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top: Time & Date (Monochrome Minimalist)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                Text(
-                    text = strings.alarm.uppercase(),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF71717A),
-                    letterSpacing = 2.sp
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    text = currentTime,
-                    fontSize = 80.sp,
-                    fontWeight = FontWeight.Light,
-                    color = Color.White,
-                    letterSpacing = (-2).sp
-                )
-
-                Text(
-                    text = currentDate,
-                    fontSize = 14.sp,
-                    color = Color(0xFF71717A),
-                    fontWeight = FontWeight.Normal
-                )
-            }
-
-            // Center: Note Title & Note Content (Description)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+            // 1. TOP HEADER: Small Clock & Alarm Badge (Perkecil jam agar judul/deskripsi dominan)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f, fill = false)
-                    .padding(vertical = 24.dp, horizontal = 8.dp)
-                    .verticalScroll(rememberScrollState())
+                    .padding(top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = noteTitle.ifBlank { strings.untitled },
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 30.sp
-                )
+                // Alarm Pill
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFF27272A),
+                    border = BorderStroke(1.dp, Color(0xFF3F3F46))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Alarm,
+                            contentDescription = null,
+                            tint = Color(0xFFF87171),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = strings.alarm.uppercase(),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFF4F4F5),
+                            letterSpacing = 1.2.sp
+                        )
+                    }
+                }
 
-                if (noteContent.isNotBlank()) {
-                    Spacer(Modifier.height(10.dp))
+                // Small Clock & Date
+                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = noteContent,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Normal,
+                        text = currentTime,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = currentDate,
+                        fontSize = 11.sp,
                         color = Color(0xFFA1A1AA),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 22.sp,
-                        maxLines = 6,
-                        overflow = TextOverflow.Ellipsis
+                        fontWeight = FontWeight.Normal
                     )
                 }
             }
 
-            // Bottom: Minimalist Buttons (Snooze & Dismiss)
+            // 2. CENTER: DOMINANT NOTE CONTENT CARD (Judul dan Deskripsi Sangat Jelas & Menonjol)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(vertical = 12.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF18181B)
+                ),
+                border = BorderStroke(1.dp, Color(0xFF27272A))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(22.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    // Note Title (Dominan, Tebal & Besar)
+                    Text(
+                        text = noteTitle.ifBlank { strings.untitled },
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        lineHeight = 38.sp
+                    )
+
+                    if (noteContent.isNotBlank()) {
+                        Spacer(Modifier.height(14.dp))
+                        HorizontalDivider(color = Color(0xFF27272A))
+                        Spacer(Modifier.height(14.dp))
+
+                        // Note Description / Content (Jelas, Terbaca Nyaman)
+                        Text(
+                            text = noteContent,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = Color(0xFFE4E4E7),
+                            lineHeight = 26.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // 3. BOTTOM: Action Buttons (Tunda & Matikan)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Snooze Button (Dark Minimalist Pill)
+                // Snooze Button
                 FilledTonalButton(
                     onClick = onSnooze,
                     modifier = Modifier
@@ -162,7 +199,7 @@ fun AlarmScreen(
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = Color(0xFF18181B),
+                        containerColor = Color(0xFF27272A),
                         contentColor = Color(0xFFE4E4E7)
                     )
                 ) {
@@ -175,11 +212,11 @@ fun AlarmScreen(
                     Text(
                         text = strings.snooze,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
-                // Dismiss Button (Clean Solid White Pill)
+                // Dismiss Button
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier
