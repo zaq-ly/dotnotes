@@ -101,29 +101,17 @@ class SettingsViewModel(
                             onResult(true, null)
                         }
                     } else {
+                        // User cancelled — no error to show
                         onResult(false, null)
                     }
                 } else {
                     val ex = result.exceptionOrNull()
-                    if (ex is kotlinx.coroutines.CancellationException ||
-                        ex?.message?.contains("cancel", ignoreCase = true) == true ||
-                        ex?.message?.contains("batal", ignoreCase = true) == true
-                    ) {
-                        onResult(false, null)
-                    } else {
-                        onResult(false, ex?.localizedMessage)
-                    }
+                    onResult(false, ex?.localizedMessage)
                 }
             } catch (_: kotlinx.coroutines.CancellationException) {
                 onResult(false, null)
             } catch (e: Exception) {
-                if (e.message?.contains("cancel", ignoreCase = true) == true ||
-                    e.message?.contains("batal", ignoreCase = true) == true
-                ) {
-                    onResult(false, null)
-                } else {
-                    onResult(false, e.localizedMessage)
-                }
+                onResult(false, e.localizedMessage)
             }
         }
     }

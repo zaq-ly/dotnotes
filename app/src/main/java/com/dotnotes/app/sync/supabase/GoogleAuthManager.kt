@@ -3,11 +3,14 @@ package com.dotnotes.app.sync.supabase
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.Log
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -20,6 +23,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.security.MessageDigest
+import java.util.UUID
 
 data class AuthUserState(
     val isLoggedIn: Boolean = false,
@@ -36,12 +41,12 @@ class GoogleAuthManager(private val context: Context) {
         val user = supabase.auth.currentUserOrNull()
         if (user != null) {
             val metadata = user.userMetadata
-            val name = metadata?.get("full_name")?.toString()?.trim('\"')
-                ?: metadata?.get("name")?.toString()?.trim('\"')
-                ?: metadata?.get("user_name")?.toString()?.trim('\"')
-            val avatar = metadata?.get("avatar_url")?.toString()?.trim('\"')
-                ?: metadata?.get("picture")?.toString()?.trim('\"')
-                ?: metadata?.get("avatar")?.toString()?.trim('\"')
+            val name = metadata?.get("full_name")?.toString()?.trim('"')
+                ?: metadata?.get("name")?.toString()?.trim('"')
+                ?: metadata?.get("user_name")?.toString()?.trim('"')
+            val avatar = metadata?.get("avatar_url")?.toString()?.trim('"')
+                ?: metadata?.get("picture")?.toString()?.trim('"')
+                ?: metadata?.get("avatar")?.toString()?.trim('"')
             AuthUserState(
                 isLoggedIn = true,
                 email = user.email,
@@ -58,22 +63,33 @@ class GoogleAuthManager(private val context: Context) {
             return Result.failure(IllegalStateException("Supabase URL, Anon Key, atau Google Web Client ID belum terpasang"))
         }
 
-        val targetActivity = context.findActivity() ?: (context as? Activity)
-        val reqContext = targetActivity ?: context
-
-        // 1. Coba GetGoogleIdOption (Standar Native Android 14, 15, 16)
-        val primaryResult = executeCredentialRequest(reqContext, isLegacy = false)
-        if (primaryResult.isSuccess) {
-            return primaryResult
+        val activity = context.findActivity()
+        if (activity == null) {
+            Log.w(TAG, "No Activity context, skipping Credential Manager → browser fallback")
+            return signInWithBrowserOAuth()
         }
 
-        // 2. Fallback ke GetSignInWithGoogleOption (Google Play Services)
-        val fallbackResult = executeCredentialRequest(reqContext, isLegacy = true)
-        if (fallbackResult.isSuccess) {
-            return fallbackResult
+        // 1. Coba GetSignInWithGoogleOption dulu (paling stabil di semua Android, termasuk 16)
+        val signInResult = executeCredentialRequest(activity, useSignInButton = true)
+        if (signInResult.isSuccess) return signInResult
+
+        // 2. Fallback ke GetGoogleIdOption (native bottom sheet)
+        val nativeResult = executeCredentialRequest(activity, useSignInButton = false)
+        if (nativeResult.isSuccess) return nativeResult
+
+        // 3. Cek apakah user yang cancel — jangan fallback ke browser kalau user sengaja cancel
+        val lastError = nativeResult.exceptionOrNull()
+        if (isUserCancellation(lastError)) {
+            Log.d(TAG, "User cancelled sign-in")
+            return Result.success(AuthUserState(isLoggedIn = false))
         }
 
-        // 3. Fallback Utama ke Supabase OAuth Browser Flow jika Credential Manager ditolak/dibatalkan oleh OS
+        // 4. Fallback ke Supabase OAuth Browser Flow
+        Log.d(TAG, "Credential Manager failed, falling back to browser OAuth. Error: ${lastError?.message}")
+        return signInWithBrowserOAuth()
+    }
+
+    private suspend fun signInWithBrowserOAuth(): Result<AuthUserState> {
         return try {
             withContext(Dispatchers.IO) {
                 supabase.auth.signInWith(Google)
@@ -83,37 +99,42 @@ class GoogleAuthManager(private val context: Context) {
                 AuthUserState(
                     isLoggedIn = user != null,
                     email = user?.email,
-                    displayName = user?.userMetadata?.get("full_name")?.toString()?.trim('\"'),
-                    avatarUrl = user?.userMetadata?.get("avatar_url")?.toString()?.trim('\"')
+                    displayName = user?.userMetadata?.get("full_name")?.toString()?.trim('"'),
+                    avatarUrl = user?.userMetadata?.get("avatar_url")?.toString()?.trim('"')
                 )
             )
         } catch (e: Exception) {
             if (isUserCancellation(e)) {
                 Result.success(AuthUserState(isLoggedIn = false))
             } else {
+                Log.e(TAG, "Browser OAuth failed", e)
                 Result.failure(e)
             }
         }
     }
 
-    private suspend fun executeCredentialRequest(reqContext: Context, isLegacy: Boolean): Result<AuthUserState> {
+    private suspend fun executeCredentialRequest(activity: Activity, useSignInButton: Boolean): Result<AuthUserState> {
         try {
+            val nonce = generateNonce()
             val requestBuilder = GetCredentialRequest.Builder()
-            if (isLegacy) {
+
+            if (useSignInButton) {
                 val option = GetSignInWithGoogleOption.Builder(
                     serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
-                ).build()
+                ).setNonce(nonce).build()
                 requestBuilder.addCredentialOption(option)
             } else {
                 val option = GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false)
                     .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
                     .setAutoSelectEnabled(false)
+                    .setNonce(nonce)
                     .build()
                 requestBuilder.addCredentialOption(option)
             }
 
-            val response = credentialManager.getCredential(reqContext, requestBuilder.build())
+            // PENTING: harus Activity context, bukan Application context
+            val response = credentialManager.getCredential(activity, requestBuilder.build())
             val credential = response.credential
 
             var idToken: String? = null
@@ -148,19 +169,31 @@ class GoogleAuthManager(private val context: Context) {
 
                 val user = supabase.auth.currentUserOrNull()
                 val finalAvatar = avatarUrl
-                    ?: user?.userMetadata?.get("avatar_url")?.toString()?.trim('\"')
-                    ?: user?.userMetadata?.get("picture")?.toString()?.trim('\"')
+                    ?: user?.userMetadata?.get("avatar_url")?.toString()?.trim('"')
+                    ?: user?.userMetadata?.get("picture")?.toString()?.trim('"')
 
                 Result.success(
                     AuthUserState(
                         isLoggedIn = true,
                         email = user?.email,
-                        displayName = displayName ?: user?.userMetadata?.get("full_name")?.toString()?.trim('\"'),
+                        displayName = displayName ?: user?.userMetadata?.get("full_name")?.toString()?.trim('"'),
                         avatarUrl = finalAvatar
                     )
                 )
             }
+        } catch (e: NoCredentialException) {
+            Log.d(TAG, "NoCredentialException (useSignInButton=$useSignInButton): ${e.message}")
+            return Result.failure(e)
+        } catch (e: GetCredentialCancellationException) {
+            Log.d(TAG, "User cancelled (useSignInButton=$useSignInButton)")
+            return Result.failure(e)
+        } catch (e: GetCredentialException) {
+            Log.w(TAG, "GetCredentialException (useSignInButton=$useSignInButton): ${e.type} - ${e.message}")
+            return Result.failure(e)
+        } catch (e: CancellationException) {
+            throw e // jangan swallow coroutine cancellation
         } catch (e: Exception) {
+            Log.w(TAG, "Credential request failed (useSignInButton=$useSignInButton)", e)
             return Result.failure(e)
         }
     }
@@ -170,10 +203,15 @@ class GoogleAuthManager(private val context: Context) {
         if (e is GetCredentialCancellationException || e is CancellationException) return true
         val msg = e.message ?: ""
         val name = e.javaClass.simpleName
-        return (msg.contains("cancel", ignoreCase = true) ||
-                msg.contains("batal", ignoreCase = true) ||
-                name.contains("Cancel", ignoreCase = true)) &&
-                !msg.contains("ditolak", ignoreCase = true)
+        return name.contains("Cancel", ignoreCase = true) ||
+                msg.contains("canceled", ignoreCase = true) ||
+                msg.contains("cancelled", ignoreCase = true)
+    }
+
+    private fun generateNonce(): String {
+        val bytes = UUID.randomUUID().toString().toByteArray()
+        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
+        return digest.joinToString("") { "%02x".format(it) }
     }
 
     suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
@@ -193,5 +231,9 @@ class GoogleAuthManager(private val context: Context) {
             current = current.baseContext
         }
         return null
+    }
+
+    companion object {
+        private const val TAG = "GoogleAuthManager"
     }
 }

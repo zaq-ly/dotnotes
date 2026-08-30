@@ -14,8 +14,8 @@ gson = "2.14.0"
 supabase = "3.1.1"
 ktor = "3.1.1"
 kotlinxSerialization = "1.8.0"
-credentials = "1.5.0-rc01"
-googleid = "1.1.1"
+credentials = "1.6.0"
+googleid = "1.2.0"
 coil = "2.7.0"
 
 [libraries]
