@@ -439,11 +439,11 @@ private fun SolidSwipeNoteCard(
         // Solid Action Background (Gambar 1 style: solid color, centered icon + label)
         if (!isSelectionMode) {
             if (isSwipingRight) {
-                // Delete Background (Solid Red)
+                // Delete Background
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .background(Color(0xFFE53935))
+                        .background(MaterialTheme.colorScheme.error)
                         .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
@@ -454,24 +454,24 @@ private fun SolidSwipeNoteCard(
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = strings.delete,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onError,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = strings.delete,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onError,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         )
                     }
                 }
             } else if (isSwipingLeft) {
-                // Pin / Unpin Background (Solid Blue)
+                // Pin / Unpin Background (Monochrome Theme Primary)
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .background(Color(0xFF1E88E5))
+                        .background(MaterialTheme.colorScheme.primary)
                         .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.CenterEnd
                 ) {
@@ -482,13 +482,13 @@ private fun SolidSwipeNoteCard(
                         Icon(
                             Icons.Default.PushPin,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = if (note.isPinned) strings.unpin else strings.pin,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         )

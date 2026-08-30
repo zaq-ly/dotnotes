@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -639,6 +640,17 @@ fun NoteEditorScreen(
 
     // Google Calendar style separate Date & Time pickers
     if (showDatePicker) {
+        val configuration = LocalConfiguration.current
+        val datePickerScale = remember(configuration.screenWidthDp, configuration.screenHeightDp) {
+            if (configuration.screenWidthDp >= 600 && configuration.screenHeightDp >= 700) {
+                1.0f
+            } else {
+                minOf(
+                    configuration.screenWidthDp / 400f,
+                    configuration.screenHeightDp / 680f
+                ).coerceIn(0.72f, 0.88f)
+            }
+        }
         val initialDateCal = remember(showDatePicker) {
             Calendar.getInstance().apply {
                 (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
@@ -649,6 +661,7 @@ fun NoteEditorScreen(
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
+            modifier = Modifier.scale(datePickerScale),
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { selectedDate ->
@@ -686,6 +699,17 @@ fun NoteEditorScreen(
     }
 
     if (showTimePicker) {
+        val configuration = LocalConfiguration.current
+        val timePickerScale = remember(configuration.screenWidthDp, configuration.screenHeightDp) {
+            if (configuration.screenWidthDp >= 600 && configuration.screenHeightDp >= 700) {
+                1.0f
+            } else {
+                minOf(
+                    configuration.screenWidthDp / 400f,
+                    configuration.screenHeightDp / 600f
+                ).coerceIn(0.72f, 0.88f)
+            }
+        }
         val initialTimeCal = remember(showTimePicker) {
             Calendar.getInstance().apply {
                 (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
@@ -698,6 +722,7 @@ fun NoteEditorScreen(
         )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
+            modifier = Modifier.scale(timePickerScale),
             title = {
                 Text(
                     text = strings.selectTime,
