@@ -657,41 +657,74 @@ fun NoteEditorScreen(
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = initialDateCal.timeInMillis
         )
-        DatePickerDialog(
+        Dialog(
             onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { selectedDate ->
-                        val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                            timeInMillis = selectedDate
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .widthIn(max = 380.dp)
+                    .padding(vertical = 16.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 20.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = strings.selectDate,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                    DatePicker(
+                        state = datePickerState,
+                        title = null,
+                        headline = null,
+                        showModeToggle = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp, end = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showDatePicker = false }) {
+                            Text(strings.cancel)
                         }
-                        val year = utcCal.get(Calendar.YEAR)
-                        val month = utcCal.get(Calendar.MONTH)
-                        val day = utcCal.get(Calendar.DAY_OF_MONTH)
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            datePickerState.selectedDateMillis?.let { selectedDate ->
+                                val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                                    timeInMillis = selectedDate
+                                }
+                                val year = utcCal.get(Calendar.YEAR)
+                                val month = utcCal.get(Calendar.MONTH)
+                                val day = utcCal.get(Calendar.DAY_OF_MONTH)
 
-                        val updatedCal = Calendar.getInstance().apply {
-                            (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                            set(Calendar.YEAR, year)
-                            set(Calendar.MONTH, month)
-                            set(Calendar.DAY_OF_MONTH, day)
-                            set(Calendar.SECOND, 0)
-                            set(Calendar.MILLISECOND, 0)
+                                val updatedCal = Calendar.getInstance().apply {
+                                    (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+                                    set(Calendar.YEAR, year)
+                                    set(Calendar.MONTH, month)
+                                    set(Calendar.DAY_OF_MONTH, day)
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
+                                }
+                                viewModel.setReminderTime(updatedCal.timeInMillis)
+                                viewModel.setReminder(true)
+                            }
+                            showDatePicker = false
+                        }) {
+                            Text(strings.save, fontWeight = FontWeight.SemiBold)
                         }
-                        viewModel.setReminderTime(updatedCal.timeInMillis)
-                        viewModel.setReminder(true)
                     }
-                    showDatePicker = false
-                }) {
-                    Text(strings.save, fontWeight = FontWeight.SemiBold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(strings.cancel)
                 }
             }
-        ) {
-            DatePicker(state = datePickerState)
         }
     }
 
@@ -706,45 +739,62 @@ fun NoteEditorScreen(
             initialMinute = initialTimeCal.get(Calendar.MINUTE),
             is24Hour = false
         )
-        AlertDialog(
+        Dialog(
             onDismissRequest = { showTimePicker = false },
-            shape = RoundedCornerShape(28.dp),
-            title = {
-                Text(
-                    text = strings.selectTime,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                )
-            },
-            text = {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .widthIn(max = 380.dp)
+                    .padding(vertical = 16.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Text(
+                        text = strings.selectTime,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                    )
                     TimePicker(state = timePickerState)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val updatedCal = Calendar.getInstance().apply {
-                        (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                        set(Calendar.MINUTE, timePickerState.minute)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showTimePicker = false }) {
+                            Text(strings.cancel)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            val updatedCal = Calendar.getInstance().apply {
+                                (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+                                set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                set(Calendar.MINUTE, timePickerState.minute)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            viewModel.setReminderTime(updatedCal.timeInMillis)
+                            viewModel.setReminder(true)
+                            showTimePicker = false
+                        }) {
+                            Text(strings.save, fontWeight = FontWeight.SemiBold)
+                        }
                     }
-                    viewModel.setReminderTime(updatedCal.timeInMillis)
-                    viewModel.setReminder(true)
-                    showTimePicker = false
-                }) {
-                    Text(strings.save, fontWeight = FontWeight.SemiBold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(strings.cancel)
                 }
             }
-        )
+        }
     }
 }
 
