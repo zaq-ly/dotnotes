@@ -74,7 +74,7 @@ class SettingsViewModel(
     val downloadProgress = _downloadProgress.asStateFlow()
 
     init {
-        checkForUpdate(com.dotnotes.app.BuildConfig.VERSION_NAME)
+        checkForUpdate("1.12.6")
     }
 
     fun setThemeMode(mode: String) {

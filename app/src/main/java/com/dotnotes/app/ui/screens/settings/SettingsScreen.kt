@@ -493,7 +493,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate(com.dotnotes.app.BuildConfig.VERSION_NAME) {
+                    viewModel.checkForUpdate("1.12.6") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -506,7 +506,7 @@ fun SettingsScreen(
                     Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 },
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v${com.dotnotes.app.BuildConfig.VERSION_NAME}") }
+                supportingContent = { Text("dotnotes v1.12.6") }
             )
         }
     }
