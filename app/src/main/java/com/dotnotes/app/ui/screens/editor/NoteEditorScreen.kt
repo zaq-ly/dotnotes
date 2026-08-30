@@ -468,12 +468,25 @@ fun NoteEditorScreen(
 
     // Reminder Pop-up Dialog
     if (showReminderDialog) {
+        val configuration = LocalConfiguration.current
+        val reminderDialogScale = remember(configuration.screenWidthDp, configuration.screenHeightDp) {
+            if (configuration.screenWidthDp >= 600 && configuration.screenHeightDp >= 700) {
+                1.0f
+            } else {
+                minOf(
+                    configuration.screenWidthDp / 400f,
+                    configuration.screenHeightDp / 680f
+                ).coerceIn(0.72f, 0.88f)
+            }
+        }
         Dialog(onDismissRequest = { showReminderDialog = false }) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .scale(reminderDialogScale)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp)

@@ -59,7 +59,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -491,7 +493,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.12.6") {
+                    viewModel.checkForUpdate(com.dotnotes.app.BuildConfig.VERSION_NAME) {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -504,7 +506,7 @@ fun SettingsScreen(
                     Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 },
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.12.6") }
+                supportingContent = { Text("dotnotes v${com.dotnotes.app.BuildConfig.VERSION_NAME}") }
             )
         }
     }
@@ -512,11 +514,23 @@ fun SettingsScreen(
     // ==========================================
     // DIALOGS
     // ==========================================
+    val configuration = LocalConfiguration.current
+    val dialogScale = remember(configuration.screenWidthDp, configuration.screenHeightDp) {
+        if (configuration.screenWidthDp >= 600 && configuration.screenHeightDp >= 700) {
+            1.0f
+        } else {
+            minOf(
+                configuration.screenWidthDp / 400f,
+                configuration.screenHeightDp / 680f
+            ).coerceIn(0.72f, 0.88f)
+        }
+    }
 
     // Language Dialog
     if (showLanguageDialog) {
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },
+            modifier = Modifier.scale(dialogScale),
             title = { Text(strings.language) },
             text = {
                 Column {
@@ -552,6 +566,7 @@ fun SettingsScreen(
     if (showThemeDialog) {
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
+            modifier = Modifier.scale(dialogScale),
             title = { Text(strings.theme) },
             text = {
                 Column {
@@ -591,6 +606,7 @@ fun SettingsScreen(
     if (showSnoozeDialog) {
         AlertDialog(
             onDismissRequest = { showSnoozeDialog = false },
+            modifier = Modifier.scale(dialogScale),
             title = { Text(strings.snoozeDuration) },
             text = {
                 Column {
@@ -627,6 +643,7 @@ fun SettingsScreen(
         if (downloadProgress != null) {
             AlertDialog(
                 onDismissRequest = {},
+                modifier = Modifier.scale(dialogScale),
                 title = { Text("${strings.updateAvailable} (${update.tagName})") },
                 text = {
                     Column {
