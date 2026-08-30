@@ -493,7 +493,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.12.9") {
+                    viewModel.checkForUpdate("1.13.0") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -506,7 +506,7 @@ fun SettingsScreen(
                     Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 },
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.12.9") }
+                supportingContent = { Text("dotnotes v1.13.0") }
             )
         }
     }
@@ -514,36 +514,25 @@ fun SettingsScreen(
     // ==========================================
     // DIALOGS
     // ==========================================
-    val configuration = LocalConfiguration.current
-    val dialogScale = remember(configuration.screenWidthDp, configuration.screenHeightDp) {
-        if (configuration.screenWidthDp >= 600 && configuration.screenHeightDp >= 700) {
-            1.0f
-        } else {
-            minOf(
-                configuration.screenWidthDp / 400f,
-                configuration.screenHeightDp / 680f
-            ).coerceIn(0.72f, 0.88f)
-        }
-    }
-
     // Language Dialog
     if (showLanguageDialog) {
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },
-            modifier = Modifier.scale(dialogScale),
-            title = { Text(strings.language) },
+            shape = RoundedCornerShape(28.dp),
+            title = { Text(strings.language, style = MaterialTheme.typography.titleLarge) },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     listOf("en" to strings.english, "id" to strings.indonesian).forEach { (code, name) ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     viewModel.setLanguage(code)
                                     showLanguageDialog = false
                                 }
-                                .padding(vertical = 12.dp)
+                                .padding(vertical = 12.dp, horizontal = 8.dp)
                         ) {
                             RadioButton(
                                 selected = language == code,
@@ -552,8 +541,8 @@ fun SettingsScreen(
                                     showLanguageDialog = false
                                 }
                             )
-                            Spacer(Modifier.width(8.dp))
-                            Text(name)
+                            Spacer(Modifier.width(12.dp))
+                            Text(name, style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
@@ -566,10 +555,10 @@ fun SettingsScreen(
     if (showThemeDialog) {
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
-            modifier = Modifier.scale(dialogScale),
-            title = { Text(strings.theme) },
+            shape = RoundedCornerShape(28.dp),
+            title = { Text(strings.theme, style = MaterialTheme.typography.titleLarge) },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     listOf(
                         "system" to strings.themeSystem,
                         "light" to strings.themeLight,
@@ -579,11 +568,12 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     viewModel.setThemeMode(mode)
                                     showThemeDialog = false
                                 }
-                                .padding(vertical = 12.dp)
+                                .padding(vertical = 12.dp, horizontal = 8.dp)
                         ) {
                             RadioButton(
                                 selected = themeMode == mode,
@@ -592,8 +582,8 @@ fun SettingsScreen(
                                     showThemeDialog = false
                                 }
                             )
-                            Spacer(Modifier.width(8.dp))
-                            Text(label)
+                            Spacer(Modifier.width(12.dp))
+                            Text(label, style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
@@ -606,20 +596,21 @@ fun SettingsScreen(
     if (showSnoozeDialog) {
         AlertDialog(
             onDismissRequest = { showSnoozeDialog = false },
-            modifier = Modifier.scale(dialogScale),
-            title = { Text(strings.snoozeDuration) },
+            shape = RoundedCornerShape(28.dp),
+            title = { Text(strings.snoozeDuration, style = MaterialTheme.typography.titleLarge) },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     listOf(5, 10, 15).forEach { minutes ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     viewModel.setSnoozeDuration(minutes)
                                     showSnoozeDialog = false
                                 }
-                                .padding(vertical = 12.dp)
+                                .padding(vertical = 12.dp, horizontal = 8.dp)
                         ) {
                             RadioButton(
                                 selected = snoozeDuration == minutes,
@@ -628,8 +619,8 @@ fun SettingsScreen(
                                     showSnoozeDialog = false
                                 }
                             )
-                            Spacer(Modifier.width(8.dp))
-                            Text("$minutes ${strings.minutes}")
+                            Spacer(Modifier.width(12.dp))
+                            Text("$minutes ${strings.minutes}", style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
@@ -643,12 +634,12 @@ fun SettingsScreen(
         if (downloadProgress != null) {
             AlertDialog(
                 onDismissRequest = {},
-                modifier = Modifier.scale(dialogScale),
-                title = { Text("${strings.updateAvailable} (${update.tagName})") },
+                shape = RoundedCornerShape(28.dp),
+                title = { Text("${strings.updateAvailable} (${update.tagName})", style = MaterialTheme.typography.titleLarge) },
                 text = {
                     Column {
-                        Text(strings.downloadingUpdate)
-                        Spacer(Modifier.height(12.dp))
+                        Text(strings.downloadingUpdate, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(16.dp))
                         val progress = downloadProgress ?: 0f
                         if (progress > 0f) {
                             LinearProgressIndicator(

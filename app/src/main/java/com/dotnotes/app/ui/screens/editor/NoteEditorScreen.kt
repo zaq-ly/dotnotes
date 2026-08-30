@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -468,28 +470,23 @@ fun NoteEditorScreen(
 
     // Reminder Pop-up Dialog
     if (showReminderDialog) {
-        val configuration = LocalConfiguration.current
-        val reminderDialogScale = remember(configuration.screenWidthDp, configuration.screenHeightDp) {
-            if (configuration.screenWidthDp >= 600 && configuration.screenHeightDp >= 700) {
-                1.0f
-            } else {
-                minOf(
-                    configuration.screenWidthDp / 400f,
-                    configuration.screenHeightDp / 680f
-                ).coerceIn(0.72f, 0.88f)
-            }
-        }
-        Dialog(onDismissRequest = { showReminderDialog = false }) {
+        Dialog(
+            onDismissRequest = { showReminderDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .scale(reminderDialogScale)
+                    .fillMaxWidth(0.92f)
+                    .widthIn(max = 420.dp)
+                    .padding(vertical = 16.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(18.dp)
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
                     // Header Row: Icon + Label + Switch
                     Row(
@@ -500,12 +497,12 @@ fun NoteEditorScreen(
                             imageVector = if (state.priority == 2 && state.hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
                             contentDescription = null,
                             tint = if (state.hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(24.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(12.dp))
                         Text(
                             text = strings.reminder,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.weight(1f))
@@ -521,7 +518,6 @@ fun NoteEditorScreen(
                                     viewModel.setReminderTime(nowCal.timeInMillis)
                                 }
                             },
-                            modifier = Modifier.scale(0.85f),
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                                 checkedTrackColor = MaterialTheme.colorScheme.primary
@@ -531,35 +527,35 @@ fun NoteEditorScreen(
 
                     // Expanded Options when Reminder is Enabled
                     if (state.hasReminder) {
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(16.dp))
 
                         // Split Date & Time Row (Compact Google Calendar Style)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Date Button
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                                 modifier = Modifier
                                     .weight(1.3f)
                                     .clickable(onClick = { showDatePicker = true })
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)
                                 ) {
                                     Icon(
                                         Icons.Default.CalendarMonth,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(15.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                    Spacer(Modifier.width(6.dp))
+                                    Spacer(Modifier.width(8.dp))
                                     Text(
                                         text = dateOnlyFormat.format(Date(state.reminderTime ?: System.currentTimeMillis())),
-                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
                                     )
@@ -568,26 +564,26 @@ fun NoteEditorScreen(
 
                             // Time Button
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable(onClick = { showTimePicker = true })
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)
                                 ) {
                                     Icon(
                                         Icons.Default.Schedule,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(15.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                    Spacer(Modifier.width(6.dp))
+                                    Spacer(Modifier.width(8.dp))
                                     Text(
                                         text = timeOnlyFormat.format(Date(state.reminderTime ?: System.currentTimeMillis())),
-                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
                                     )
@@ -595,22 +591,22 @@ fun NoteEditorScreen(
                             }
                         }
 
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(16.dp))
 
                         // Priority Selection (Notification vs Alarm)
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             FilterChip(
                                 selected = state.priority <= 1,
                                 onClick = { viewModel.setPriority(1) },
-                                modifier = Modifier.height(28.dp),
-                                label = { Text(strings.notification, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)) },
+                                modifier = Modifier.height(36.dp),
+                                label = { Text(strings.notification, style = MaterialTheme.typography.labelMedium) },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(13.dp))
+                                    Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
                                 },
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                     selectedLabelColor = MaterialTheme.colorScheme.primary,
@@ -621,12 +617,12 @@ fun NoteEditorScreen(
                             FilterChip(
                                 selected = state.priority == 2,
                                 onClick = { viewModel.setPriority(2) },
-                                modifier = Modifier.height(28.dp),
-                                label = { Text(strings.alarm, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)) },
+                                modifier = Modifier.height(36.dp),
+                                label = { Text(strings.alarm, style = MaterialTheme.typography.labelMedium) },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(13.dp))
+                                    Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(16.dp))
                                 },
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
                                     selectedLabelColor = MaterialTheme.colorScheme.error,
@@ -636,14 +632,14 @@ fun NoteEditorScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(20.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showReminderDialog = false }) {
-                            Text(strings.save, fontWeight = FontWeight.SemiBold)
+                            Text(strings.save, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
@@ -653,17 +649,6 @@ fun NoteEditorScreen(
 
     // Google Calendar style separate Date & Time pickers
     if (showDatePicker) {
-        val configuration = LocalConfiguration.current
-        val datePickerScale = remember(configuration.screenWidthDp, configuration.screenHeightDp) {
-            if (configuration.screenWidthDp >= 600 && configuration.screenHeightDp >= 700) {
-                1.0f
-            } else {
-                minOf(
-                    configuration.screenWidthDp / 400f,
-                    configuration.screenHeightDp / 680f
-                ).coerceIn(0.72f, 0.88f)
-            }
-        }
         val initialDateCal = remember(showDatePicker) {
             Calendar.getInstance().apply {
                 (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
@@ -674,7 +659,6 @@ fun NoteEditorScreen(
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
-            modifier = Modifier.scale(datePickerScale),
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { selectedDate ->
@@ -712,17 +696,6 @@ fun NoteEditorScreen(
     }
 
     if (showTimePicker) {
-        val configuration = LocalConfiguration.current
-        val timePickerScale = remember(configuration.screenWidthDp, configuration.screenHeightDp) {
-            if (configuration.screenWidthDp >= 600 && configuration.screenHeightDp >= 700) {
-                1.0f
-            } else {
-                minOf(
-                    configuration.screenWidthDp / 400f,
-                    configuration.screenHeightDp / 600f
-                ).coerceIn(0.72f, 0.88f)
-            }
-        }
         val initialTimeCal = remember(showTimePicker) {
             Calendar.getInstance().apply {
                 (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
@@ -735,7 +708,7 @@ fun NoteEditorScreen(
         )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            modifier = Modifier.scale(timePickerScale),
+            shape = RoundedCornerShape(28.dp),
             title = {
                 Text(
                     text = strings.selectTime,
