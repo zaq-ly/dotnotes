@@ -95,7 +95,12 @@ data class AppStrings(
     val notLoggedIn: String,
     val supabaseNotConfigured: String,
     val lastSynced: String,
-    val never: String
+    val never: String,
+    val accountAndSync: String,
+    val preferences: String,
+    val aboutAndUpdates: String,
+    val newBadge: String,
+    val googleSignInPrompt: String
 )
 
 val EnglishStrings = AppStrings(
@@ -178,7 +183,12 @@ val EnglishStrings = AppStrings(
     notLoggedIn = "Not signed in",
     supabaseNotConfigured = "Supabase credentials not configured in local.properties",
     lastSynced = "Last synced: %s",
-    never = "Never"
+    never = "Never",
+    accountAndSync = "Account & Cloud Sync",
+    preferences = "Preferences",
+    aboutAndUpdates = "About & Updates",
+    newBadge = "NEW",
+    googleSignInPrompt = "Sign in with Google to securely back up & sync notes across your devices"
 )
 
 val IndonesianStrings = AppStrings(
@@ -261,7 +271,12 @@ val IndonesianStrings = AppStrings(
     notLoggedIn = "Belum masuk akun",
     supabaseNotConfigured = "Kredensial Supabase belum diatur di local.properties",
     lastSynced = "Terakhir sinkron: %s",
-    never = "Belum pernah"
+    never = "Belum pernah",
+    accountAndSync = "Akun & Sinkronisasi Cloud",
+    preferences = "Preferensi",
+    aboutAndUpdates = "Tentang & Pembaruan",
+    newBadge = "BARU",
+    googleSignInPrompt = "Masuk dengan Google untuk mencadangkan & menyinkronkan catatan secara aman"
 )
 
 val LocalStrings = staticCompositionLocalOf { EnglishStrings }

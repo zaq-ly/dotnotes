@@ -1,13 +1,11 @@
 package com.dotnotes.app.ui.screens.settings
 
 import android.widget.Toast
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import com.dotnotes.app.sync.supabase.SyncResult
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,11 +15,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Snooze
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -30,8 +43,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -43,11 +58,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dotnotes.app.DotNotesApp
+import com.dotnotes.app.R
+import com.dotnotes.app.sync.supabase.SyncResult
 import com.dotnotes.app.ui.i18n.LocalStrings
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,38 +92,19 @@ fun SettingsScreen(
     val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsState()
     val availableUpdate by viewModel.availableUpdate.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
+    val authUser by viewModel.authUserState.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    val lastSyncTime by viewModel.lastSyncTime.collectAsState()
     
     val context = LocalContext.current
     var showThemeDialog by remember { mutableStateOf(false) }
     var showSnoozeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
-        if (uri != null) {
-            viewModel.exportBackup(context, uri) { success ->
-                val msg = if (success) strings.exportSuccess else strings.exportFailed
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    val importLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            viewModel.importBackup(context, uri) { count ->
-                val msg = if (count >= 0) String.format(strings.importSuccess, count) else strings.importFailed
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(strings.settings) },
+                title = { Text(strings.settings, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
@@ -107,17 +113,264 @@ fun SettingsScreen(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 24.dp)
+        ) {
+            // ==========================================
+            // 1. AKUN GOOGLE & CLOUD SYNC (PALING ATAS)
+            // ==========================================
+            SectionHeader(title = strings.accountAndSync)
+
+            if (!authUser.isLoggedIn) {
+                // Not Logged In Card with Google Branding
+                OutlinedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_google_logo),
+                                contentDescription = "Google",
+                                modifier = Modifier.size(24.dp),
+                                tint = Color.Unspecified
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                text = strings.googleAccount,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Text(
+                            text = strings.googleSignInPrompt,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(Modifier.height(14.dp))
+
+                        // Custom Styled Google Sign-In Button
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            shadowElevation = 2.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.signInWithGoogle(context) { success, err ->
+                                        if (success) {
+                                            Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
+                                        } else if (err != null) {
+                                            Toast.makeText(context, err, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp, horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_google_logo),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = Color.Unspecified
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    text = strings.signInWithGoogle,
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Logged In Card with Profile and Sync Actions
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        // User Profile Row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val initial = authUser.displayName?.firstOrNull()?.uppercase()
+                                    ?: authUser.email?.firstOrNull()?.uppercase()
+                                    ?: "U"
+                                Text(
+                                    text = initial,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+
+                            Spacer(Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = authUser.displayName ?: strings.googleAccount,
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                if (!authUser.email.isNullOrBlank()) {
+                                    Text(
+                                        text = authUser.email!!,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            TextButton(onClick = {
+                                viewModel.signOut(context) {
+                                    Toast.makeText(context, strings.signOut, Toast.LENGTH_SHORT).show()
+                                }
+                            }) {
+                                Text(
+                                    text = strings.signOut,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // Cloud Sync Row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CloudSync,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                val lastSyncStr = if (lastSyncTime > 0L) {
+                                    val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+                                    String.format(strings.lastSynced, sdf.format(Date(lastSyncTime)))
+                                } else {
+                                    String.format(strings.lastSynced, strings.never)
+                                }
+                                Text(
+                                    text = strings.cloudBackup,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = lastSyncStr,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            if (isSyncing) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                Button(
+                                    onClick = {
+                                        viewModel.syncCloud { result ->
+                                            when (result) {
+                                                is SyncResult.Success -> {
+                                                    val msg = String.format(strings.syncSuccess, result.syncedCount)
+                                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                                }
+                                                is SyncResult.Error -> {
+                                                    val msg = "${strings.syncFailed}: ${result.message}"
+                                                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                                }
+                                                SyncResult.NotLoggedIn -> {
+                                                    Toast.makeText(context, strings.notLoggedIn, Toast.LENGTH_SHORT).show()
+                                                }
+                                                SyncResult.NotConfigured -> {
+                                                    Toast.makeText(context, strings.supabaseNotConfigured, Toast.LENGTH_LONG).show()
+                                                }
+                                            }
+                                        }
+                                    },
+                                    enabled = !isSyncing
+                                ) {
+                                    Text(strings.syncNow)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ==========================================
+            // 2. PREFERENSI APLIKASI
+            // ==========================================
+            SectionHeader(title = strings.preferences)
+
             // Language
             ListItem(
+                leadingContent = {
+                    Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 headlineContent = { Text(strings.language) },
                 supportingContent = { Text(if (language == "id") strings.indonesian else strings.english) },
                 modifier = Modifier.clickable { showLanguageDialog = true }
             )
-            HorizontalDivider()
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Theme
             ListItem(
+                leadingContent = {
+                    Icon(Icons.Default.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 headlineContent = { Text(strings.theme) },
                 supportingContent = {
                     val label = when (themeMode) {
@@ -129,143 +382,97 @@ fun SettingsScreen(
                 },
                 modifier = Modifier.clickable { showThemeDialog = true }
             )
-            HorizontalDivider()
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Snooze Duration
             ListItem(
+                leadingContent = {
+                    Icon(Icons.Default.Snooze, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 headlineContent = { Text(strings.snoozeDuration) },
                 supportingContent = { Text("$snoozeDuration ${strings.minutes}") },
                 modifier = Modifier.clickable { showSnoozeDialog = true }
             )
-            HorizontalDivider()
 
-            // Google Account (Supabase Auth)
-            val authUser by viewModel.authUserState.collectAsState()
-            val isSyncing by viewModel.isSyncing.collectAsState()
-            val lastSyncTime by viewModel.lastSyncTime.collectAsState()
+            Spacer(Modifier.height(16.dp))
 
-            ListItem(
-                headlineContent = { 
-                    Text(if (authUser.isLoggedIn && !authUser.displayName.isNullOrBlank()) authUser.displayName!! else strings.googleAccount) 
-                },
-                supportingContent = { 
-                    Text(if (authUser.isLoggedIn) (authUser.email ?: "") else strings.notLoggedIn) 
-                },
-                trailingContent = {
-                    if (authUser.isLoggedIn) {
-                        TextButton(onClick = {
-                            viewModel.signOut(context) {
-                                Toast.makeText(context, strings.signOut, Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
-                            Text(strings.signOut, color = MaterialTheme.colorScheme.error)
-                        }
-                    } else {
-                        Button(onClick = {
-                            viewModel.signInWithGoogle(context) { success, err ->
-                                if (success) {
-                                    Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
-                                } else if (err != null) {
-                                    Toast.makeText(context, err, Toast.LENGTH_LONG).show()
-                                }
-                            }
-                        }) {
-                            Text(strings.signInWithGoogle)
-                        }
-                    }
-                }
-            )
-            HorizontalDivider()
+            // ==========================================
+            // 3. TENTANG & PEMBARUAN
+            // ==========================================
+            SectionHeader(title = strings.aboutAndUpdates)
 
-            // Cloud Sync
-            ListItem(
-                headlineContent = { Text(strings.cloudBackup) },
-                supportingContent = {
-                    val lastSyncStr = if (lastSyncTime > 0L) {
-                        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-                        String.format(strings.lastSynced, sdf.format(Date(lastSyncTime)))
-                    } else {
-                        String.format(strings.lastSynced, strings.never)
-                    }
-                    Text("${strings.cloudBackupDesc}\n$lastSyncStr")
-                },
-                trailingContent = {
-                    if (isSyncing) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    } else {
-                        Button(
-                            onClick = {
-                                if (!authUser.isLoggedIn) {
-                                    Toast.makeText(context, strings.notLoggedIn, Toast.LENGTH_SHORT).show()
-                                    return@Button
-                                }
-                                viewModel.syncCloud { result ->
-                                    when (result) {
-                                        is SyncResult.Success -> {
-                                            val msg = String.format(strings.syncSuccess, result.syncedCount)
-                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                        }
-                                        is SyncResult.Error -> {
-                                            val msg = "${strings.syncFailed}: ${result.message}"
-                                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                                        }
-                                        SyncResult.NotLoggedIn -> {
-                                            Toast.makeText(context, strings.notLoggedIn, Toast.LENGTH_SHORT).show()
-                                        }
-                                        SyncResult.NotConfigured -> {
-                                            Toast.makeText(context, strings.supabaseNotConfigured, Toast.LENGTH_LONG).show()
-                                        }
-                                    }
-                                }
-                            },
-                            enabled = authUser.isLoggedIn && !isSyncing
+            // Update Notification Banner (jika update ditemukan)
+            if (availableUpdate != null) {
+                val update = availableUpdate!!
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(strings.syncNow)
+                            Icon(
+                                Icons.Default.NewReleases,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "${strings.updateAvailable} (${update.tagName})",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            ) {
+                                Text(strings.newBadge, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        if (update.changelog.isNotBlank()) {
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = update.changelog,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                maxLines = 2
+                            )
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+
+                        Button(
+                            onClick = { viewModel.downloadAndInstall(context, update) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(strings.updateNow)
                         }
                     }
                 }
-            )
-            HorizontalDivider()
+            }
 
-            // Export Backup
+            // Check for Updates item
             ListItem(
-                headlineContent = { Text(strings.exportBackup) },
-                supportingContent = { Text(strings.exportBackupDesc) },
-                modifier = Modifier.clickable {
-                    val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-                    val dateStr = formatter.format(Date())
-                    exportLauncher.launch("dotnotes_backup_$dateStr.json")
-                }
-            )
-            HorizontalDivider()
-
-            // Import Backup
-            ListItem(
-                headlineContent = { Text(strings.importBackup) },
-                supportingContent = { Text(strings.importBackupDesc) },
-                modifier = Modifier.clickable {
-                    importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
-                }
-            )
-            HorizontalDivider()
-
-            // About
-            ListItem(
-                headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.12.2") }
-            )
-            HorizontalDivider()
-
-            // Check for Updates
-            ListItem(
+                leadingContent = {
+                    Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 headlineContent = { Text(strings.checkForUpdates) },
                 supportingContent = {
-                    val update = availableUpdate
-                    if (update != null) {
+                    if (availableUpdate != null) {
                         Text(
-                            "${strings.updateAvailable} (${update.tagName})",
+                            text = "${strings.updateAvailable} (${availableUpdate!!.tagName})",
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     } else {
                         Text(strings.checkForUpdatesDesc)
@@ -273,24 +480,38 @@ fun SettingsScreen(
                 },
                 trailingContent = {
                     if (isCheckingUpdate) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else if (availableUpdate != null) {
-                        Icon(
-                            Icons.Default.NewReleases,
-                            contentDescription = strings.updateAvailable,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ) {
+                            Text(strings.newBadge, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.12.2") {
+                    viewModel.checkForUpdate("1.12.3") {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
             )
-            HorizontalDivider()
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            // About item
+            ListItem(
+                leadingContent = {
+                    Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
+                headlineContent = { Text(strings.about) },
+                supportingContent = { Text("dotnotes v1.12.3") }
+            )
         }
     }
+
+    // ==========================================
+    // DIALOGS
+    // ==========================================
 
     // Language Dialog
     if (showLanguageDialog) {
@@ -401,22 +622,20 @@ fun SettingsScreen(
         )
     }
 
-    // Update Dialog
+    // Update Progress / Confirmation Dialog
     availableUpdate?.let { update ->
-        AlertDialog(
-            onDismissRequest = {
-                if (downloadProgress == null) viewModel.dismissUpdateDialog()
-            },
-            title = { Text("${strings.updateAvailable} (${update.tagName})") },
-            text = {
-                Column {
-                    val progress = downloadProgress
-                    if (progress != null) {
+        if (downloadProgress != null) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("${strings.updateAvailable} (${update.tagName})") },
+                text = {
+                    Column {
                         Text(strings.downloadingUpdate)
                         Spacer(Modifier.height(12.dp))
+                        val progress = downloadProgress ?: 0f
                         if (progress > 0f) {
                             LinearProgressIndicator(
-                                progress = { (downloadProgress ?: 0f).coerceIn(0f, 1f) },
+                                progress = { progress.coerceIn(0f, 1f) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
@@ -424,28 +643,23 @@ fun SettingsScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
-                    } else {
-                        Text(
-                            text = if (update.changelog.isNotBlank()) update.changelog else "Update ${update.tagName} is ready.",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
                     }
-                }
-            },
-            confirmButton = {
-                if (downloadProgress == null) {
-                    Button(onClick = { viewModel.downloadAndInstall(context, update) }) {
-                        Text(strings.updateNow)
-                    }
-                }
-            },
-            dismissButton = {
-                if (downloadProgress == null) {
-                    TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
-                        Text(strings.later)
-                    }
-                }
-            }
-        )
+                },
+                confirmButton = {}
+            )
+        }
     }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelMedium.copy(
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            letterSpacing = 0.5.sp
+        ),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+    )
 }

@@ -73,6 +73,10 @@ class SettingsViewModel(
     private val _downloadProgress = MutableStateFlow<Float?>(null)
     val downloadProgress = _downloadProgress.asStateFlow()
 
+    init {
+        checkForUpdate("1.12.3")
+    }
+
     fun setThemeMode(mode: String) {
         viewModelScope.launch { dataStore.setThemeMode(mode) }
     }

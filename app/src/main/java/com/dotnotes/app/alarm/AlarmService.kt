@@ -16,6 +16,7 @@ import com.dotnotes.app.MainActivity
 
 class AlarmService : Service() {
     private var mediaPlayer: MediaPlayer? = null
+    private var ringtone: android.media.Ringtone? = null
     private var vibrator: Vibrator? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -97,7 +98,15 @@ class AlarmService : Service() {
             .build()
 
         try {
-            startForeground(notifId, notification)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                startForeground(
+                    notifId,
+                    notification,
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                )
+            } else {
+                startForeground(notifId, notification)
+            }
         } catch (_: Exception) {
         }
 
@@ -113,11 +122,12 @@ class AlarmService : Service() {
     }
 
     private fun startAlarmSound() {
-        if (mediaPlayer != null) return
+        if (mediaPlayer != null || ringtone != null) return
         try {
             val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                ?: android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
 
             if (alarmUri != null) {
                 mediaPlayer = MediaPlayer().apply {
@@ -127,7 +137,7 @@ class AlarmService : Service() {
                             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                             .build()
                     )
-                    setDataSource(this@AlarmService, alarmUri)
+                    setDataSource(applicationContext, alarmUri)
                     isLooping = true
                     prepare()
                     start()
@@ -136,12 +146,19 @@ class AlarmService : Service() {
         } catch (_: Exception) {
             try {
                 val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
                     ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                val ringtone = RingtoneManager.getRingtone(this, ringtoneUri)
-                ringtone?.audioAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .build()
-                ringtone?.play()
+                    ?: android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
+                ringtone = RingtoneManager.getRingtone(applicationContext, ringtoneUri)?.apply {
+                    audioAttributes = AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                        isLooping = true
+                    }
+                    play()
+                }
             } catch (_: Exception) {
             }
         }
@@ -163,10 +180,23 @@ class AlarmService : Service() {
     }
 
     override fun onDestroy() {
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+        } catch (_: Exception) {
+        }
         mediaPlayer = null
-        vibrator?.cancel()
+
+        try {
+            ringtone?.stop()
+        } catch (_: Exception) {
+        }
+        ringtone = null
+
+        try {
+            vibrator?.cancel()
+        } catch (_: Exception) {
+        }
         vibrator = null
         super.onDestroy()
     }

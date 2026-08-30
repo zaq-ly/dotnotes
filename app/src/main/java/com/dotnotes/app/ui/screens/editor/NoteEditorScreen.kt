@@ -189,7 +189,16 @@ fun NoteEditorScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { showReminderDialog = true }) {
+                        IconButton(onClick = { 
+                            if (state.reminderTime == null) {
+                                val nowCal = Calendar.getInstance().apply {
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
+                                }
+                                viewModel.setReminderTime(nowCal.timeInMillis)
+                            }
+                            showReminderDialog = true 
+                        }) {
                             Icon(
                                 imageVector = if (state.priority == 2 && state.hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
                                 contentDescription = strings.reminder,
@@ -491,13 +500,11 @@ fun NoteEditorScreen(
                             onCheckedChange = { enabled ->
                                 viewModel.setReminder(enabled)
                                 if (enabled && (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis())) {
-                                    // Default to 10 minutes in future rounded to next minute
-                                    val futureCal = Calendar.getInstance().apply {
-                                        add(Calendar.MINUTE, 10)
+                                    val nowCal = Calendar.getInstance().apply {
                                         set(Calendar.SECOND, 0)
                                         set(Calendar.MILLISECOND, 0)
                                     }
-                                    viewModel.setReminderTime(futureCal.timeInMillis)
+                                    viewModel.setReminderTime(nowCal.timeInMillis)
                                 }
                             },
                             modifier = Modifier.scale(0.85f),
@@ -537,7 +544,7 @@ fun NoteEditorScreen(
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Text(
-                                        text = state.reminderTime?.let { dateOnlyFormat.format(Date(it)) } ?: strings.selectDate,
+                                        text = dateOnlyFormat.format(Date(state.reminderTime ?: System.currentTimeMillis())),
                                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
@@ -565,7 +572,7 @@ fun NoteEditorScreen(
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Text(
-                                        text = state.reminderTime?.let { timeOnlyFormat.format(Date(it)) } ?: strings.selectTime,
+                                        text = timeOnlyFormat.format(Date(state.reminderTime ?: System.currentTimeMillis())),
                                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
@@ -631,15 +638,14 @@ fun NoteEditorScreen(
     }
 
     // Google Calendar style separate Date & Time pickers
-    val currentCalendar = remember(state.reminderTime) {
-        Calendar.getInstance().apply {
-            state.reminderTime?.let { timeInMillis = it }
-        }
-    }
-
     if (showDatePicker) {
+        val initialDateCal = remember(showDatePicker) {
+            Calendar.getInstance().apply {
+                (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+            }
+        }
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = currentCalendar.timeInMillis
+            initialSelectedDateMillis = initialDateCal.timeInMillis
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -654,7 +660,7 @@ fun NoteEditorScreen(
                         val day = utcCal.get(Calendar.DAY_OF_MONTH)
 
                         val updatedCal = Calendar.getInstance().apply {
-                            state.reminderTime?.let { timeInMillis = it }
+                            (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
                             set(Calendar.YEAR, year)
                             set(Calendar.MONTH, month)
                             set(Calendar.DAY_OF_MONTH, day)
@@ -680,9 +686,14 @@ fun NoteEditorScreen(
     }
 
     if (showTimePicker) {
+        val initialTimeCal = remember(showTimePicker) {
+            Calendar.getInstance().apply {
+                (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+            }
+        }
         val timePickerState = rememberTimePickerState(
-            initialHour = currentCalendar.get(Calendar.HOUR_OF_DAY),
-            initialMinute = currentCalendar.get(Calendar.MINUTE),
+            initialHour = initialTimeCal.get(Calendar.HOUR_OF_DAY),
+            initialMinute = initialTimeCal.get(Calendar.MINUTE),
             is24Hour = false
         )
         AlertDialog(
@@ -704,7 +715,7 @@ fun NoteEditorScreen(
             confirmButton = {
                 TextButton(onClick = {
                     val updatedCal = Calendar.getInstance().apply {
-                        state.reminderTime?.let { timeInMillis = it }
+                        (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
                         set(Calendar.HOUR_OF_DAY, timePickerState.hour)
                         set(Calendar.MINUTE, timePickerState.minute)
                         set(Calendar.SECOND, 0)

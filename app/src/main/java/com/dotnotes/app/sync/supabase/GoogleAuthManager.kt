@@ -1,4 +1,4 @@
-﻿package com.dotnotes.app.sync.supabase
+package com.dotnotes.app.sync.supabase
 
 import android.content.Context
 import androidx.credentials.ClearCredentialStateRequest
@@ -8,6 +8,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
@@ -49,10 +50,10 @@ class GoogleAuthManager(private val context: Context) {
         }
     }
 
-    suspend fun signInWithGoogle(): Result<AuthUserState> = withContext(Dispatchers.IO) {
+    suspend fun signInWithGoogle(): Result<AuthUserState> {
         try {
             if (!SupabaseClientProvider.isConfigured || BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank()) {
-                return@withContext Result.failure(IllegalStateException("Supabase URL, Anon Key, or Google Web Client ID not configured"))
+                return Result.failure(IllegalStateException("Supabase URL, Anon Key, or Google Web Client ID not configured"))
             }
 
             val rawNonce = UUID.randomUUID().toString()
@@ -61,13 +62,21 @@ class GoogleAuthManager(private val context: Context) {
             val digest = md.digest(bytes)
             val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
 
+            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(
+                serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+            )
+                .setNonce(hashedNonce)
+                .build()
+
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
                 .setNonce(hashedNonce)
+                .setAutoSelectEnabled(false)
                 .build()
 
             val request = GetCredentialRequest.Builder()
+                .addCredentialOption(signInWithGoogleOption)
                 .addCredentialOption(googleIdOption)
                 .build()
 
@@ -78,28 +87,30 @@ class GoogleAuthManager(private val context: Context) {
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                 val idToken = googleIdTokenCredential.idToken
 
-                supabase.auth.signInWith(IDToken) {
-                    this.idToken = idToken
-                    this.provider = Google
-                    this.nonce = rawNonce
-                }
+                return withContext(Dispatchers.IO) {
+                    supabase.auth.signInWith(IDToken) {
+                        this.idToken = idToken
+                        this.provider = Google
+                        this.nonce = rawNonce
+                    }
 
-                val user = supabase.auth.currentUserOrNull()
-                Result.success(
-                    AuthUserState(
-                        isLoggedIn = true,
-                        email = user?.email,
-                        displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName,
-                        avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                    val user = supabase.auth.currentUserOrNull()
+                    Result.success(
+                        AuthUserState(
+                            isLoggedIn = true,
+                            email = user?.email,
+                            displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName,
+                            avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                        )
                     )
-                )
+                }
             } else {
-                Result.failure(IllegalStateException("Unsupported credential type"))
+                return Result.failure(IllegalStateException("Unsupported credential type"))
             }
         } catch (e: GetCredentialCancellationException) {
-            Result.failure(e)
+            return Result.failure(e)
         } catch (e: Exception) {
-            Result.failure(e)
+            return Result.failure(e)
         }
     }
 
