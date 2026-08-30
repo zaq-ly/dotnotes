@@ -1,6 +1,7 @@
 package com.dotnotes.app.ui.screens.settings
 
 import android.widget.Toast
+import com.dotnotes.app.BuildConfig
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -530,7 +531,7 @@ fun SettingsScreen(
                     }
                 },
                 modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate("1.14.2") {
+                    viewModel.checkForUpdate(BuildConfig.VERSION_NAME) {
                         Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -543,7 +544,7 @@ fun SettingsScreen(
                     Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 },
                 headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v1.14.2") }
+                supportingContent = { Text("dotnotes v${BuildConfig.VERSION_NAME}") }
             )
         }
     }

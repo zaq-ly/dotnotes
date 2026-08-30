@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.dotnotes.app.BuildConfig
 import com.dotnotes.app.data.local.NoteDao
 import com.dotnotes.app.data.preferences.SettingsDataStore
 import com.dotnotes.app.sync.BackupManager
@@ -74,7 +75,7 @@ class SettingsViewModel(
     val downloadProgress = _downloadProgress.asStateFlow()
 
     init {
-        checkForUpdate("1.14.1")
+        checkForUpdate(BuildConfig.VERSION_NAME)
     }
 
     fun setThemeMode(mode: String) {

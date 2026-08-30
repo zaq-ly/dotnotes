@@ -3,6 +3,7 @@ package com.dotnotes.app.ui.screens.notelist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.dotnotes.app.BuildConfig
 import com.dotnotes.app.data.model.Note
 import com.dotnotes.app.data.repository.NoteRepository
 import com.dotnotes.app.update.UpdateManager
@@ -33,7 +34,7 @@ class NoteListViewModel(
     private fun startPeriodicUpdateChecker() {
         viewModelScope.launch {
             while (isActive) {
-                checkForUpdate("1.14.1")
+                checkForUpdate(BuildConfig.VERSION_NAME)
                 delay(15 * 60 * 1000L) // 15 menit loop real-time
             }
         }
@@ -45,7 +46,7 @@ class NoteListViewModel(
         }
     }
 
-    fun checkForUpdate(currentVersion: String = "1.14.1") {
+    fun checkForUpdate(currentVersion: String = BuildConfig.VERSION_NAME) {
         viewModelScope.launch {
             val release = updateManager.checkForUpdate(currentVersion)
             _hasUpdate.value = (release != null)
