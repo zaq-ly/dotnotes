@@ -612,9 +612,9 @@ fun NoteEditorScreen(
                                 },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.primary,
-                                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                                    selectedContainerColor = Color(0xFF1976D2).copy(alpha = 0.22f),
+                                    selectedLabelColor = Color(0xFF42A5F5),
+                                    selectedLeadingIconColor = Color(0xFF42A5F5)
                                 )
                             )
 
