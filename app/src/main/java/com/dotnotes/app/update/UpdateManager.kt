@@ -1,8 +1,17 @@
 package com.dotnotes.app.update
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.dotnotes.app.DotNotesApp
+import com.dotnotes.app.MainActivity
+import com.dotnotes.app.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -161,6 +170,43 @@ class UpdateManager {
             // Gracefully move app to background so OS PackageInstaller doesn't kill an active foreground window
             if (context is android.app.Activity) {
                 context.moveTaskToBack(true)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun showUpdateNotification(context: Context, release: ReleaseInfo) {
+        try {
+            val openIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("OPEN_SETTINGS", true)
+            }
+            val openPending = PendingIntent.getActivity(
+                context,
+                9999,
+                openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_UPDATE)
+                .setSmallIcon(R.drawable.ic_stat_notification)
+                .setContentTitle("Pembaruan Tersedia (${release.tagName})")
+                .setContentText("Versi terbaru .notes telah tersedia. Ketuk untuk memperbarui.")
+                .setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .bigText(if (release.changelog.isNotBlank()) release.changelog else "Versi terbaru .notes telah tersedia. Ketuk untuk memperbarui.")
+                )
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setContentIntent(openPending)
+                .setAutoCancel(true)
+                .build()
+
+            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                NotificationManagerCompat.from(context).notify(9999, notification)
             }
         } catch (e: Exception) {
             e.printStackTrace()

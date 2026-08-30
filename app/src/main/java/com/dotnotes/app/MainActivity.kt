@@ -14,6 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -23,6 +24,7 @@ import com.dotnotes.app.ui.i18n.EnglishStrings
 import com.dotnotes.app.ui.i18n.IndonesianStrings
 import com.dotnotes.app.ui.i18n.LocalStrings
 import com.dotnotes.app.ui.navigation.NavGraph
+import com.dotnotes.app.ui.navigation.Routes
 import com.dotnotes.app.ui.theme.DotNotesTheme
 import io.github.jan.supabase.auth.auth
 
@@ -31,6 +33,11 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) {
         checkExactAlarmPermission()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +63,11 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(LocalStrings provides strings) {
                 DotNotesTheme(darkTheme = isDark) {
                     val navController = rememberNavController()
+                    LaunchedEffect(Unit) {
+                        if (intent?.getBooleanExtra("OPEN_SETTINGS", false) == true) {
+                            navController.navigate(Routes.SETTINGS)
+                        }
+                    }
                     NavGraph(navController = navController)
                 }
             }

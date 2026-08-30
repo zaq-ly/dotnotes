@@ -64,14 +64,26 @@ class DotNotesApp : Application() {
             setSound(alarmSoundUri, alarmAudioAttributes)
         }
 
+        val updateChannel = NotificationChannel(
+            CHANNEL_UPDATE, "Pembaruan Aplikasi",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Notifikasi rilis versi terbaru .notes"
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 300, 150, 300)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+        }
+
         val mgr = getSystemService(NotificationManager::class.java)
         mgr?.createNotificationChannel(notifChannel)
         mgr?.createNotificationChannel(alarmChannel)
+        mgr?.createNotificationChannel(updateChannel)
     }
 
     companion object {
         lateinit var instance: DotNotesApp
         const val CHANNEL_REMINDER = "reminder_channel_v3"
         const val CHANNEL_ALARM = "alarm_channel_v3"
+        const val CHANNEL_UPDATE = "update_channel_v1"
     }
 }

@@ -276,67 +276,6 @@ fun NoteListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Floating In-App Update Notification Banner
-            AnimatedVisibility(
-                visible = hasUpdate,
-                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable { onSettingsClick() },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 4.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.NewReleases,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = strings.updateAvailable,
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Badge(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError
-                                ) {
-                                    Text(strings.newBadge, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                            Text(
-                                text = strings.checkForUpdatesDesc,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        FilledTonalButton(
-                            onClick = onSettingsClick,
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Text(strings.updateNow, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                }
-            }
-
             if (notes.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
