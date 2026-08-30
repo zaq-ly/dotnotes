@@ -74,7 +74,7 @@ class SettingsViewModel(
     val downloadProgress = _downloadProgress.asStateFlow()
 
     init {
-        checkForUpdate("1.13.8")
+        checkForUpdate("1.13.9")
     }
 
     fun setThemeMode(mode: String) {

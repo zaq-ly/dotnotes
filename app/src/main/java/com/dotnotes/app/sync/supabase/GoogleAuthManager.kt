@@ -8,6 +8,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -58,25 +59,52 @@ class GoogleAuthManager(private val context: Context) {
             return Result.failure(IllegalStateException("Supabase URL, Anon Key, atau Google Web Client ID belum terpasang"))
         }
 
+        val targetActivity = context.findActivity() ?: (context as? Activity)
+        val reqContext = targetActivity ?: context
+
+        // 1. Coba GetGoogleIdOption (Standar Android 14, 15, 16)
+        val primaryResult = executeCredentialRequest(reqContext, isLegacy = false)
+        if (primaryResult.isSuccess) {
+            return primaryResult
+        }
+
+        val primaryEx = primaryResult.exceptionOrNull()
+        if (isUserCancellation(primaryEx)) {
+            return Result.success(AuthUserState(isLoggedIn = false))
+        }
+
+        // 2. Fallback ke GetSignInWithGoogleOption (Kompatibilitas Google Play Services)
+        val fallbackResult = executeCredentialRequest(reqContext, isLegacy = true)
+        if (fallbackResult.isSuccess) {
+            return fallbackResult
+        }
+
+        val fallbackEx = fallbackResult.exceptionOrNull()
+        if (isUserCancellation(fallbackEx)) {
+            return Result.success(AuthUserState(isLoggedIn = false))
+        }
+
+        return Result.failure(fallbackEx ?: primaryEx ?: IllegalStateException("Gagal masuk dengan Google"))
+    }
+
+    private suspend fun executeCredentialRequest(reqContext: Context, isLegacy: Boolean): Result<AuthUserState> {
         try {
-            val googleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
-                .setAutoSelectEnabled(false)
-                .build()
+            val requestBuilder = GetCredentialRequest.Builder()
+            if (isLegacy) {
+                val option = GetSignInWithGoogleOption.Builder(
+                    serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+                ).build()
+                requestBuilder.addCredentialOption(option)
+            } else {
+                val option = GetGoogleIdOption.Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
+                    .setAutoSelectEnabled(false)
+                    .build()
+                requestBuilder.addCredentialOption(option)
+            }
 
-            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(
-                serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
-            ).build()
-
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOption)
-                .addCredentialOption(signInWithGoogleOption)
-                .build()
-
-            val targetActivity = context.findActivity() ?: (context as? Activity)
-            val reqContext = targetActivity ?: context
-            val response = credentialManager.getCredential(reqContext, request)
+            val response = credentialManager.getCredential(reqContext, requestBuilder.build())
             val credential = response.credential
 
             var idToken: String? = null
@@ -100,7 +128,7 @@ class GoogleAuthManager(private val context: Context) {
             }
 
             if (idToken.isNullOrBlank()) {
-                return Result.failure(IllegalStateException("Gagal mendapatkan Google ID Token"))
+                return Result.failure(IllegalStateException("ID Token Google tidak ditemukan"))
             }
 
             return withContext(Dispatchers.IO) {
@@ -123,19 +151,19 @@ class GoogleAuthManager(private val context: Context) {
                     )
                 )
             }
-        } catch (e: GetCredentialCancellationException) {
-            return Result.success(AuthUserState(isLoggedIn = false))
-        } catch (e: CancellationException) {
-            return Result.success(AuthUserState(isLoggedIn = false))
         } catch (e: Exception) {
-            if (e.message?.contains("cancel", ignoreCase = true) == true ||
-                e.message?.contains("batal", ignoreCase = true) == true ||
-                e.javaClass.simpleName.contains("Cancel", ignoreCase = true)
-            ) {
-                return Result.success(AuthUserState(isLoggedIn = false))
-            }
             return Result.failure(e)
         }
+    }
+
+    private fun isUserCancellation(e: Throwable?): Boolean {
+        if (e == null) return false
+        if (e is GetCredentialCancellationException || e is CancellationException) return true
+        val msg = e.message ?: ""
+        val name = e.javaClass.simpleName
+        return msg.contains("cancel", ignoreCase = true) ||
+                msg.contains("batal", ignoreCase = true) ||
+                name.contains("Cancel", ignoreCase = true)
     }
 
     suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
