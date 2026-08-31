@@ -129,7 +129,6 @@ fun NoteListScreen(
             if (isSelectionMode) {
                 // TopBar in Selection Mode
                 TopAppBar(
-                    modifier = Modifier.padding(horizontal = 8.dp),
                     title = {
                         Text(
                             text = String.format(strings.selectedCount, selectedNoteIds.size),
@@ -137,28 +136,37 @@ fun NoteListScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = { selectedNoteIds = emptySet() }) {
+                        IconButton(
+                            onClick = { selectedNoteIds = emptySet() },
+                            modifier = Modifier.padding(start = 4.dp)
+                        ) {
                             Icon(Icons.Default.Close, contentDescription = strings.cancel)
                         }
                     },
                     actions = {
                         val isAllSelected = selectedNoteIds.size == notes.size && notes.isNotEmpty()
-                        IconButton(onClick = {
-                            selectedNoteIds = if (isAllSelected) emptySet() else notes.map { it.id }.toSet()
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
-                                contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
-                                tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
+                        Box(modifier = Modifier.padding(end = 6.dp)) {
+                            IconButton(onClick = {
+                                selectedNoteIds = if (isAllSelected) emptySet() else notes.map { it.id }.toSet()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
+                                    contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
+                                    tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
                 )
             } else {
                 // Standard TopBar with History Icon and Settings Icon
                 TopAppBar(
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    title = { Text(strings.appName) },
+                    title = {
+                        Text(
+                            text = strings.appName,
+                            modifier = Modifier.padding(start = 6.dp)
+                        )
+                    },
                     actions = {
                         // History Icon (Belum Selesai / Riwayat Pengingat)
                         val pendingCount = notes.count { it.reminderTime != null && !it.isAlarmDismissed }
@@ -180,7 +188,7 @@ fun NoteListScreen(
                         }
 
                         // Settings / Update Icon Button
-                        Box(modifier = Modifier.padding(end = 4.dp)) {
+                        Box(modifier = Modifier.padding(end = 6.dp)) {
                             IconButton(
                                 onClick = onSettingsClick,
                                 modifier = if (hasUpdate) {

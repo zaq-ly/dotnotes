@@ -186,7 +186,6 @@ fun NoteEditorScreen(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 TopAppBar(
-                    modifier = Modifier.padding(horizontal = 8.dp),
                     title = {
                         Text(
                             if (noteId == null) strings.newNote else strings.editNote,
@@ -194,7 +193,10 @@ fun NoteEditorScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = { saveAndExit() }) {
+                        IconButton(
+                            onClick = { saveAndExit() },
+                            modifier = Modifier.padding(start = 4.dp)
+                        ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                         }
                     },
@@ -215,8 +217,10 @@ fun NoteEditorScreen(
                                 tint = if (state.hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         }
-                        IconButton(onClick = { saveAndExit() }) {
-                            Icon(Icons.Default.Check, contentDescription = strings.save, tint = MaterialTheme.colorScheme.primary)
+                        Box(modifier = Modifier.padding(end = 4.dp)) {
+                            IconButton(onClick = { saveAndExit() }) {
+                                Icon(Icons.Default.Check, contentDescription = strings.save, tint = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                 )

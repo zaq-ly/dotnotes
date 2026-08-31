@@ -128,10 +128,12 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                modifier = Modifier.padding(horizontal = 8.dp),
                 title = { Text(strings.settings, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                     }
                 }
