@@ -40,12 +40,16 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        SupabaseClientProvider.client.handleDeeplinks(intent)
+        SupabaseClientProvider.client.handleDeeplinks(intent) {
+            DotNotesApp.instance.repository.syncCloud()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        SupabaseClientProvider.client.handleDeeplinks(intent)
+        SupabaseClientProvider.client.handleDeeplinks(intent) {
+            DotNotesApp.instance.repository.syncCloud()
+        }
         enableEdgeToEdge()
         requestNotificationPermission()
 

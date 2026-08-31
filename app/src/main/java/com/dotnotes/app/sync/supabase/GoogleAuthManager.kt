@@ -2,16 +2,8 @@ package com.dotnotes.app.sync.supabase
 
 import android.content.Context
 import android.util.Log
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialException
-import com.dotnotes.app.BuildConfig
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
-import io.github.jan.supabase.auth.providers.builtin.IDToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -48,47 +40,20 @@ class GoogleAuthManager(private val context: Context) {
         }
     }
 
-    suspend fun signInWithGoogle(): Result<Unit> {
+    suspend fun signInWithGoogle(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             if (!SupabaseClientProvider.isConfigured) {
-                return Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
+                return@withContext Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
             }
 
-            val webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
-            if (webClientId.isBlank()) {
-                return Result.failure(IllegalStateException("GOOGLE_WEB_CLIENT_ID belum terpasang"))
+            Log.d(TAG, "Launching Supabase Google OAuth via CustomTabs with account picker prompt...")
+            supabase.auth.signInWith(Google) {
+                queryParams["prompt"] = "select_account"
             }
-
-            // 1. Native Google Credential Manager (Displays all device Google accounts natively)
-            val googleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(webClientId)
-                .setAutoSelectEnabled(false)
-                .build()
-
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOption)
-                .build()
-
-            val credentialManager = CredentialManager.create(context)
-            val result = credentialManager.getCredential(context, request)
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
-            val idToken = googleIdTokenCredential.idToken
-
-            // 2. Authenticate with Supabase via IDToken
-            withContext(Dispatchers.IO) {
-                supabase.auth.signInWith(IDToken) {
-                    this.idToken = idToken
-                    provider = Google
-                }
-            }
-
-            return Result.success(Unit)
-        } catch (_: GetCredentialCancellationException) {
-            return Result.failure(kotlinx.coroutines.CancellationException("User cancelled login"))
+            Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Native Google Credential Manager login failed", e)
-            return Result.failure(e)
+            Log.e(TAG, "Google OAuth failed", e)
+            Result.failure(e)
         }
     }
 

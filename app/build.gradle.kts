@@ -26,8 +26,8 @@ android {
         applicationId = "com.dotnotes.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 85
-        versionName = "1.17.0"
+        versionCode = 86
+        versionName = "1.17.1"
 
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
