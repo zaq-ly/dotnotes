@@ -191,6 +191,7 @@ fun SettingsScreen(
                                             Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
                                         } else if (err != null) {
                                             signInError = err
+                                            Toast.makeText(context, err, Toast.LENGTH_LONG).show()
                                         }
                                     }
                                 }

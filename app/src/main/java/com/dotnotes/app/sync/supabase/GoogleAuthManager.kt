@@ -63,10 +63,16 @@ class GoogleAuthManager(private val context: Context) {
 
             val activityContext = context.findActivity() ?: context
 
+            val rawNonce = java.util.UUID.randomUUID().toString()
+            val md = java.security.MessageDigest.getInstance("SHA-256")
+            val digest = md.digest(rawNonce.toByteArray())
+            val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
+
             // 1. Pure Native Google Credential Manager (0% Browser)
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(webClientId)
+                .setNonce(hashedNonce)
                 .setAutoSelectEnabled(false)
                 .build()
 
@@ -83,6 +89,7 @@ class GoogleAuthManager(private val context: Context) {
             withContext(Dispatchers.IO) {
                 supabase.auth.signInWith(IDToken) {
                     this.idToken = idToken
+                    this.nonce = rawNonce
                     provider = Google
                 }
             }
