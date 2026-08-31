@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -189,39 +188,27 @@ fun NoteListScreen(
                         }
 
                         // Settings / Update Icon Button
-                        Box(modifier = Modifier.padding(end = 12.dp)) {
+                        IconButton(
+                            onClick = onSettingsClick,
+                            modifier = if (hasUpdate) {
+                                Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), CircleShape)
+                            } else Modifier
+                        ) {
                             BadgedBox(
                                 badge = {
                                     if (hasUpdate) {
                                         Badge(
                                             containerColor = MaterialTheme.colorScheme.error,
-                                            contentColor = MaterialTheme.colorScheme.onError,
-                                            modifier = Modifier.offset(x = (-6).dp, y = 6.dp)
-                                        ) {
-                                            Text(
-                                                text = strings.newBadge,
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 8.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                ),
-                                                modifier = Modifier.padding(horizontal = 2.dp)
-                                            )
-                                        }
+                                            modifier = Modifier.size(7.dp)
+                                        )
                                     }
                                 }
                             ) {
-                                IconButton(
-                                    onClick = onSettingsClick,
-                                    modifier = if (hasUpdate) {
-                                        Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), CircleShape)
-                                    } else Modifier
-                                ) {
-                                    Icon(
-                                        imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
-                                        contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
-                                        tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
+                                Icon(
+                                    imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
+                                    contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
+                                    tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }

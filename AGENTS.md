@@ -40,14 +40,26 @@ AI Agent **wajib menganalisis instruksi/permintaan user** untuk menyusun pesan c
 Permintaan User ───> Analisis Tipe Pekerjaan ───> Rumuskan Pesan Commit ───> Tentukan Versi (MAJOR / MINOR / PATCH)
 ```
 
+### Prinsip Kenaikan Versi SemVer Murni:
+1. **PATCH (`X.Y.Z`)**:
+   - Digit paling belakang (`Z`) bertambah `+1` untuk setiap pekerjaan `fix:`, `style:`, `refactor:`, `perf:`, atau penyesuaian fungsional kecil.
+   - **Bebas naik tanpa batas digit (`1.20.99` ➔ `1.20.100` ➔ `1.20.1000`)** selama masih dalam lingkup perbaikan/refactor.
+   - **DILARANG KERAS** menaikkan angka MINOR secara otomatis hanya karena angka PATCH sudah besar.
+2. **MINOR (`X.Y.0`)**:
+   - Digit tengah (`Y`) **HANYA BOLEH NAIK** jika ada **penambahan modul fitur baru berskala besar** atau atas **perintah eksplisit dari user**.
+   - Saat MINOR naik, digit PATCH di-reset ke `0` (contoh: `1.20.1000` ➔ `1.21.0`).
+3. **MAJOR (`X.0.0`)**:
+   - Digit depan (`X`) **HANYA BOLEH NAIK** jika ada **perombakan arsitektur besar / breaking changes** atau atas **perintah eksplisit dari user**.
+   - Saat MAJOR naik, digit MINOR & PATCH di-reset ke `0` (contoh: `1.20.1000` ➔ `2.0.0`).
+
 ### Tabel Pemetaan Tipe Commit ke Versi:
 
 | Tipe Pekerjaan (Commit Prefix) | Deskripsi Berdasarkan Perintah User | Dampak Versi | Contoh Transisi Versi |
 | :--- | :--- | :--- | :--- |
-| **`feat!:`** atau **`breaking:`** | Perubahan besar/merombak arsitektur, migrasi struktur data yang memutus kompatibilitas, atau redesign total aplikasi. | **MAJOR** (`X.0.0`)<br>*Digit depan +1, minor & patch reset ke 0* | `1.1.0` ➔ `2.0.0` |
-| **`feat:`** | **Menambahkan fitur fungsional baru** yang diminta user (misal: tambah bahasa baru, in-app updater, filter tag, ekspor/impor). | **MINOR** (`1.X.0`)<br>*Digit tengah +1, patch reset ke 0* | `1.1.0` ➔ `1.2.0` |
-| **`fix:`** | Memperbaiki bug, salah hitung waktu/jam alarm, error crash, dsb. | **PATCH** (`1.0.X`)<br>*Digit belakang +1* | `1.1.0` ➔ `1.1.1` |
-| **`style:`** / **`refactor:`** / **`perf:`** | Mempercantik tampilan (UI), mengubah tata letak tombol, membersihkan kode tanpa menambah fitur baru. | **PATCH** (`1.0.X`)<br>*Digit belakang +1* | `1.1.0` ➔ `1.1.1` |
+| **`feat!:`** atau **`breaking:`** | Perubahan besar/merombak arsitektur, migrasi struktur data yang memutus kompatibilitas, atau instruksi eksplisit user. | **MAJOR** (`X.0.0`)<br>*Digit depan +1, minor & patch reset ke 0* | `1.20.500` ➔ `2.0.0` |
+| **`feat:`** | **Menambahkan modul/fitur fungsional baru** (misal: tambah modul sinkronisasi baru, export/import engine baru, dsb.) atau instruksi user. | **MINOR** (`1.X.0`)<br>*Digit tengah +1, patch reset ke 0* | `1.20.500` ➔ `1.21.0` |
+| **`fix:`** | Memperbaiki bug, salah hitung waktu/jam alarm, error crash, tampilan terpotong, dsb. | **PATCH** (`1.X.Z`)<br>*Digit belakang +1 (tanpa batas)* | `1.20.6` ➔ `1.20.7`<br>`1.20.99` ➔ `1.20.100`<br>`1.20.999` ➔ `1.20.1000` |
+| **`style:`** / **`refactor:`** / **`perf:`** | Mempercantik tampilan (UI), mengubah padding/posisi tombol, optimasi performa, membersihkan kode tanpa modul baru. | **PATCH** (`1.X.Z`)<br>*Digit belakang +1 (tanpa batas)* | `1.20.6` ➔ `1.20.7` |
 
 ### Format Standar Pesan Commit:
 Format commit wajib menggunakan standar Conventional Commits yang mencerminkan instruksi user:
