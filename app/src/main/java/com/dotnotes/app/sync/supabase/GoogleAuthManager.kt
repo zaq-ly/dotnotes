@@ -1,13 +1,19 @@
 package com.dotnotes.app.sync.supabase
 
+import android.app.Activity
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
+import android.content.ContextWrapper
 import android.util.Log
-import androidx.browser.customtabs.CustomTabsIntent
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
 import com.dotnotes.app.BuildConfig
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.providers.builtin.IDToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -44,52 +50,54 @@ class GoogleAuthManager(private val context: Context) {
         }
     }
 
-    suspend fun signInWithGoogle(): Result<Unit> = withContext(Dispatchers.Main) {
+    suspend fun signInWithGoogle(): Result<Unit> {
         try {
             if (!SupabaseClientProvider.isConfigured) {
-                return@withContext Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
+                return Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
             }
 
-            // 1. Generate Google OAuth URL with prompt=select_account and redirect to app
-            val redirectUrl = "com.dotnotes.app://auth"
-            val oAuthUrl = withContext(Dispatchers.IO) {
-                supabase.auth.getOAuthUrl(
-                    provider = Google,
-                    redirectUrl = redirectUrl
-                ) {
-                    queryParams["prompt"] = "select_account"
+            val webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+            if (webClientId.isBlank()) {
+                return Result.failure(IllegalStateException("GOOGLE_WEB_CLIENT_ID belum terpasang"))
+            }
+
+            // Ensure activity context for Android 14+ Credential Manager
+            val activityContext = context.findActivity() ?: context
+
+            // 1. Build Google ID Option for Native Credential Manager
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(webClientId)
+                .setAutoSelectEnabled(false)
+                .build()
+
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build()
+
+            val credentialManager = CredentialManager.create(activityContext)
+            val result = credentialManager.getCredential(activityContext, request)
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
+            val idToken = googleIdTokenCredential.idToken
+
+            // 2. Authenticate with Supabase via IDToken
+            withContext(Dispatchers.IO) {
+                supabase.auth.signInWith(IDToken) {
+                    this.idToken = idToken
+                    provider = Google
                 }
             }
 
-            Log.d(TAG, "Launching OAuth URL via Chrome Custom Tabs: $oAuthUrl")
-
-            // 2. Build seamless Custom Tabs intent
-            val customTabsIntent = CustomTabsIntent.Builder()
-                .setShowTitle(false)
-                .setUrlBarHidingEnabled(true)
-                .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
-                .setToolbarCornerRadiusDp(16)
-                .build()
-
-            val intent = customTabsIntent.intent
-            intent.data = Uri.parse(oAuthUrl)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-            // 3. Lock package to Google Chrome so accounts on device appear and no browser chooser is shown
-            intent.setPackage("com.android.chrome")
-
-            try {
-                context.startActivity(intent)
-            } catch (_: Exception) {
-                // Fallback to system Custom Tabs if Chrome is not installed
-                intent.setPackage(null)
-                context.startActivity(intent)
-            }
-
-            Result.success(Unit)
+            return Result.success(Unit)
+        } catch (_: GetCredentialCancellationException) {
+            Log.d(TAG, "User dismissed Google Sign-In dialog")
+            return Result.failure(kotlinx.coroutines.CancellationException("User cancelled login"))
+        } catch (e: GetCredentialException) {
+            Log.e(TAG, "Credential Manager error type: ${e.type}, message: ${e.message}", e)
+            return Result.failure(Exception("Google Sign-In gagal [${e.type}]: ${e.message}", e))
         } catch (e: Exception) {
-            Log.e(TAG, "Google OAuth failed", e)
-            Result.failure(e)
+            Log.e(TAG, "Google login exception: ${e.localizedMessage}", e)
+            return Result.failure(e)
         }
     }
 
@@ -104,5 +112,16 @@ class GoogleAuthManager(private val context: Context) {
 
     companion object {
         private const val TAG = "GoogleAuthManager"
+
+        private fun Context.findActivity(): Activity? {
+            var currentContext = this
+            while (currentContext is ContextWrapper) {
+                if (currentContext is Activity) {
+                    return currentContext
+                }
+                currentContext = currentContext.baseContext
+            }
+            return null
+        }
     }
 }
