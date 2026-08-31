@@ -45,8 +45,10 @@ class GoogleAuthManager(private val context: Context) {
             if (!SupabaseClientProvider.isConfigured) {
                 return@withContext Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
             }
-            Log.d(TAG, "Launching Supabase Google OAuth browser flow...")
-            supabase.auth.signInWith(Google)
+            Log.d(TAG, "Launching Supabase Google OAuth browser flow with account picker prompt...")
+            supabase.auth.signInWith(Google) {
+                queryParams["prompt"] = "select_account"
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Google OAuth failed", e)
