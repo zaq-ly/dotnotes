@@ -1,7 +1,11 @@
 package com.dotnotes.app.sync.supabase
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import androidx.browser.customtabs.CustomTabsIntent
+import com.dotnotes.app.BuildConfig
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import kotlinx.coroutines.Dispatchers
@@ -40,16 +44,48 @@ class GoogleAuthManager(private val context: Context) {
         }
     }
 
-    suspend fun signInWithGoogle(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun signInWithGoogle(): Result<Unit> = withContext(Dispatchers.Main) {
         try {
             if (!SupabaseClientProvider.isConfigured) {
                 return@withContext Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
             }
 
-            Log.d(TAG, "Launching Supabase Google OAuth via CustomTabs with account picker prompt...")
-            supabase.auth.signInWith(Google) {
-                queryParams["prompt"] = "select_account"
+            // 1. Generate Google OAuth URL with prompt=select_account and redirect to app
+            val redirectUrl = "com.dotnotes.app://auth"
+            val oAuthUrl = withContext(Dispatchers.IO) {
+                supabase.auth.getOAuthUrl(
+                    provider = Google,
+                    redirectUrl = redirectUrl
+                ) {
+                    queryParams["prompt"] = "select_account"
+                }
             }
+
+            Log.d(TAG, "Launching OAuth URL via Chrome Custom Tabs: $oAuthUrl")
+
+            // 2. Build seamless Custom Tabs intent
+            val customTabsIntent = CustomTabsIntent.Builder()
+                .setShowTitle(false)
+                .setUrlBarHidingEnabled(true)
+                .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
+                .setToolbarCornerRadiusDp(16)
+                .build()
+
+            val intent = customTabsIntent.intent
+            intent.data = Uri.parse(oAuthUrl)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+            // 3. Lock package to Google Chrome so accounts on device appear and no browser chooser is shown
+            intent.setPackage("com.android.chrome")
+
+            try {
+                context.startActivity(intent)
+            } catch (_: Exception) {
+                // Fallback to system Custom Tabs if Chrome is not installed
+                intent.setPackage(null)
+                context.startActivity(intent)
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Google OAuth failed", e)

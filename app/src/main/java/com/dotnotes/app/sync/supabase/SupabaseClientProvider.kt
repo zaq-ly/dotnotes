@@ -1,8 +1,6 @@
 package com.dotnotes.app.sync.supabase
 
-import androidx.browser.customtabs.CustomTabsIntent
 import com.dotnotes.app.BuildConfig
-import com.dotnotes.app.DotNotesApp
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.ExternalAuthAction
@@ -27,11 +25,7 @@ object SupabaseClientProvider {
             install(Auth) {
                 scheme = "com.dotnotes.app"
                 host = "auth"
-                defaultExternalAuthAction = ExternalAuthAction.CustomTabs {
-                    setShowTitle(false)
-                    setUrlBarHidingEnabled(true)
-                    setShareState(CustomTabsIntent.SHARE_STATE_OFF)
-                }
+                defaultExternalAuthAction = ExternalAuthAction.CustomTabs()
             }
             install(Postgrest)
         }
