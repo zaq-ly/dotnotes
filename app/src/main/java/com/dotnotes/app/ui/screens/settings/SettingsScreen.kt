@@ -361,7 +361,11 @@ fun SettingsScreen(
                                     viewModel.syncCloud { result ->
                                         when (result) {
                                             is SyncResult.Success -> {
-                                                val msg = String.format(strings.syncSuccess, result.syncedCount)
+                                                val msg = if (result.syncedCount > 0) {
+                                                    String.format(strings.syncSuccess, result.syncedCount)
+                                                } else {
+                                                    strings.syncUpToDate
+                                                }
                                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                             }
                                             is SyncResult.Error -> {
