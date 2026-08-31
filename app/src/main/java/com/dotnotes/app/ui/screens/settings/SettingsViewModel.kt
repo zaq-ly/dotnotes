@@ -62,6 +62,9 @@ class SettingsViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AuthUserState())
 
+    private val _isLoggingIn = MutableStateFlow(false)
+    val isLoggingIn = _isLoggingIn.asStateFlow()
+
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing = _isSyncing.asStateFlow()
 
@@ -92,6 +95,7 @@ class SettingsViewModel(
 
     fun signInWithGoogle(context: Context, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
+            _isLoggingIn.value = true
             try {
                 val authManager = GoogleAuthManager(context)
                 val result = authManager.signInWithGoogle()
@@ -107,12 +111,14 @@ class SettingsViewModel(
                     }
                 } else {
                     val ex = result.exceptionOrNull()
-                    onResult(false, ex?.localizedMessage)
+                    onResult(false, ex?.localizedMessage ?: "Gagal login")
                 }
             } catch (_: kotlinx.coroutines.CancellationException) {
                 onResult(false, null)
             } catch (e: Exception) {
-                onResult(false, e.localizedMessage)
+                onResult(false, e.localizedMessage ?: "Gagal login")
+            } finally {
+                _isLoggingIn.value = false
             }
         }
     }

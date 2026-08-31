@@ -99,6 +99,7 @@ fun SettingsScreen(
     val availableUpdate by viewModel.availableUpdate.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
     val authUser by viewModel.authUserState.collectAsState()
+    val isLoggingIn by viewModel.isLoggingIn.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     val lastSyncTime by viewModel.lastSyncTime.collectAsState()
     
@@ -183,7 +184,7 @@ fun SettingsScreen(
                             shadowElevation = 2.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
+                                .clickable(enabled = !isLoggingIn) {
                                     viewModel.signInWithGoogle(context) { success, err ->
                                         if (success) {
                                             Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
@@ -200,18 +201,32 @@ fun SettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_google_logo),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = Color.Unspecified
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    text = strings.signInWithGoogle,
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                if (isLoggingIn) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(
+                                        text = strings.syncing,
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                } else {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_google_logo),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = Color.Unspecified
+                                    )
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(
+                                        text = strings.signInWithGoogle,
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                             }
                         }
                     }
