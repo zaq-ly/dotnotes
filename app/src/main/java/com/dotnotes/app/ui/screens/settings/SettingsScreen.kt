@@ -129,9 +129,9 @@ fun SettingsScreen(
                 .padding(bottom = 24.dp)
         ) {
             // ==========================================
-            // 1. AKUN GOOGLE & CLOUD SYNC (PALING ATAS)
+            // 1. AKUN GOOGLE (PALING ATAS)
             // ==========================================
-            SectionHeader(title = strings.accountAndSync)
+            SectionHeader(title = strings.googleAccount)
 
             if (!authUser.isLoggedIn) {
                 // Not Logged In Card with Google Branding
@@ -233,7 +233,7 @@ fun SettingsScreen(
                     }
                 }
             } else {
-                // Logged In Card with Profile and Sync Actions
+                // Logged In Card with Profile
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -243,118 +243,69 @@ fun SettingsScreen(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                     )
                 ) {
-                    Column(
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp)
                     ) {
-                        // User Profile Row
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            if (!authUser.avatarUrl.isNullOrBlank()) {
-                                AsyncImage(
-                                    model = authUser.avatarUrl,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primaryContainer),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    val initial = authUser.displayName?.firstOrNull()?.uppercase()
-                                        ?: authUser.email?.firstOrNull()?.uppercase()
-                                        ?: "U"
-                                    Text(
-                                        text = initial,
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
-
-                            Spacer(Modifier.width(12.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
+                        if (!authUser.avatarUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = authUser.avatarUrl,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val initial = authUser.displayName?.firstOrNull()?.uppercase()
+                                    ?: authUser.email?.firstOrNull()?.uppercase()
+                                    ?: "U"
                                 Text(
-                                    text = authUser.displayName ?: strings.googleAccount,
+                                    text = initial,
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1
-                                )
-                                if (!authUser.email.isNullOrBlank()) {
-                                    Text(
-                                        text = authUser.email!!,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-
-                            TextButton(onClick = {
-                                viewModel.signOut(context) {
-                                    Toast.makeText(context, strings.signOut, Toast.LENGTH_SHORT).show()
-                                }
-                            }) {
-                                Text(
-                                    text = strings.signOut,
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
 
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 14.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                        )
+                        Spacer(Modifier.width(12.dp))
 
-                        // Cloud Sync Section (Auto-Sync Status)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudDone,
-                                contentDescription = null,
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(24.dp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = authUser.displayName ?: strings.googleAccount,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
                             )
-                            Spacer(Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
+                            if (!authUser.email.isNullOrBlank()) {
                                 Text(
-                                    text = strings.cloudBackup,
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = strings.cloudBackupDesc,
+                                    text = authUser.email!!,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
                                 )
                             }
-                            Spacer(Modifier.width(8.dp))
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFF4CAF50).copy(alpha = 0.15f)
-                            ) {
-                                Text(
-                                    text = strings.autoSyncActive,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = Color(0xFF4CAF50),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
+                        }
+
+                        TextButton(onClick = {
+                            viewModel.signOut(context) {
+                                Toast.makeText(context, strings.signOut, Toast.LENGTH_SHORT).show()
                             }
+                        }) {
+                            Text(
+                                text = strings.signOut,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                            )
                         }
                     }
                 }
