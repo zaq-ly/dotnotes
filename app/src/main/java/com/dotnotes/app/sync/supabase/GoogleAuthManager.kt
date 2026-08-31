@@ -12,6 +12,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
@@ -70,6 +71,10 @@ class GoogleAuthManager(private val context: Context) {
             val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
             val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
 
+            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(
+                serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+            ).setNonce(hashedNonce).build()
+
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
@@ -78,26 +83,50 @@ class GoogleAuthManager(private val context: Context) {
                 .build()
 
             val request = GetCredentialRequest.Builder()
+                .addCredentialOption(signInWithGoogleOption)
                 .addCredentialOption(googleIdOption)
                 .build()
 
             val response = credentialManager.getCredential(activity, request)
             val credential = response.credential
 
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            val idToken = googleIdTokenCredential.idToken
-            val displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName
-            val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+            var idToken: String? = null
+            var displayName: String? = null
+            var avatarUrl: String? = null
 
-            if (idToken.isBlank()) {
-                return Result.failure(IllegalStateException("ID Token Google tidak ditemukan"))
+            try {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                idToken = googleIdTokenCredential.idToken
+                displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName
+                avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error parsing GoogleIdTokenCredential", e)
             }
 
+            if (idToken.isNullOrBlank()) {
+                idToken = credential.data.getString("androidx.credentials.BUNDLE_KEY_ID_TOKEN")
+                    ?: credential.data.getString("id_token")
+            }
+
+            if (idToken.isNullOrBlank()) {
+                return Result.failure(IllegalStateException("ID Token Google tidak ditemukan dari akun yang dipilih"))
+            }
+
+            val finalIdToken = idToken
+
             withContext(Dispatchers.IO) {
-                supabase.auth.signInWith(IDToken) {
-                    this.idToken = idToken
-                    this.provider = Google
-                    this.nonce = rawNonce
+                try {
+                    supabase.auth.signInWith(IDToken) {
+                        this.idToken = finalIdToken
+                        this.provider = Google
+                        this.nonce = rawNonce
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Supabase IDToken sign in with rawNonce failed, retrying without nonce...", e)
+                    supabase.auth.signInWith(IDToken) {
+                        this.idToken = finalIdToken
+                        this.provider = Google
+                    }
                 }
             }
 

@@ -209,7 +209,7 @@ fun SettingsScreen(
                                     )
                                     Spacer(Modifier.width(10.dp))
                                     Text(
-                                        text = strings.syncing,
+                                        text = strings.signingIn,
                                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )

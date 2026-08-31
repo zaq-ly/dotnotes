@@ -102,21 +102,20 @@ class SettingsViewModel(
                 if (result.isSuccess) {
                     val state = result.getOrNull()
                     if (state != null && state.isLoggedIn) {
-                        syncCloud {
-                            onResult(true, null)
-                        }
+                        onResult(true, null)
+                        syncCloud()
                     } else {
                         // User cancelled — no error to show
                         onResult(false, null)
                     }
                 } else {
                     val ex = result.exceptionOrNull()
-                    onResult(false, ex?.localizedMessage ?: "Gagal login")
+                    onResult(false, ex?.localizedMessage ?: ex?.message ?: "Gagal login dengan Google")
                 }
             } catch (_: kotlinx.coroutines.CancellationException) {
                 onResult(false, null)
             } catch (e: Exception) {
-                onResult(false, e.localizedMessage ?: "Gagal login")
+                onResult(false, e.localizedMessage ?: e.message ?: "Gagal login dengan Google")
             } finally {
                 _isLoggingIn.value = false
             }
