@@ -71,6 +71,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.R
@@ -108,6 +111,23 @@ fun SettingsScreen(
     var showSnoozeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var signInError by remember { mutableStateOf<String?>(null) }
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.handleGoogleSignInResult(context, result.data) { success, err ->
+                if (success) {
+                    Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
+                } else if (err != null) {
+                    signInError = err
+                    Toast.makeText(context, err, Toast.LENGTH_LONG).show()
+                }
+            }
+        } else {
+            viewModel.cancelLoggingIn()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -186,13 +206,10 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable(enabled = !isLoggingIn) {
-                                    viewModel.signInWithGoogle(context) { success, err ->
-                                        if (success) {
-                                            Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
-                                        } else if (err != null) {
-                                            signInError = err
-                                            Toast.makeText(context, err, Toast.LENGTH_LONG).show()
-                                        }
+                                    try {
+                                        googleSignInLauncher.launch(viewModel.getGoogleSignInIntent(context))
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                                     }
                                 }
                         ) {

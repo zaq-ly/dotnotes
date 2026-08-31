@@ -1,6 +1,7 @@
 package com.dotnotes.app.ui.screens.settings
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -93,32 +94,35 @@ class SettingsViewModel(
         viewModelScope.launch { dataStore.setLanguage(lang) }
     }
 
-    fun signInWithGoogle(context: Context, onResult: (Boolean, String?) -> Unit) {
+    fun getGoogleSignInIntent(context: Context): Intent {
+        val authManager = GoogleAuthManager(context)
+        return authManager.getSignInIntent()
+    }
+
+    fun handleGoogleSignInResult(context: Context, data: Intent?, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             _isLoggingIn.value = true
             try {
                 val authManager = GoogleAuthManager(context)
-                val result = authManager.signInWithGoogle()
+                val result = authManager.handleSignInResult(data)
                 if (result.isSuccess) {
                     // Pull notes from cloud for this logged-in account
                     syncManager.syncNotes()
                     onResult(true, null)
                 } else {
                     val ex = result.exceptionOrNull()
-                    if (ex is kotlinx.coroutines.CancellationException) {
-                        onResult(false, null)
-                    } else {
-                        onResult(false, ex?.localizedMessage ?: ex?.message ?: "Gagal masuk dengan Google")
-                    }
+                    onResult(false, ex?.localizedMessage ?: ex?.message ?: "Gagal masuk dengan Google")
                 }
-            } catch (_: kotlinx.coroutines.CancellationException) {
-                onResult(false, null)
             } catch (e: Exception) {
                 onResult(false, e.localizedMessage ?: e.message ?: "Gagal masuk dengan Google")
             } finally {
                 _isLoggingIn.value = false
             }
         }
+    }
+
+    fun cancelLoggingIn() {
+        _isLoggingIn.value = false
     }
 
     fun signOut(context: Context, onResult: (Boolean) -> Unit) {

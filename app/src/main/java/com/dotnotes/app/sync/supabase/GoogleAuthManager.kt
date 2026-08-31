@@ -1,16 +1,13 @@
 package com.dotnotes.app.sync.supabase
 
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
+import android.content.Intent
 import android.util.Log
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialException
 import com.dotnotes.app.BuildConfig
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.IDToken
@@ -50,65 +47,44 @@ class GoogleAuthManager(private val context: Context) {
         }
     }
 
-    suspend fun signInWithGoogle(): Result<Unit> = withContext(Dispatchers.Main) {
+    fun getSignInIntent(): Intent {
+        val webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(webClientId)
+            .requestEmail()
+            .build()
+        val client = GoogleSignIn.getClient(context, gso)
+        client.signOut()
+        return client.signInIntent
+    }
+
+    suspend fun handleSignInResult(data: Intent?): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            if (!SupabaseClientProvider.isConfigured) {
-                return@withContext Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
+            val idToken = account.idToken ?: return@withContext Result.failure(IllegalStateException("Gagal mendapatkan ID Token dari Google"))
+
+            Log.d(TAG, "Google ID Token received successfully. Authenticating with Supabase...")
+
+            supabase.auth.signInWith(IDToken) {
+                this.idToken = idToken
+                provider = Google
             }
 
-            val webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
-            if (webClientId.isBlank()) {
-                return@withContext Result.failure(IllegalStateException("GOOGLE_WEB_CLIENT_ID belum terpasang"))
-            }
-
-            val activityContext = context.findActivity() ?: context
-
-            val rawNonce = java.util.UUID.randomUUID().toString()
-            val md = java.security.MessageDigest.getInstance("SHA-256")
-            val digest = md.digest(rawNonce.toByteArray())
-            val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
-
-            // 1. Pure Native Google Credential Manager (0% Browser)
-            val googleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(webClientId)
-                .setNonce(hashedNonce)
-                .setAutoSelectEnabled(false)
-                .build()
-
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOption)
-                .build()
-
-            val credentialManager = CredentialManager.create(activityContext)
-            val result = credentialManager.getCredential(activityContext, request)
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
-            val idToken = googleIdTokenCredential.idToken
-
-            // 2. Authenticate directly with Supabase via IDToken
-            withContext(Dispatchers.IO) {
-                supabase.auth.signInWith(IDToken) {
-                    this.idToken = idToken
-                    this.nonce = rawNonce
-                    provider = Google
-                }
-            }
-
-            return@withContext Result.success(Unit)
-        } catch (_: GetCredentialCancellationException) {
-            Log.d(TAG, "User cancelled Google Sign-In dialog")
-            return@withContext Result.failure(kotlinx.coroutines.CancellationException("User cancelled login"))
-        } catch (e: GetCredentialException) {
-            Log.e(TAG, "Credential Manager error type: ${e.type}, message: ${e.message}", e)
-            return@withContext Result.failure(Exception("Google Sign-In gagal [${e.type}]: ${e.message}", e))
+            Result.success(Unit)
+        } catch (e: ApiException) {
+            Log.e(TAG, "Google Sign-In ApiException statusCode=${e.statusCode}", e)
+            Result.failure(Exception("Google Sign-In error (Status Code ${e.statusCode}): ${e.localizedMessage ?: e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Google login failed", e)
-            return@withContext Result.failure(e)
+            Log.e(TAG, "Google Sign-In failed", e)
+            Result.failure(e)
         }
     }
 
     suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+            GoogleSignIn.getClient(context, gso).signOut()
             supabase.auth.signOut()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -118,16 +94,5 @@ class GoogleAuthManager(private val context: Context) {
 
     companion object {
         private const val TAG = "GoogleAuthManager"
-
-        private fun Context.findActivity(): Activity? {
-            var currentContext = this
-            while (currentContext is ContextWrapper) {
-                if (currentContext is Activity) {
-                    return currentContext
-                }
-                currentContext = currentContext.baseContext
-            }
-            return null
-        }
     }
 }
