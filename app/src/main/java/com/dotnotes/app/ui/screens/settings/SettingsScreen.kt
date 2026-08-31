@@ -107,6 +107,7 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showSnoozeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var signInError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -189,7 +190,7 @@ fun SettingsScreen(
                                         if (success) {
                                             Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
                                         } else if (err != null) {
-                                            Toast.makeText(context, err, Toast.LENGTH_LONG).show()
+                                            signInError = err
                                         }
                                     }
                                 }
@@ -567,6 +568,25 @@ fun SettingsScreen(
     // ==========================================
     // DIALOGS
     // ==========================================
+    // Sign-In Error Dialog
+    if (signInError != null) {
+        AlertDialog(
+            onDismissRequest = { signInError = null },
+            shape = RoundedCornerShape(28.dp),
+            title = { Text("Google Sign-In Error", style = MaterialTheme.typography.titleLarge) },
+            text = {
+                Text(
+                    text = signInError ?: "",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { signInError = null }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
     // Language Dialog
     if (showLanguageDialog) {
         AlertDialog(

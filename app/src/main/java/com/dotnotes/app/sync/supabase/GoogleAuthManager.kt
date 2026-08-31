@@ -12,6 +12,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
@@ -63,7 +64,10 @@ class GoogleAuthManager(private val context: Context) {
             ?: return Result.failure(IllegalStateException("Activity context tidak ditemukan"))
 
         return try {
-            // ponytail: no nonce — overkill for notes app, causes silent failures
+            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(
+                serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+            ).build()
+
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
@@ -71,6 +75,7 @@ class GoogleAuthManager(private val context: Context) {
                 .build()
 
             val request = GetCredentialRequest.Builder()
+                .addCredentialOption(signInWithGoogleOption)
                 .addCredentialOption(googleIdOption)
                 .build()
 
@@ -79,21 +84,36 @@ class GoogleAuthManager(private val context: Context) {
             val credential = response.credential
             Log.d(TAG, "Credential received, type=${credential.type}")
 
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            val idToken = googleIdTokenCredential.idToken
-            val displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName
-            val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+            var idToken: String? = null
+            var displayName: String? = null
+            var avatarUrl: String? = null
 
-            Log.d(TAG, "ID Token obtained, length=${idToken.length}, displayName=$displayName")
-
-            if (idToken.isBlank()) {
-                return Result.failure(IllegalStateException("ID Token Google kosong"))
+            try {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                idToken = googleIdTokenCredential.idToken
+                displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName
+                avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error parsing GoogleIdTokenCredential: ${e.message}")
             }
+
+            if (idToken.isNullOrBlank()) {
+                idToken = credential.data.getString("androidx.credentials.BUNDLE_KEY_ID_TOKEN")
+                    ?: credential.data.getString("id_token")
+            }
+
+            Log.d(TAG, "ID Token obtained, length=${idToken?.length ?: 0}, displayName=$displayName")
+
+            if (idToken.isNullOrBlank()) {
+                return Result.failure(IllegalStateException("ID Token Google tidak ditemukan dari akun yang dipilih"))
+            }
+
+            val finalIdToken = idToken
 
             Log.d(TAG, "Signing in to Supabase with IDToken...")
             withContext(Dispatchers.IO) {
                 supabase.auth.signInWith(IDToken) {
-                    this.idToken = idToken
+                    this.idToken = finalIdToken
                     this.provider = Google
                 }
             }
@@ -129,13 +149,13 @@ class GoogleAuthManager(private val context: Context) {
                 Result.success(AuthUserState(isLoggedIn = false))
             } else {
                 Log.e(TAG, "CredentialException: ${e.type} - ${e.message}", e)
-                Result.failure(IllegalStateException("Google Sign-In gagal: ${e.message}"))
+                Result.failure(IllegalStateException("[CredentialException] ${e.type}: ${e.message}"))
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Sign-in failed", e)
-            Result.failure(IllegalStateException("Login gagal: ${e.message}"))
+            Log.e(TAG, "Sign-in failed: ${e.javaClass.simpleName}", e)
+            Result.failure(IllegalStateException("[${e.javaClass.simpleName}] ${e.message ?: "Unknown error"}"))
         }
     }
 
