@@ -16,6 +16,7 @@ data class SupabaseNoteDto(
     @SerialName("priority") val priority: Int? = null,
     @SerialName("is_alarm_dismissed") val isAlarmDismissed: Boolean? = null,
     @SerialName("snooze_duration_min") val snoozeDurationMin: Int? = null,
+    @SerialName("repeat_interval") val repeatInterval: String? = null,
     @SerialName("created_at") val createdAt: Long? = null,
     @SerialName("updated_at") val updatedAt: Long? = null,
     @SerialName("is_deleted") val isDeleted: Boolean? = null
@@ -29,6 +30,7 @@ data class SupabaseNoteDto(
         priority = priority ?: 0,
         isAlarmDismissed = isAlarmDismissed ?: false,
         snoozeDurationMin = snoozeDurationMin ?: 5,
+        repeatInterval = repeatInterval ?: "NONE",
         createdAt = createdAt ?: System.currentTimeMillis(),
         updatedAt = updatedAt ?: System.currentTimeMillis(),
         isDeleted = isDeleted ?: false
@@ -45,6 +47,7 @@ data class SupabaseNoteDto(
             priority = note.priority,
             isAlarmDismissed = note.isAlarmDismissed,
             snoozeDurationMin = note.snoozeDurationMin,
+            repeatInterval = note.repeatInterval,
             createdAt = note.createdAt,
             updatedAt = note.updatedAt,
             isDeleted = note.isDeleted

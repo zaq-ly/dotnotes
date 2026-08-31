@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.layout.heightIn
@@ -634,6 +635,15 @@ private fun SelectableNoteCard(
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF42A5F5)
                             )
+                            if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                                Spacer(Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Repeat,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = if (note.priority == 2) MaterialTheme.colorScheme.error else Color(0xFF42A5F5)
+                                )
+                            }
                         }
                     }
 

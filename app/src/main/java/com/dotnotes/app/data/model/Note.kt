@@ -14,6 +14,7 @@ data class Note(
     val priority: Int = 0,
     val isAlarmDismissed: Boolean = false,
     val snoozeDurationMin: Int = 5,
+    val repeatInterval: String = "NONE",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false

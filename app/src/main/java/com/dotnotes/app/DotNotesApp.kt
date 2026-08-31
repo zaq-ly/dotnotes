@@ -19,7 +19,9 @@ class DotNotesApp : Application() {
 
         database = Room.databaseBuilder(
             this, NoteDatabase::class.java, "dotnotes.db"
-        ).build()
+        )
+            .addMigrations(NoteDatabase.MIGRATION_1_2)
+            .build()
 
         repository = NoteRepository(database.noteDao())
         settingsDataStore = SettingsDataStore(this)

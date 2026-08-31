@@ -40,6 +40,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckBox
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -56,6 +58,9 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import com.dotnotes.app.alarm.ReminderHelper
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -143,6 +148,7 @@ fun NoteEditorScreen(
     var showReminderDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showRepeatMenu by remember { mutableStateOf(false) }
     var isContentInitialized by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.isLoading) {
@@ -590,6 +596,82 @@ fun NoteEditorScreen(
                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+
+                        // Repeat Interval Selector (Google Calendar Style)
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(onClick = { showRepeatMenu = true })
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Repeat,
+                                        contentDescription = null,
+                                        tint = if (state.repeatInterval != ReminderHelper.REPEAT_NONE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = ReminderHelper.getRepeatLabel(state.repeatInterval, strings),
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = showRepeatMenu,
+                                onDismissRequest = { showRepeatMenu = false },
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            ) {
+                                val repeatOptions = listOf(
+                                    ReminderHelper.REPEAT_NONE to strings.repeatNone,
+                                    ReminderHelper.REPEAT_DAILY to strings.repeatDaily,
+                                    ReminderHelper.REPEAT_WEEKLY to strings.repeatWeekly,
+                                    ReminderHelper.REPEAT_MONTHLY to strings.repeatMonthly,
+                                    ReminderHelper.REPEAT_YEARLY to strings.repeatYearly
+                                )
+                                repeatOptions.forEach { (optionKey, optionLabel) ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = optionLabel,
+                                                fontWeight = if (state.repeatInterval == optionKey) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (state.repeatInterval == optionKey) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.setRepeatInterval(optionKey)
+                                            showRepeatMenu = false
+                                        },
+                                        leadingIcon = if (state.repeatInterval == optionKey) {
+                                            {
+                                                Icon(
+                                                    Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        } else null
                                     )
                                 }
                             }

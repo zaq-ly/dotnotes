@@ -25,7 +25,19 @@ class AlarmReceiver : BroadcastReceiver() {
             NotificationManagerCompat.from(context).cancel(noteId.hashCode())
             NotificationManagerCompat.from(context).cancel(Math.abs(noteId.hashCode()) + 1)
             runBlocking {
-                DotNotesApp.instance.repository.dismissAlarm(noteId)
+                val note = DotNotesApp.instance.repository.getNoteById(noteId)
+                if (note != null && note.repeatInterval != ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                    val nextTime = ReminderHelper.getNextReminderTime(note.reminderTime ?: System.currentTimeMillis(), note.repeatInterval)
+                    val updatedNote = note.copy(
+                        reminderTime = nextTime,
+                        isAlarmDismissed = false,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    DotNotesApp.instance.repository.upsertNote(updatedNote)
+                    AlarmScheduler(context).schedule(updatedNote)
+                } else {
+                    DotNotesApp.instance.repository.dismissAlarm(noteId)
+                }
             }
             return
         }

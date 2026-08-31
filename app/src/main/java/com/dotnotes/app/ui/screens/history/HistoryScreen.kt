@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -439,17 +440,31 @@ private fun HistoryCard(
                                 Color(0xFF42A5F5)
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = if (reminderTime > 0) reminderFormat.format(Date(reminderTime)) else "",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (selectedTab == 1)
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            else if (note.priority == 2 || isOverdue)
-                                MaterialTheme.colorScheme.onErrorContainer
-                            else
-                                Color(0xFF42A5F5)
-                        )
+                            Text(
+                                text = if (reminderTime > 0) reminderFormat.format(Date(reminderTime)) else "",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (selectedTab == 1)
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                else if (note.priority == 2 || isOverdue)
+                                    MaterialTheme.colorScheme.onErrorContainer
+                                else
+                                    Color(0xFF42A5F5)
+                            )
+                            if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                                Spacer(Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Repeat,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = if (selectedTab == 1)
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    else if (note.priority == 2 || isOverdue)
+                                        MaterialTheme.colorScheme.error
+                                    else
+                                        Color(0xFF42A5F5)
+                                )
+                            }
                     }
                 }
 

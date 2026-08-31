@@ -76,8 +76,20 @@ class NoteListViewModel(
 
     fun dismissReminder(context: android.content.Context, noteId: String) {
         viewModelScope.launch {
-            repository.dismissAlarm(noteId)
-            com.dotnotes.app.alarm.AlarmScheduler(context).cancel(noteId)
+            val note = repository.getNoteById(noteId)
+            if (note != null && note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                val nextTime = com.dotnotes.app.alarm.ReminderHelper.getNextReminderTime(note.reminderTime ?: System.currentTimeMillis(), note.repeatInterval)
+                val updatedNote = note.copy(
+                    reminderTime = nextTime,
+                    isAlarmDismissed = false,
+                    updatedAt = System.currentTimeMillis()
+                )
+                repository.upsertNote(updatedNote)
+                com.dotnotes.app.alarm.AlarmScheduler(context).schedule(updatedNote)
+            } else {
+                repository.dismissAlarm(noteId)
+                com.dotnotes.app.alarm.AlarmScheduler(context).cancel(noteId)
+            }
         }
     }
 

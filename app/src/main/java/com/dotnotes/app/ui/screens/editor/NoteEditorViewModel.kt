@@ -21,6 +21,7 @@ data class EditorState(
     val reminderTime: Long? = null,
     val priority: Int = 0,
     val snoozeDurationMin: Int = 5,
+    val repeatInterval: String = com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE,
     val createdAt: Long = 0L,
     val isLoading: Boolean = true
 )
@@ -48,6 +49,7 @@ class NoteEditorViewModel(
                         reminderTime = note.reminderTime,
                         priority = note.priority,
                         snoozeDurationMin = note.snoozeDurationMin,
+                        repeatInterval = note.repeatInterval,
                         createdAt = note.createdAt,
                         isLoading = false
                     )
@@ -72,7 +74,8 @@ class NoteEditorViewModel(
         _state.value = _state.value.copy(
             hasReminder = enabled,
             reminderTime = if (enabled) _state.value.reminderTime else null,
-            priority = if (enabled) maxOf(1, _state.value.priority) else 0
+            priority = if (enabled) maxOf(1, _state.value.priority) else 0,
+            repeatInterval = if (enabled) _state.value.repeatInterval else com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE
         )
     }
 
@@ -82,6 +85,10 @@ class NoteEditorViewModel(
 
     fun setPriority(priority: Int) {
         _state.value = _state.value.copy(priority = priority)
+    }
+
+    fun setRepeatInterval(interval: String) {
+        _state.value = _state.value.copy(repeatInterval = interval)
     }
 
     fun save() {
@@ -98,6 +105,7 @@ class NoteEditorViewModel(
                 reminderTime = if (s.hasReminder) s.reminderTime else null,
                 priority = if (s.hasReminder) s.priority else 0,
                 snoozeDurationMin = s.snoozeDurationMin,
+                repeatInterval = if (s.hasReminder) s.repeatInterval else com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE,
                 createdAt = if (isNew) now else s.createdAt,
                 updatedAt = now
             )
