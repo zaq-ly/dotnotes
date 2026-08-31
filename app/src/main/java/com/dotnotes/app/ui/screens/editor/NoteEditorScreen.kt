@@ -186,6 +186,7 @@ fun NoteEditorScreen(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 TopAppBar(
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     title = {
                         Text(
                             if (noteId == null) strings.newNote else strings.editNote,

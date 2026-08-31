@@ -107,6 +107,7 @@ fun HistoryScreen(
         topBar = {
             if (isSelectionMode) {
                 TopAppBar(
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     title = {
                         Text(
                             text = String.format(strings.selectedCount, selectedNoteIds.size),
@@ -121,25 +122,24 @@ fun HistoryScreen(
                     actions = {
                         val currentTabIds = currentList.map { it.id }.toSet()
                         val isAllSelected = currentTabIds.isNotEmpty() && selectedNoteIds.containsAll(currentTabIds)
-                        Box(modifier = Modifier.padding(end = 8.dp)) {
-                            IconButton(onClick = {
-                                selectedNoteIds = if (isAllSelected) {
-                                    selectedNoteIds - currentTabIds
-                                } else {
-                                    selectedNoteIds + currentTabIds
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
-                                    contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
-                                    tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
+                        IconButton(onClick = {
+                            selectedNoteIds = if (isAllSelected) {
+                                selectedNoteIds - currentTabIds
+                            } else {
+                                selectedNoteIds + currentTabIds
                             }
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
+                                contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
+                                tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     }
                 )
             } else {
                 TopAppBar(
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     title = {
                         Text(
                             text = strings.reminderHistory,

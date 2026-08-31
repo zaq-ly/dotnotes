@@ -127,8 +127,9 @@ fun NoteListScreen(
     Scaffold(
         topBar = {
             if (isSelectionMode) {
-                // TopBar in Selection Mode (Gambar 3)
+                // TopBar in Selection Mode
                 TopAppBar(
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     title = {
                         Text(
                             text = String.format(strings.selectedCount, selectedNoteIds.size),
@@ -142,22 +143,21 @@ fun NoteListScreen(
                     },
                     actions = {
                         val isAllSelected = selectedNoteIds.size == notes.size && notes.isNotEmpty()
-                        Box(modifier = Modifier.padding(end = 8.dp)) {
-                            IconButton(onClick = {
-                                selectedNoteIds = if (isAllSelected) emptySet() else notes.map { it.id }.toSet()
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
-                                    contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
-                                    tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
+                        IconButton(onClick = {
+                            selectedNoteIds = if (isAllSelected) emptySet() else notes.map { it.id }.toSet()
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
+                                contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
+                                tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     }
                 )
             } else {
                 // Standard TopBar with History Icon and Settings Icon
                 TopAppBar(
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     title = { Text(strings.appName) },
                     actions = {
                         // History Icon (Belum Selesai / Riwayat Pengingat)
@@ -180,37 +180,39 @@ fun NoteListScreen(
                         }
 
                         // Settings / Update Icon Button
-                        IconButton(
-                            onClick = onSettingsClick,
-                            modifier = if (hasUpdate) {
-                                Modifier
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-                            } else Modifier
-                        ) {
-                            BadgedBox(
-                                badge = {
-                                    if (hasUpdate) {
-                                        Badge(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            contentColor = MaterialTheme.colorScheme.onError
-                                        ) {
-                                            Text(
-                                                text = strings.newBadge,
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 8.sp,
-                                                    fontWeight = FontWeight.Bold
+                        Box(modifier = Modifier.padding(end = 4.dp)) {
+                            IconButton(
+                                onClick = onSettingsClick,
+                                modifier = if (hasUpdate) {
+                                    Modifier
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                                } else Modifier
+                            ) {
+                                BadgedBox(
+                                    badge = {
+                                        if (hasUpdate) {
+                                            Badge(
+                                                containerColor = MaterialTheme.colorScheme.error,
+                                                contentColor = MaterialTheme.colorScheme.onError
+                                            ) {
+                                                Text(
+                                                    text = strings.newBadge,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontSize = 8.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
                                                 )
-                                            )
+                                            }
                                         }
                                     }
+                                ) {
+                                    Icon(
+                                        imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
+                                        contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
+                                        tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
-                            ) {
-                                Icon(
-                                    imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
-                                    contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
-                                    tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
                             }
                         }
                     }
@@ -313,6 +315,7 @@ fun NoteListScreen(
             if (!isSelectionMode) {
                 FloatingActionButton(
                     onClick = onNewNote,
+                    modifier = Modifier.padding(end = 4.dp, bottom = 4.dp),
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = CircleShape,
