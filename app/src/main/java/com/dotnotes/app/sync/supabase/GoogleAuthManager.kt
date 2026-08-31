@@ -3,7 +3,10 @@ package com.dotnotes.app.sync.supabase
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -18,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 
 data class AuthUserState(
     val isLoggedIn: Boolean = false,
@@ -50,54 +54,89 @@ class GoogleAuthManager(private val context: Context) {
         }
     }
 
-    suspend fun signInWithGoogle(): Result<Unit> {
+    suspend fun signInWithGoogle(): Result<Unit> = withContext(Dispatchers.Main) {
         try {
             if (!SupabaseClientProvider.isConfigured) {
-                return Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
+                return@withContext Result.failure(IllegalStateException("Supabase URL atau Anon Key belum terpasang"))
             }
 
             val webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
             if (webClientId.isBlank()) {
-                return Result.failure(IllegalStateException("GOOGLE_WEB_CLIENT_ID belum terpasang"))
+                return@withContext Result.failure(IllegalStateException("GOOGLE_WEB_CLIENT_ID belum terpasang"))
             }
 
-            // Ensure activity context for Android 14+ Credential Manager
             val activityContext = context.findActivity() ?: context
 
-            // 1. Build Google ID Option for Native Credential Manager
-            val googleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(webClientId)
-                .setAutoSelectEnabled(false)
-                .build()
+            // 1. Try Native Credential Manager First (0% Browser)
+            try {
+                val googleIdOption = GetGoogleIdOption.Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(webClientId)
+                    .setAutoSelectEnabled(false)
+                    .build()
 
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOption)
-                .build()
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
 
-            val credentialManager = CredentialManager.create(activityContext)
-            val result = credentialManager.getCredential(activityContext, request)
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
-            val idToken = googleIdTokenCredential.idToken
+                val credentialManager = CredentialManager.create(activityContext)
 
-            // 2. Authenticate with Supabase via IDToken
-            withContext(Dispatchers.IO) {
-                supabase.auth.signInWith(IDToken) {
-                    this.idToken = idToken
-                    provider = Google
+                val result = withTimeout(6000) {
+                    credentialManager.getCredential(activityContext, request)
+                }
+
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
+                val idToken = googleIdTokenCredential.idToken
+
+                withContext(Dispatchers.IO) {
+                    supabase.auth.signInWith(IDToken) {
+                        this.idToken = idToken
+                        provider = Google
+                    }
+                }
+
+                return@withContext Result.success(Unit)
+            } catch (_: GetCredentialCancellationException) {
+                Log.d(TAG, "User dismissed Google Sign-In dialog")
+                return@withContext Result.failure(kotlinx.coroutines.CancellationException("User cancelled login"))
+            } catch (e: Exception) {
+                Log.w(TAG, "Native Credential Manager not ready (${e.message}), executing seamless fallback...", e)
+            }
+
+            // 2. Seamless In-App Chrome Custom Tabs Fallback
+            val redirectUrl = "com.dotnotes.app://auth"
+            val oAuthUrl = withContext(Dispatchers.IO) {
+                supabase.auth.getOAuthUrl(
+                    provider = Google,
+                    redirectUrl = redirectUrl
+                ) {
+                    queryParams["prompt"] = "select_account"
                 }
             }
 
-            return Result.success(Unit)
-        } catch (_: GetCredentialCancellationException) {
-            Log.d(TAG, "User dismissed Google Sign-In dialog")
-            return Result.failure(kotlinx.coroutines.CancellationException("User cancelled login"))
-        } catch (e: GetCredentialException) {
-            Log.e(TAG, "Credential Manager error type: ${e.type}, message: ${e.message}", e)
-            return Result.failure(Exception("Google Sign-In gagal [${e.type}]: ${e.message}", e))
+            val customTabsIntent = CustomTabsIntent.Builder()
+                .setShowTitle(false)
+                .setUrlBarHidingEnabled(true)
+                .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
+                .setToolbarCornerRadiusDp(16)
+                .build()
+
+            val intent = customTabsIntent.intent
+            intent.data = Uri.parse(oAuthUrl)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            intent.setPackage("com.android.chrome")
+
+            try {
+                activityContext.startActivity(intent)
+            } catch (_: Exception) {
+                intent.setPackage(null)
+                activityContext.startActivity(intent)
+            }
+
+            return@withContext Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Google login exception: ${e.localizedMessage}", e)
-            return Result.failure(e)
+            Log.e(TAG, "Google login failed", e)
+            return@withContext Result.failure(e)
         }
     }
 
