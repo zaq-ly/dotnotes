@@ -4,6 +4,20 @@ Dokumen ini adalah instruksi operasional wajib untuk semua AI Agent yang bekerja
 
 ---
 
+## 0. Aturan Komunikasi & Mode Diskusi (Wajib Diikuti)
+
+1. **Mode Diskusi (Zero Code Execution)**:
+   - Setiap kali user menyebut kata **"diskusi"**, meminta penjelasan, atau mengajak merundingkan fitur/alur:
+   - AI Agent **DILARANG KERAS mengubah, membuat, atau mengeksekusi kode apa pun**.
+   - Fokus 100% pada penjabaran ide, konsep arsitektur, diagram alur, dan analisis teknis.
+   - Pengerjaan kode **HANYA BOLEH DIMULAI** setelah user secara eksplisit memberikan instruksi persetujuan (misal: *"oke kerjakan"*, *"terapkan"*, atau *"lanjut eksekusi"*).
+
+2. **Aturan Commit & Push Mandiri**:
+   - Dilarang keras melakukan `git commit`, `git push`, atau membuat GitHub Release otomatis tanpa perintah eksplisit dari user.
+   - Pengujian lokal hanya dilakukan via compile APK dan push langsung ke HP via adb debugging.
+
+---
+
 ## 1. Ikhtisar Proyek & Arsitektur
 - **Platform**: Android Native (Min SDK 26, Target SDK 34)
 - **Bahasa & UI**: Kotlin 2.0 + Jetpack Compose (Material3)

@@ -81,5 +81,9 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <receiver
+            android:name=".update.UpdateDismissReceiver"
+            android:exported="false" />
+
     </application>
 </manifest>

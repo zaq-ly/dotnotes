@@ -31,6 +31,8 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
 
 class MainActivity : ComponentActivity() {
+    private val openSettingsTrigger = kotlinx.coroutines.flow.MutableStateFlow(false)
+
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
@@ -43,10 +45,16 @@ class MainActivity : ComponentActivity() {
         SupabaseClientProvider.client.handleDeeplinks(intent) {
             DotNotesApp.instance.repository.syncCloud()
         }
+        if (intent.getBooleanExtra("OPEN_SETTINGS", false)) {
+            openSettingsTrigger.value = true
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.getBooleanExtra("OPEN_SETTINGS", false) == true) {
+            openSettingsTrigger.value = true
+        }
         SupabaseClientProvider.client.handleDeeplinks(intent) {
             DotNotesApp.instance.repository.syncCloud()
         }
@@ -57,6 +65,7 @@ class MainActivity : ComponentActivity() {
             val settingsDataStore = DotNotesApp.instance.settingsDataStore
             val themeMode by settingsDataStore.themeMode.collectAsState(initial = "system")
             val language by settingsDataStore.language.collectAsState(initial = "en")
+            val shouldOpenSettings by openSettingsTrigger.collectAsState()
 
             val isDark = when (themeMode) {
                 "dark" -> true
@@ -71,9 +80,10 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(LocalStrings provides strings) {
                 DotNotesTheme(darkTheme = isDark) {
                     val navController = rememberNavController()
-                    LaunchedEffect(Unit) {
-                        if (intent?.getBooleanExtra("OPEN_SETTINGS", false) == true) {
+                    LaunchedEffect(shouldOpenSettings) {
+                        if (shouldOpenSettings) {
                             navController.navigate(Routes.SETTINGS)
+                            openSettingsTrigger.value = false
                         }
                     }
                     NavGraph(navController = navController)

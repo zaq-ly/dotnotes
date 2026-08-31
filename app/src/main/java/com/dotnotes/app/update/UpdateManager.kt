@@ -13,6 +13,7 @@ import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.MainActivity
 import com.dotnotes.app.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -176,8 +177,14 @@ class UpdateManager {
         }
     }
 
-    fun showUpdateNotification(context: Context, release: ReleaseInfo) {
+    suspend fun showUpdateNotification(context: Context, release: ReleaseInfo) {
         try {
+            val dismissedTag = DotNotesApp.instance.settingsDataStore.dismissedUpdateTag.first()
+            if (dismissedTag == release.tagName) {
+                // User already dismissed notification for this release version, don't harass
+                return
+            }
+
             val openIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 putExtra("OPEN_SETTINGS", true)
@@ -186,6 +193,16 @@ class UpdateManager {
                 context,
                 9999,
                 openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val dismissIntent = Intent(context, UpdateDismissReceiver::class.java).apply {
+                putExtra(UpdateDismissReceiver.EXTRA_TAG_NAME, release.tagName)
+            }
+            val dismissPending = PendingIntent.getBroadcast(
+                context,
+                9999,
+                dismissIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
@@ -201,6 +218,7 @@ class UpdateManager {
                 .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setContentIntent(openPending)
+                .setDeleteIntent(dismissPending)
                 .setAutoCancel(true)
                 .build()
 

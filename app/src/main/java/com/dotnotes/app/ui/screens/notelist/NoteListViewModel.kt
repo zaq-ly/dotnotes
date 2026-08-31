@@ -51,9 +51,6 @@ class NoteListViewModel(
         viewModelScope.launch {
             val release = updateManager.checkForUpdate(currentVersion)
             _hasUpdate.value = (release != null)
-            if (release != null) {
-                updateManager.showUpdateNotification(com.dotnotes.app.DotNotesApp.instance, release)
-            }
         }
     }
 

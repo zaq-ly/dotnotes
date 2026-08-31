@@ -47,6 +47,7 @@ androidx-credentials = { group = "androidx.credentials", name = "credentials", v
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version = "21.3.0" }
+androidx-work = { group = "androidx.work", name = "work-runtime-ktx", version = "2.9.1" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

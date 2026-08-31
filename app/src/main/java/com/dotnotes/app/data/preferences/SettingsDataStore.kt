@@ -18,6 +18,7 @@ class SettingsDataStore(private val context: Context) {
         val SNOOZE_DURATION = intPreferencesKey("snooze_duration")
         val LANGUAGE = stringPreferencesKey("language")
         val LAST_SYNC_TIME = androidx.datastore.preferences.core.longPreferencesKey("last_sync_time")
+        val DISMISSED_UPDATE_TAG = stringPreferencesKey("dismissed_update_tag")
     }
 
     val themeMode: Flow<String> = context.dataStore.data.map {
@@ -36,6 +37,10 @@ class SettingsDataStore(private val context: Context) {
         it[LAST_SYNC_TIME] ?: 0L
     }
 
+    val dismissedUpdateTag: Flow<String> = context.dataStore.data.map {
+        it[DISMISSED_UPDATE_TAG] ?: ""
+    }
+
     suspend fun setThemeMode(mode: String) {
         context.dataStore.edit { it[THEME_MODE] = mode }
     }
@@ -50,5 +55,9 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setLastSyncTime(time: Long) {
         context.dataStore.edit { it[LAST_SYNC_TIME] = time }
+    }
+
+    suspend fun setDismissedUpdateTag(tag: String) {
+        context.dataStore.edit { it[DISMISSED_UPDATE_TAG] = tag }
     }
 }

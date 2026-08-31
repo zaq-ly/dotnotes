@@ -25,6 +25,29 @@ class DotNotesApp : Application() {
         settingsDataStore = SettingsDataStore(this)
 
         createNotificationChannels()
+        scheduleBackgroundUpdateCheck()
+    }
+
+    private fun scheduleBackgroundUpdateCheck() {
+        try {
+            val constraints = androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                .build()
+
+            val updateWorkRequest = androidx.work.PeriodicWorkRequestBuilder<com.dotnotes.app.update.UpdateCheckWorker>(
+                12, java.util.concurrent.TimeUnit.HOURS
+            )
+                .setConstraints(constraints)
+                .build()
+
+            androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                com.dotnotes.app.update.UpdateCheckWorker.WORK_NAME,
+                androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+                updateWorkRequest
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun createNotificationChannels() {
