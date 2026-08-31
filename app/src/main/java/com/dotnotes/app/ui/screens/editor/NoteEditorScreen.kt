@@ -77,6 +77,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
@@ -741,8 +742,12 @@ fun NoteEditorScreen(
     // Google Calendar style separate Date & Time pickers
     if (showDatePicker) {
         val initialDateCal = remember(showDatePicker) {
-            Calendar.getInstance().apply {
+            val localCal = Calendar.getInstance().apply {
                 (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+            }
+            Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                clear()
+                set(localCal.get(Calendar.YEAR), localCal.get(Calendar.MONTH), localCal.get(Calendar.DAY_OF_MONTH))
             }
         }
         val datePickerState = rememberDatePickerState(
@@ -757,20 +762,20 @@ fun NoteEditorScreen(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .widthIn(max = 380.dp)
+                    .fillMaxWidth(0.95f)
+                    .widthIn(max = 400.dp)
                     .padding(vertical = 16.dp)
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 20.dp)
+                        .padding(vertical = 16.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
                         text = strings.selectDate,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                     )
                     DatePicker(
                         state = datePickerState,
@@ -782,7 +787,7 @@ fun NoteEditorScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp, end = 8.dp),
+                            .padding(top = 8.dp, end = 24.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showDatePicker = false }) {
@@ -839,8 +844,8 @@ fun NoteEditorScreen(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .widthIn(max = 380.dp)
+                    .fillMaxWidth(0.95f)
+                    .widthIn(max = 400.dp)
                     .padding(vertical = 16.dp)
             ) {
                 Column(
@@ -857,7 +862,22 @@ fun NoteEditorScreen(
                             .fillMaxWidth()
                             .padding(bottom = 12.dp)
                     )
-                    TimePicker(state = timePickerState)
+                    TimePicker(
+                        state = timePickerState,
+                        colors = TimePickerDefaults.colors(
+                            timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                            timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                            timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                            periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                            periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectorColor = MaterialTheme.colorScheme.primary,
+                            clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                            clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
