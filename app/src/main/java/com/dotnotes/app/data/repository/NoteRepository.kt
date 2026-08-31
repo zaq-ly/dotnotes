@@ -60,4 +60,6 @@ class NoteRepository(private val dao: NoteDao) {
         dao.cleanExpiredCompletedReminders(thresholdTime)
         syncCloud()
     }
+
+    suspend fun clearAllNotes() = dao.clearAllNotes()
 }

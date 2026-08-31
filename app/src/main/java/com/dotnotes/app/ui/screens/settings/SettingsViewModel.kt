@@ -100,15 +100,21 @@ class SettingsViewModel(
                 val authManager = GoogleAuthManager(context)
                 val result = authManager.signInWithGoogle()
                 if (result.isSuccess) {
+                    // Pull notes from cloud for this logged-in account
+                    syncManager.syncNotes()
                     onResult(true, null)
                 } else {
                     val ex = result.exceptionOrNull()
-                    onResult(false, ex?.localizedMessage ?: ex?.message ?: "Gagal membuka login Google")
+                    if (ex is kotlinx.coroutines.CancellationException) {
+                        onResult(false, null)
+                    } else {
+                        onResult(false, ex?.localizedMessage ?: ex?.message ?: "Gagal masuk dengan Google")
+                    }
                 }
             } catch (_: kotlinx.coroutines.CancellationException) {
                 onResult(false, null)
             } catch (e: Exception) {
-                onResult(false, e.localizedMessage ?: e.message ?: "Gagal membuka login Google")
+                onResult(false, e.localizedMessage ?: e.message ?: "Gagal masuk dengan Google")
             } finally {
                 _isLoggingIn.value = false
             }
@@ -119,6 +125,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             val authManager = GoogleAuthManager(context)
             val result = authManager.signOut()
+            if (result.isSuccess) {
+                // Clear local notes on logout
+                noteDao.clearAllNotes()
+            }
             onResult(result.isSuccess)
         }
     }
