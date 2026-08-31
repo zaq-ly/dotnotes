@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.AlertDialog
@@ -179,19 +180,38 @@ fun NoteListScreen(
                             }
                         }
 
-                        // Settings Icon
-                        IconButton(onClick = onSettingsClick) {
+                        // Settings / Update Icon Button
+                        IconButton(
+                            onClick = onSettingsClick,
+                            modifier = if (hasUpdate) {
+                                Modifier
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                            } else Modifier
+                        ) {
                             BadgedBox(
                                 badge = {
                                     if (hasUpdate) {
                                         Badge(
                                             containerColor = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(10.dp)
-                                        )
+                                            contentColor = MaterialTheme.colorScheme.onError
+                                        ) {
+                                            Text(
+                                                text = strings.newBadge,
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 8.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            )
+                                        }
                                     }
                                 }
                             ) {
-                                Icon(Icons.Default.Settings, contentDescription = strings.settings)
+                                Icon(
+                                    imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
+                                    contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
+                                    tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
