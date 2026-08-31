@@ -318,90 +318,42 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                         )
 
-                        // Cloud Sync Section (Responsive: Text on top, full-width button below)
-                        Column(
+                        // Cloud Sync Section (Auto-Sync Status)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CloudSync,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(22.dp)
+                            Icon(
+                                imageVector = Icons.Default.CloudDone,
+                                contentDescription = null,
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = strings.cloudBackup,
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
-                                Spacer(Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    val lastSyncStr = if (lastSyncTime > 0L) {
-                                        val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
-                                        String.format(strings.lastSynced, sdf.format(Date(lastSyncTime)))
-                                    } else {
-                                        String.format(strings.lastSynced, strings.never)
-                                    }
-                                    Text(
-                                        text = strings.cloudBackup,
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(
-                                        text = lastSyncStr,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = strings.cloudBackupDesc,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-
-                            Spacer(Modifier.height(14.dp))
-
-                            Button(
-                                onClick = {
-                                    viewModel.syncCloud { result ->
-                                        when (result) {
-                                            is SyncResult.Success -> {
-                                                val msg = if (result.syncedCount > 0) {
-                                                    String.format(strings.syncSuccess, result.syncedCount)
-                                                } else {
-                                                    strings.syncUpToDate
-                                                }
-                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                            }
-                                            is SyncResult.Error -> {
-                                                val msg = "${strings.syncFailed}: ${result.message}"
-                                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                                            }
-                                            SyncResult.NotLoggedIn -> {
-                                                Toast.makeText(context, strings.notLoggedIn, Toast.LENGTH_SHORT).show()
-                                            }
-                                            SyncResult.NotConfigured -> {
-                                                Toast.makeText(context, strings.supabaseNotConfigured, Toast.LENGTH_LONG).show()
-                                            }
-                                        }
-                                    }
-                                },
-                                enabled = !isSyncing,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF4CAF50).copy(alpha = 0.15f)
                             ) {
-                                if (isSyncing) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(18.dp),
-                                        strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(strings.syncing)
-                                } else {
-                                    Icon(
-                                        Icons.Default.Sync,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(strings.syncNow, fontWeight = FontWeight.SemiBold)
-                                }
+                                Text(
+                                    text = strings.autoSyncActive,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = Color(0xFF4CAF50),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
                             }
                         }
                     }

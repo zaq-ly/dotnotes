@@ -102,7 +102,8 @@ data class AppStrings(
     val aboutAndUpdates: String,
     val newBadge: String,
     val googleSignInPrompt: String,
-    val signingIn: String
+    val signingIn: String,
+    val autoSyncActive: String
 )
 
 val EnglishStrings = AppStrings(
@@ -192,7 +193,8 @@ val EnglishStrings = AppStrings(
     aboutAndUpdates = "About & Updates",
     newBadge = "NEW",
     googleSignInPrompt = "Sign in with Google to securely back up & sync notes across your devices",
-    signingIn = "Connecting..."
+    signingIn = "Connecting...",
+    autoSyncActive = "Auto-Sync Active"
 )
 
 val IndonesianStrings = AppStrings(
@@ -282,7 +284,8 @@ val IndonesianStrings = AppStrings(
     aboutAndUpdates = "Tentang & Pembaruan",
     newBadge = "BARU",
     googleSignInPrompt = "Masuk dengan Google untuk mencadangkan & menyinkronkan catatan secara aman",
-    signingIn = "Menghubungkan..."
+    signingIn = "Menghubungkan...",
+    autoSyncActive = "Otomatis Tersinkron"
 )
 
 val LocalStrings = staticCompositionLocalOf { EnglishStrings }

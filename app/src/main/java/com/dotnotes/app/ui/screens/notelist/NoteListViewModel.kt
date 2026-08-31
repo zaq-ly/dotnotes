@@ -29,6 +29,7 @@ class NoteListViewModel(
     init {
         startPeriodicUpdateChecker()
         cleanExpiredReminders()
+        repository.syncCloud()
     }
 
     private fun startPeriodicUpdateChecker() {

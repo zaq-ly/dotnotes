@@ -74,5 +74,16 @@ class AlarmScheduler(private val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        // Dismiss floating notifications and stop alarm audio immediately
+        try {
+            AlarmPlayer.stop()
+            AlarmService.stop(context)
+            val notifManager = androidx.core.app.NotificationManagerCompat.from(context)
+            notifManager.cancel(noteId.hashCode())
+            notifManager.cancel(Math.abs(noteId.hashCode()) + 1)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
