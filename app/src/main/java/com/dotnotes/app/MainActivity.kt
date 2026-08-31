@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
+import com.dotnotes.app.sync.supabase.SupabaseClientProvider
 import com.dotnotes.app.ui.i18n.EnglishStrings
 import com.dotnotes.app.ui.i18n.IndonesianStrings
 import com.dotnotes.app.ui.i18n.LocalStrings
@@ -27,6 +28,7 @@ import com.dotnotes.app.ui.navigation.NavGraph
 import com.dotnotes.app.ui.navigation.Routes
 import com.dotnotes.app.ui.theme.DotNotesTheme
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.handleDeeplinks
 
 class MainActivity : ComponentActivity() {
     private val notifPermissionLauncher = registerForActivityResult(
@@ -38,10 +40,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        SupabaseClientProvider.client.handleDeeplinks(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SupabaseClientProvider.client.handleDeeplinks(intent)
         enableEdgeToEdge()
         requestNotificationPermission()
 

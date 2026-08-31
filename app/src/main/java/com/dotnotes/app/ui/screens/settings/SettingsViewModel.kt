@@ -100,22 +100,15 @@ class SettingsViewModel(
                 val authManager = GoogleAuthManager(context)
                 val result = authManager.signInWithGoogle()
                 if (result.isSuccess) {
-                    val state = result.getOrNull()
-                    if (state != null && state.isLoggedIn) {
-                        onResult(true, null)
-                        syncCloud()
-                    } else {
-                        // User cancelled — no error to show
-                        onResult(false, null)
-                    }
+                    onResult(true, null)
                 } else {
                     val ex = result.exceptionOrNull()
-                    onResult(false, ex?.localizedMessage ?: ex?.message ?: "Gagal login dengan Google")
+                    onResult(false, ex?.localizedMessage ?: ex?.message ?: "Gagal membuka login Google")
                 }
             } catch (_: kotlinx.coroutines.CancellationException) {
                 onResult(false, null)
             } catch (e: Exception) {
-                onResult(false, e.localizedMessage ?: e.message ?: "Gagal login dengan Google")
+                onResult(false, e.localizedMessage ?: e.message ?: "Gagal membuka login Google")
             } finally {
                 _isLoggingIn.value = false
             }

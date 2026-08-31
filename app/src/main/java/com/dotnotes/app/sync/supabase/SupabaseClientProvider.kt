@@ -1,4 +1,4 @@
-﻿package com.dotnotes.app.sync.supabase
+package com.dotnotes.app.sync.supabase
 
 import com.dotnotes.app.BuildConfig
 import io.github.jan.supabase.SupabaseClient
@@ -21,7 +21,10 @@ object SupabaseClientProvider {
             supabaseKey = key
         ) {
             httpEngine = OkHttp.create()
-            install(Auth)
+            install(Auth) {
+                scheme = "com.dotnotes.app"
+                host = "auth"
+            }
             install(Postgrest)
         }
     }
