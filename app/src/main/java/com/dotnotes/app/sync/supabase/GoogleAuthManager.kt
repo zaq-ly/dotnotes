@@ -12,7 +12,6 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.dotnotes.app.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
@@ -22,8 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
-import java.util.UUID
 
 data class AuthUserState(
     val isLoggedIn: Boolean = false,
@@ -59,109 +56,86 @@ class GoogleAuthManager(private val context: Context) {
 
     suspend fun signInWithGoogle(): Result<AuthUserState> {
         if (!SupabaseClientProvider.isConfigured || BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank()) {
-            return Result.failure(IllegalStateException("Supabase URL, Anon Key, atau Google Web Client ID belum terpasang"))
+            return Result.failure(IllegalStateException("Supabase atau Google Web Client ID belum terpasang"))
         }
 
         val activity = context.findActivity()
             ?: return Result.failure(IllegalStateException("Activity context tidak ditemukan"))
 
         return try {
-            val rawNonce = UUID.randomUUID().toString()
-            val bytes = rawNonce.toByteArray()
-            val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
-            val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
-
-            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(
-                serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
-            ).setNonce(hashedNonce).build()
-
+            // ponytail: no nonce — overkill for notes app, causes silent failures
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
                 .setAutoSelectEnabled(false)
-                .setNonce(hashedNonce)
                 .build()
 
             val request = GetCredentialRequest.Builder()
-                .addCredentialOption(signInWithGoogleOption)
                 .addCredentialOption(googleIdOption)
                 .build()
 
+            Log.d(TAG, "Launching Credential Manager...")
             val response = credentialManager.getCredential(activity, request)
             val credential = response.credential
+            Log.d(TAG, "Credential received, type=${credential.type}")
 
-            var idToken: String? = null
-            var displayName: String? = null
-            var avatarUrl: String? = null
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+            val idToken = googleIdTokenCredential.idToken
+            val displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName
+            val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
 
-            try {
-                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                idToken = googleIdTokenCredential.idToken
-                displayName = googleIdTokenCredential.displayName ?: googleIdTokenCredential.givenName
-                avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
-            } catch (e: Exception) {
-                Log.w(TAG, "Error parsing GoogleIdTokenCredential", e)
+            Log.d(TAG, "ID Token obtained, length=${idToken.length}, displayName=$displayName")
+
+            if (idToken.isBlank()) {
+                return Result.failure(IllegalStateException("ID Token Google kosong"))
             }
 
-            if (idToken.isNullOrBlank()) {
-                idToken = credential.data.getString("androidx.credentials.BUNDLE_KEY_ID_TOKEN")
-                    ?: credential.data.getString("id_token")
-            }
-
-            if (idToken.isNullOrBlank()) {
-                return Result.failure(IllegalStateException("ID Token Google tidak ditemukan dari akun yang dipilih"))
-            }
-
-            val finalIdToken = idToken
-
+            Log.d(TAG, "Signing in to Supabase with IDToken...")
             withContext(Dispatchers.IO) {
-                try {
-                    supabase.auth.signInWith(IDToken) {
-                        this.idToken = finalIdToken
-                        this.provider = Google
-                        this.nonce = rawNonce
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Supabase IDToken sign in with rawNonce failed, retrying without nonce...", e)
-                    supabase.auth.signInWith(IDToken) {
-                        this.idToken = finalIdToken
-                        this.provider = Google
-                    }
+                supabase.auth.signInWith(IDToken) {
+                    this.idToken = idToken
+                    this.provider = Google
                 }
             }
 
             val user = supabase.auth.currentUserOrNull()
+            Log.d(TAG, "Supabase user after sign-in: id=${user?.id}, email=${user?.email}")
+
+            if (user == null) {
+                return Result.failure(IllegalStateException("Login berhasil tapi sesi tidak tersimpan"))
+            }
+
             val finalAvatar = avatarUrl
-                ?: user?.userMetadata?.get("avatar_url")?.toString()?.trim('"')
-                ?: user?.userMetadata?.get("picture")?.toString()?.trim('"')
+                ?: user.userMetadata?.get("avatar_url")?.toString()?.trim('"')
+                ?: user.userMetadata?.get("picture")?.toString()?.trim('"')
 
             Result.success(
                 AuthUserState(
                     isLoggedIn = true,
-                    email = user?.email,
-                    displayName = displayName ?: user?.userMetadata?.get("full_name")?.toString()?.trim('"'),
+                    email = user.email,
+                    displayName = displayName ?: user.userMetadata?.get("full_name")?.toString()?.trim('"'),
                     avatarUrl = finalAvatar
                 )
             )
         } catch (e: GetCredentialCancellationException) {
-            Log.d(TAG, "User cancelled Google Sign In")
+            Log.d(TAG, "User cancelled")
             Result.success(AuthUserState(isLoggedIn = false))
         } catch (e: NoCredentialException) {
-            Log.w(TAG, "No Google accounts available: ${e.message}")
-            Result.failure(IllegalStateException("Tidak ada akun Google yang tersedia pada perangkat ini"))
+            Log.w(TAG, "No credential: ${e.message}")
+            Result.failure(IllegalStateException("Tidak ada akun Google di perangkat ini"))
         } catch (e: GetCredentialException) {
             if (isUserCancellation(e)) {
-                Log.d(TAG, "User cancelled Google Sign In: ${e.message}")
+                Log.d(TAG, "User cancelled: ${e.message}")
                 Result.success(AuthUserState(isLoggedIn = false))
             } else {
-                Log.e(TAG, "Credential Manager error: ${e.type} - ${e.message}", e)
-                Result.failure(e)
+                Log.e(TAG, "CredentialException: ${e.type} - ${e.message}", e)
+                Result.failure(IllegalStateException("Google Sign-In gagal: ${e.message}"))
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Google Sign In failed", e)
-            Result.failure(e)
+            Log.e(TAG, "Sign-in failed", e)
+            Result.failure(IllegalStateException("Login gagal: ${e.message}"))
         }
     }
 
