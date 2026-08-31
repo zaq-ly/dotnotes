@@ -24,6 +24,7 @@ object SupabaseClientProvider {
             install(Auth) {
                 scheme = "com.dotnotes.app"
                 host = "auth"
+                defaultExternalAuthAction = io.github.jan.supabase.auth.ExternalAuthAction.CustomTabs()
             }
             install(Postgrest)
         }
