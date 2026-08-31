@@ -615,7 +615,7 @@ private fun SelectableNoteCard(
                         color = if (note.priority == 2)
                             MaterialTheme.colorScheme.errorContainer
                         else
-                            MaterialTheme.colorScheme.primaryContainer
+                            Color(0xFF1976D2).copy(alpha = 0.22f)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -625,14 +625,14 @@ private fun SelectableNoteCard(
                                 imageVector = if (note.priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
-                                tint = if (note.priority == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                tint = if (note.priority == 2) MaterialTheme.colorScheme.error else Color(0xFF42A5F5)
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 text = reminderFormat.format(Date(note.reminderTime)),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
+                                color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF42A5F5)
                             )
                         }
                     }

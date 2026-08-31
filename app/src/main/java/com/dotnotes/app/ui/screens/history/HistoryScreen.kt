@@ -412,11 +412,11 @@ private fun HistoryCard(
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = if (selectedTab == 1)
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        MaterialTheme.colorScheme.surfaceVariant
                     else if (note.priority == 2 || isOverdue)
                         MaterialTheme.colorScheme.errorContainer
                     else
-                        MaterialTheme.colorScheme.primaryContainer
+                        Color(0xFF1976D2).copy(alpha = 0.22f)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -432,11 +432,11 @@ private fun HistoryCard(
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
                             tint = if (selectedTab == 1)
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             else if (note.priority == 2 || isOverdue)
                                 MaterialTheme.colorScheme.error
                             else
-                                MaterialTheme.colorScheme.primary
+                                Color(0xFF42A5F5)
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
@@ -444,11 +444,11 @@ private fun HistoryCard(
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = if (selectedTab == 1)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             else if (note.priority == 2 || isOverdue)
                                 MaterialTheme.colorScheme.onErrorContainer
                             else
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                Color(0xFF42A5F5)
                         )
                     }
                 }
