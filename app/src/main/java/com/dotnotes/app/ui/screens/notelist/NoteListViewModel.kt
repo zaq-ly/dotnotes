@@ -74,6 +74,10 @@ class NoteListViewModel(
         viewModelScope.launch { repository.togglePin(note.id, !note.isPinned) }
     }
 
+    fun togglePinNotes(noteIds: Collection<String>, shouldPin: Boolean) {
+        viewModelScope.launch { repository.togglePinNotes(noteIds, shouldPin) }
+    }
+
     fun dismissReminder(context: android.content.Context, noteId: String) {
         viewModelScope.launch {
             val note = repository.getNoteById(noteId)

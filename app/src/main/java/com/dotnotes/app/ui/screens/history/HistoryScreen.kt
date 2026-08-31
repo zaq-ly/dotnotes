@@ -1,6 +1,8 @@
 package com.dotnotes.app.ui.screens.history
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -8,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,18 +121,20 @@ fun HistoryScreen(
                     actions = {
                         val currentTabIds = currentList.map { it.id }.toSet()
                         val isAllSelected = currentTabIds.isNotEmpty() && selectedNoteIds.containsAll(currentTabIds)
-                        IconButton(onClick = {
-                            selectedNoteIds = if (isAllSelected) {
-                                selectedNoteIds - currentTabIds
-                            } else {
-                                selectedNoteIds + currentTabIds
+                        Box(modifier = Modifier.padding(end = 8.dp)) {
+                            IconButton(onClick = {
+                                selectedNoteIds = if (isAllSelected) {
+                                    selectedNoteIds - currentTabIds
+                                } else {
+                                    selectedNoteIds + currentTabIds
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
+                                    contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
+                                    tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
                             }
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
-                                contentDescription = if (isAllSelected) strings.deselectAll else strings.selectAll,
-                                tint = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
                         }
                     }
                 )
@@ -150,69 +155,48 @@ fun HistoryScreen(
             }
         },
         bottomBar = {
-            // Bottom Action Bar in Selection Mode (Gambar 2: Batal & Hapus)
+            // Floating Pill Action Bar in Selection Mode
             AnimatedVisibility(
                 visible = isSelectionMode,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it })
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
             ) {
-                Surface(
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 8.dp,
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        shape = RoundedCornerShape(32.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        tonalElevation = 6.dp,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.wrapContentSize()
                     ) {
-                        // Cancel Button
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { selectedNoteIds = emptySet() }
-                                .padding(horizontal = 24.dp, vertical = 6.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = strings.cancel,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = strings.cancel,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-
-                        // Delete Button
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(32.dp))
                                 .clickable {
                                     viewModel.deleteHistoryReminders(context, selectedNoteIds)
                                     selectedNoteIds = emptySet()
                                 }
-                                .padding(horizontal = 24.dp, vertical = 6.dp)
+                                .padding(horizontal = 24.dp, vertical = 12.dp)
                         ) {
                             Icon(
-                                Icons.Default.Delete,
+                                imageVector = Icons.Default.Delete,
                                 contentDescription = strings.delete,
                                 tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(20.dp)
                             )
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.width(8.dp))
                             Text(
                                 text = "${strings.delete} (${selectedNoteIds.size})",
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.SemiBold,
-                                style = MaterialTheme.typography.labelMedium
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }

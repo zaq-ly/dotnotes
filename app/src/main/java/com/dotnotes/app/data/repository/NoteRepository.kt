@@ -41,6 +41,11 @@ class NoteRepository(private val dao: NoteDao) {
         syncCloud()
     }
 
+    suspend fun togglePinNotes(ids: Collection<String>, isPinned: Boolean) {
+        dao.togglePinNotes(ids, isPinned)
+        syncCloud()
+    }
+
     suspend fun dismissAlarm(id: String) {
         dao.dismissAlarm(id)
         syncCloud()

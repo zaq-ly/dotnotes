@@ -35,6 +35,9 @@ interface NoteDao {
     @Query("UPDATE notes SET isPinned = :isPinned, updatedAt = :now WHERE id = :id")
     suspend fun togglePin(id: String, isPinned: Boolean, now: Long = System.currentTimeMillis())
 
+    @Query("UPDATE notes SET isPinned = :isPinned, updatedAt = :now WHERE id IN (:ids)")
+    suspend fun togglePinNotes(ids: Collection<String>, isPinned: Boolean, now: Long = System.currentTimeMillis())
+
     @Query("UPDATE notes SET isAlarmDismissed = 1, updatedAt = :now WHERE id = :id")
     suspend fun dismissAlarm(id: String, now: Long = System.currentTimeMillis())
 
