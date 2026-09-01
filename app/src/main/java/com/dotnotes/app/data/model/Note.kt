@@ -15,6 +15,7 @@ data class Note(
     val isAlarmDismissed: Boolean = false,
     val snoozeDurationMin: Int = 5,
     val repeatInterval: String = "NONE",
+    val colorTheme: String = "DEFAULT",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false

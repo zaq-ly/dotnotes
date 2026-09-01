@@ -22,6 +22,7 @@ data class EditorState(
     val priority: Int = 0,
     val snoozeDurationMin: Int = 5,
     val repeatInterval: String = com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE,
+    val colorTheme: String = com.dotnotes.app.ui.theme.NoteColorThemes.DEFAULT,
     val createdAt: Long = 0L,
     val isLoading: Boolean = true
 )
@@ -50,6 +51,7 @@ class NoteEditorViewModel(
                         priority = note.priority,
                         snoozeDurationMin = note.snoozeDurationMin,
                         repeatInterval = note.repeatInterval,
+                        colorTheme = note.colorTheme,
                         createdAt = note.createdAt,
                         isLoading = false
                     )
@@ -68,6 +70,10 @@ class NoteEditorViewModel(
 
     fun updateContent(content: String) {
         _state.value = _state.value.copy(content = content)
+    }
+
+    fun setColorTheme(themeKey: String) {
+        _state.value = _state.value.copy(colorTheme = themeKey)
     }
 
     fun setReminder(enabled: Boolean) {
@@ -106,6 +112,7 @@ class NoteEditorViewModel(
                 priority = if (s.hasReminder) s.priority else 0,
                 snoozeDurationMin = s.snoozeDurationMin,
                 repeatInterval = if (s.hasReminder) s.repeatInterval else com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE,
+                colorTheme = s.colorTheme,
                 createdAt = if (isNew) now else s.createdAt,
                 updatedAt = now
             )

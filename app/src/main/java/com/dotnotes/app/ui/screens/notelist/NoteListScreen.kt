@@ -58,6 +58,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import com.dotnotes.app.ui.theme.NoteColorThemes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -419,6 +425,11 @@ private fun SelectableNoteCard(
     onDismissReminder: () -> Unit
 ) {
     val strings = LocalStrings.current
+    val isDark = isSystemInDarkTheme()
+    val noteTheme = remember(note.colorTheme, isDark) {
+        NoteColorThemes.getThemeColors(note.colorTheme, isDark)
+    }
+    val hasCustomTheme = note.colorTheme.isNotEmpty() && note.colorTheme != NoteColorThemes.DEFAULT
     val dateFormat = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
     val reminderFormat = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
 
@@ -431,6 +442,27 @@ private fun SelectableNoteCard(
                     Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
                 } else Modifier
             )
+            .drawWithContent {
+                drawContent()
+                if (hasCustomTheme && !isSelected) {
+                    val barWidth = 3.5.dp.toPx()
+                    val insetY = 12.dp.toPx()
+                    // Left side stroke
+                    drawRoundRect(
+                        color = noteTheme.strokeColor,
+                        topLeft = Offset(0f, insetY),
+                        size = Size(barWidth, (size.height - insetY * 2).coerceAtLeast(0f)),
+                        cornerRadius = CornerRadius(barWidth / 2, barWidth / 2)
+                    )
+                    // Right side stroke
+                    drawRoundRect(
+                        color = noteTheme.strokeColor,
+                        topLeft = Offset(size.width - barWidth, insetY),
+                        size = Size(barWidth, (size.height - insetY * 2).coerceAtLeast(0f)),
+                        cornerRadius = CornerRadius(barWidth / 2, barWidth / 2)
+                    )
+                }
+            }
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick

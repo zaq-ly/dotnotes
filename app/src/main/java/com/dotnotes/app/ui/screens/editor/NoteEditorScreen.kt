@@ -60,6 +60,19 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.TopAppBarDefaults
+import com.dotnotes.app.ui.theme.NoteColorThemes
+import com.dotnotes.app.ui.theme.NoteThemeColors
+import com.dotnotes.app.ui.theme.PureWhite
 import com.dotnotes.app.alarm.ReminderHelper
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -140,6 +153,10 @@ fun NoteEditorScreen(
 ) {
     val strings = LocalStrings.current
     val state by viewModel.state.collectAsState()
+    val isDark = isSystemInDarkTheme()
+    val noteColors = remember(state.colorTheme, isDark) {
+        NoteColorThemes.getThemeColors(state.colorTheme, isDark)
+    }
     val richTextState = rememberRichTextState()
 
     var blocks by remember { mutableStateOf<List<NoteBlock>>(listOf(NoteBlock())) }
@@ -147,6 +164,7 @@ fun NoteEditorScreen(
     val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
 
     var showReminderDialog by remember { mutableStateOf(false) }
+    var showColorPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showRepeatMenu by remember { mutableStateOf(false) }
@@ -171,10 +189,12 @@ fun NoteEditorScreen(
         }
     }
 
-    val customTextSelectionColors = TextSelectionColors(
-        handleColor = MaterialTheme.colorScheme.primary,
-        backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-    )
+    val customTextSelectionColors = remember(noteColors.primary) {
+        TextSelectionColors(
+            handleColor = noteColors.primary,
+            backgroundColor = noteColors.primary.copy(alpha = 0.35f)
+        )
+    }
 
     fun saveAndExit() {
         viewModel.updateContent(blocksToHtml(blocks))
@@ -184,13 +204,21 @@ fun NoteEditorScreen(
 
     CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
         Scaffold(
+            containerColor = noteColors.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = noteColors.background,
+                        titleContentColor = noteColors.onSurface,
+                        navigationIconContentColor = noteColors.onSurface,
+                        actionIconContentColor = noteColors.primary
+                    ),
                     title = {
                         Text(
                             if (noteId == null) strings.newNote else strings.editNote,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = noteColors.onSurface
                         )
                     },
                     navigationIcon = {
@@ -198,7 +226,7 @@ fun NoteEditorScreen(
                             onClick = { saveAndExit() },
                             modifier = Modifier.padding(start = 4.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back, tint = noteColors.onSurface)
                         }
                     },
                     actions = {
@@ -215,12 +243,12 @@ fun NoteEditorScreen(
                             Icon(
                                 imageVector = if (state.priority == 2 && state.hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
                                 contentDescription = strings.reminder,
-                                tint = if (state.hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                tint = if (state.hasReminder) noteColors.primary else noteColors.onSurface.copy(alpha = 0.6f)
                             )
                         }
                         Box(modifier = Modifier.padding(end = 4.dp)) {
                             IconButton(onClick = { saveAndExit() }) {
-                                Icon(Icons.Default.Check, contentDescription = strings.save, tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.Check, contentDescription = strings.save, tint = noteColors.primary)
                             }
                         }
                     }
@@ -236,7 +264,7 @@ fun NoteEditorScreen(
                     val currentBlock = blocks.getOrNull(currentFocusedIndex) ?: blocks.firstOrNull() ?: NoteBlock()
 
                     Surface(
-                        color = MaterialTheme.colorScheme.surface,
+                        color = noteColors.surface,
                         tonalElevation = 6.dp,
                         shadowElevation = 8.dp,
                         modifier = Modifier
@@ -257,6 +285,8 @@ fun NoteEditorScreen(
                                     icon = if (currentBlock.type == BlockType.CHECKLIST) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                                     contentDescription = "Checklist",
                                     isActive = currentBlock.type == BlockType.CHECKLIST,
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeIconColor = noteColors.primary,
                                     onClick = {
                                         val idx = blocks.indexOfFirst { it.id == focusedBlockId }.let { if (it in blocks.indices) it else 0 }
                                         if (idx in blocks.indices) {
@@ -276,6 +306,8 @@ fun NoteEditorScreen(
                                     icon = Icons.Default.FormatBold,
                                     contentDescription = "Bold",
                                     isActive = currentBlock.isBold,
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeIconColor = noteColors.primary,
                                     onClick = {
                                         val idx = blocks.indexOfFirst { it.id == focusedBlockId }.let { if (it in blocks.indices) it else 0 }
                                         if (idx in blocks.indices) {
@@ -292,6 +324,8 @@ fun NoteEditorScreen(
                                     icon = Icons.Default.FormatItalic,
                                     contentDescription = "Italic",
                                     isActive = currentBlock.isItalic,
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeIconColor = noteColors.primary,
                                     onClick = {
                                         val idx = blocks.indexOfFirst { it.id == focusedBlockId }.let { if (it in blocks.indices) it else 0 }
                                         if (idx in blocks.indices) {
@@ -308,6 +342,8 @@ fun NoteEditorScreen(
                                     icon = Icons.AutoMirrored.Filled.FormatListBulleted,
                                     contentDescription = "Bullet List",
                                     isActive = currentBlock.type == BlockType.BULLET,
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeIconColor = noteColors.primary,
                                     onClick = {
                                         val idx = blocks.indexOfFirst { it.id == focusedBlockId }.let { if (it in blocks.indices) it else 0 }
                                         if (idx in blocks.indices) {
@@ -326,6 +362,8 @@ fun NoteEditorScreen(
                                     icon = Icons.Default.FormatListNumbered,
                                     contentDescription = "Numbered List",
                                     isActive = currentBlock.type == BlockType.NUMBERED,
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeIconColor = noteColors.primary,
                                     onClick = {
                                         val idx = blocks.indexOfFirst { it.id == focusedBlockId }.let { if (it in blocks.indices) it else 0 }
                                         if (idx in blocks.indices) {
@@ -338,6 +376,18 @@ fun NoteEditorScreen(
                                         }
                                     }
                                 )
+
+                                // 6. Color Palette
+                                FormattingButton(
+                                    icon = Icons.Default.Palette,
+                                    contentDescription = strings.noteColor,
+                                    isActive = state.colorTheme != NoteColorThemes.DEFAULT,
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeIconColor = noteColors.primary,
+                                    onClick = {
+                                        showColorPicker = true
+                                    }
+                                )
                             }
                         }
                     }
@@ -346,7 +396,7 @@ fun NoteEditorScreen(
         ) { padding ->
             if (state.isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = noteColors.primary)
                 }
             } else {
                 Column(
@@ -365,14 +415,14 @@ fun NoteEditorScreen(
                                 style = TextStyle(
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                    color = noteColors.onSurface.copy(alpha = 0.4f)
                                 )
                             )
                         },
                         textStyle = TextStyle(
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = noteColors.onSurface
                         ),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -402,6 +452,7 @@ fun NoteEditorScreen(
                             NoteBlockRow(
                                 block = block,
                                 numberedIndex = numberedIndex,
+                                noteColors = noteColors,
                                 focusRequester = requester,
                                 onFocus = { focusedBlockId = block.id },
                                 onTextChange = { newText ->
@@ -907,6 +958,121 @@ fun NoteEditorScreen(
             }
         }
     }
+
+    // Color Swatch Picker Sheet (Option B)
+    if (showColorPicker) {
+        ModalBottomSheet(
+            onDismissRequest = { showColorPicker = false },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                )
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Palette,
+                        contentDescription = null,
+                        tint = noteColors.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = strings.noteColor,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Spacer(Modifier.height(18.dp))
+
+                val colorOptions = listOf(
+                    NoteColorThemes.DEFAULT to strings.colorDefault,
+                    NoteColorThemes.BLUE to strings.colorBlue,
+                    NoteColorThemes.GREEN to strings.colorGreen,
+                    NoteColorThemes.YELLOW to strings.colorYellow,
+                    NoteColorThemes.PURPLE to strings.colorPurple,
+                    NoteColorThemes.ROSE to strings.colorRose,
+                    NoteColorThemes.ORANGE to strings.colorOrange,
+                    NoteColorThemes.TEAL to strings.colorTeal
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(colorOptions) { (colorKey, colorLabel) ->
+                        val themeSample = NoteColorThemes.getThemeColors(colorKey, isDark)
+                        val isSelected = state.colorTheme == colorKey
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.setColorTheme(colorKey)
+                                    showColorPicker = false
+                                }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .background(themeSample.swatchColor)
+                                    .then(
+                                        if (isSelected) {
+                                            Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                        } else {
+                                            Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), CircleShape)
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = if (colorKey == NoteColorThemes.DEFAULT && !isDark) PureWhite else if (colorKey == NoteColorThemes.YELLOW && isDark) Color.Black else PureWhite,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = colorLabel,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 11.sp
+                                ),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -914,10 +1080,12 @@ private fun FormattingButton(
     icon: ImageVector,
     contentDescription: String,
     isActive: Boolean,
+    activeContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
+    activeIconColor: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit
 ) {
-    val containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-    val iconTint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val containerColor = if (isActive) activeContainerColor else Color.Transparent
+    val iconTint = if (isActive) activeIconColor else MaterialTheme.colorScheme.onSurfaceVariant
 
     Box(
         modifier = Modifier
@@ -1039,6 +1207,7 @@ private fun blocksToHtml(blocks: List<NoteBlock>): String {
 private fun NoteBlockRow(
     block: NoteBlock,
     numberedIndex: Int,
+    noteColors: NoteThemeColors,
     focusRequester: FocusRequester,
     onFocus: () -> Unit,
     onTextChange: (String) -> Unit,
@@ -1068,9 +1237,9 @@ private fun NoteBlockRow(
                     checked = block.isChecked,
                     onCheckedChange = onCheckedChange,
                     colors = CheckboxDefaults.colors(
-                        checkedColor = MaterialTheme.colorScheme.primary,
-                        checkmarkColor = MaterialTheme.colorScheme.onPrimary,
-                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        checkedColor = noteColors.primary,
+                        checkmarkColor = noteColors.onPrimary,
+                        uncheckedColor = noteColors.onSurface.copy(alpha = 0.5f)
                     ),
                     modifier = Modifier.size(36.dp)
                 )
@@ -1082,7 +1251,7 @@ private fun NoteBlockRow(
                     style = TextStyle(
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = noteColors.primary
                     ),
                     modifier = Modifier.padding(start = 6.dp, end = 10.dp)
                 )
@@ -1093,7 +1262,7 @@ private fun NoteBlockRow(
                     style = TextStyle(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = noteColors.primary
                     ),
                     modifier = Modifier.padding(start = 4.dp, end = 8.dp)
                 )
@@ -1151,15 +1320,15 @@ private fun NoteBlockRow(
                 fontWeight = if (block.isBold) FontWeight.Bold else FontWeight.Normal,
                 fontStyle = if (block.isItalic) FontStyle.Italic else FontStyle.Normal,
                 color = if (block.type == BlockType.CHECKLIST && block.isChecked)
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                    noteColors.onSurface.copy(alpha = 0.45f)
                 else
-                    MaterialTheme.colorScheme.onSurface,
+                    noteColors.onSurface,
                 textDecoration = if (block.type == BlockType.CHECKLIST && block.isChecked)
                     TextDecoration.LineThrough
                 else
                     TextDecoration.None
             ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            cursorBrush = SolidColor(noteColors.primary),
             keyboardOptions = KeyboardOptions(
                 imeAction = ImeAction.Default
             ),
@@ -1174,7 +1343,7 @@ private fun NoteBlockRow(
                             BlockType.PARAGRAPH -> "Tulis catatan..."
                         },
                         fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                        color = noteColors.onSurface.copy(alpha = 0.35f)
                     )
                 }
                 innerTextField()
