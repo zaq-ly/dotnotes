@@ -1,8 +1,10 @@
 package com.dotnotes.app.ui.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -14,7 +16,9 @@ import com.dotnotes.app.ui.screens.history.HistoryScreen
 import com.dotnotes.app.ui.screens.notelist.NoteListScreen
 import com.dotnotes.app.ui.screens.settings.SettingsScreen
 import com.dotnotes.app.ui.screens.splash.SplashScreen
-import androidx.compose.animation.fadeOut
+
+private val IosEasing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
+private const val IosDuration = 380
 
 object Routes {
     const val SPLASH = "splash"
@@ -35,25 +39,33 @@ fun NavGraph(navController: NavHostController) {
         enterTransition = {
             slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
+                animationSpec = tween(IosDuration, easing = IosEasing)
             )
         },
         exitTransition = {
             slideOutOfContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
+                targetOffset = { it / 4 },
+                animationSpec = tween(IosDuration, easing = IosEasing)
+            ) + fadeOut(
+                animationSpec = tween(IosDuration, easing = IosEasing),
+                targetAlpha = 0.85f
             )
         },
         popEnterTransition = {
             slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.End,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
+                initialOffset = { -it / 4 },
+                animationSpec = tween(IosDuration, easing = IosEasing)
+            ) + fadeIn(
+                animationSpec = tween(IosDuration, easing = IosEasing),
+                initialAlpha = 0.85f
             )
         },
         popExitTransition = {
             slideOutOfContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.End,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
+                animationSpec = tween(IosDuration, easing = IosEasing)
             )
         }
     ) {
