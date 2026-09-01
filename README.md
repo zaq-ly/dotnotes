@@ -7,9 +7,11 @@
   **Aplikasi Catatan Modern, Offline-First dengan Pengingat & Alarm Layar Penuh (Full-Screen Intent).**
 
   [![Latest Release](https://img.shields.io/github/v/release/zaq-ly/dotnotes?style=for-the-badge&color=2563EB&label=Release)](https://github.com/zaq-ly/dotnotes/releases/latest)
+  [![Android CI](https://img.shields.io/github/actions/workflow/status/zaq-ly/dotnotes/ci.yml?branch=main&style=for-the-badge&label=CI%20Checks)](https://github.com/zaq-ly/dotnotes/actions/workflows/ci.yml)
   [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com)
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
   [![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+  [![Security](https://img.shields.io/badge/Security-Policy-blueviolet?style=for-the-badge)](SECURITY.md)
   [![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
 
   <br />
@@ -24,9 +26,9 @@
 
 ## 📖 Tentang Aplikasi
 
-**.notes (dotnotes)** adalah aplikasi catatan Android yang dirancang dengan fokus pada kesederhanaan, kecepatan, dan privasi penuh. Berbeda dengan aplikasi catatan berbasis cloud, **.notes** berjalan **100% secara offline** di perangkat Anda—tanpa iklan, tanpa pelacakan data, dan tanpa perlu membuat akun.
+**.notes (dotnotes)** adalah aplikasi catatan Android yang dirancang dengan fokus pada kesederhanaan, kecepatan, dan privasi penuh. Berbeda dengan aplikasi catatan berbasis cloud tertutup, **.notes** berjalan **100% secara offline** di perangkat Anda—tanpa iklan, tanpa pelacakan data, dan tanpa kewajiban membuat akun.
 
-Aplikasi ini memadukan kemudahan menulis catatan berformat kaya (*Rich Text*) dan daftar tugas (*to-do list*) dengan sistem pengingat alarm layar penuh (*Full-Screen Intent*) bersuara nada dering alarm perangkat untuk memastikan Anda tidak pernah melewatkan agenda penting.
+Aplikasi ini memadukan kemudahan menulis catatan berformat kaya (*Rich Text*), palet tema warna kustom per catatan, sistem pengingat alarm layar penuh (*Full-Screen Intent*), serta sinkronisasi awan opsional terenkripsi (*Cloud Sync*).
 
 ---
 
@@ -35,12 +37,14 @@ Aplikasi ini memadukan kemudahan menulis catatan berformat kaya (*Rich Text*) da
 | Fitur | Deskripsi |
 | :--- | :--- |
 | ✍️ **Rich Text & To-Do Editor** | Tulis catatan dengan kotak centang (*checkbox* / daftar tugas), format tebal (*bold*), miring (*italic*), serta daftar bertitik (*bulleted*) dan bernomor (*numbered list*). |
+| 🎨 **Tema Warna Kustom Per Catatan** | Pilih dari 8 palet warna adaptif (Default, Biru, Hijau, Kuning, Ungu, Rose, Oranye, Teal) dengan kontras dinamis untuk kanvas dan indikator status dot di daftar catatan. |
 | ⏰ **Alarm Layar Penuh (Full-Screen Intent)** | Alarm interaktif satu layar penuh yang langsung aktif saat layar ponsel terkunci serta notifikasi mengambang (*heads-up*), dilengkapi tombol **Matikan (Dismiss)** dan **Tunda (Snooze)**. |
+| ☁️ **Sinkronisasi Cloud Opsional (Supabase)** | Sinkronisasi dua arah instan dengan akun Google Anda menggunakan Row Level Security (RLS) terisolasi penuh. |
 | 🔒 **100% Offline & Privasi Terjaga** | Seluruh data catatan dan pengaturan tersimpan secara lokal di database perangkat Anda. Tidak ada server perantara atau analitik data eksternal. |
 | 💾 **Backup & Restore Mandiri** | Ekspor dan impor seluruh data catatan Anda ke format file JSON lokal dengan aman menggunakan Android *Storage Access Framework* (SAF). |
 | 🔄 **In-App Updater** | Terintegrasi langsung dengan GitHub Releases API untuk memeriksa versi baru dan memperbarui aplikasi langsung dari dalam menu pengaturan. |
 | 🌐 **Multi-Bahasa (Bilingual)** | Mendukung antarmuka dalam **Bahasa Indonesia** dan **English**. |
-| 🎨 **Desain Modern Material 3** | Tampilan antarmuka bersih, adaptif dengan dukungan tema Gelap (*Dark Mode*) dan Terang (*Light Mode*). |
+| ⚡ **Animasi Halus Material 3** | Transisi navigasi *Fade Through* modern tanpa kilat putih dan hemat baterai. |
 
 ---
 

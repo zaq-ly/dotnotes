@@ -18,6 +18,13 @@ val supabaseUrl = localProperties.getProperty("SUPABASE_URL") ?: ""
 val supabaseAnonKey = localProperties.getProperty("SUPABASE_ANON_KEY") ?: ""
 val googleWebClientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID") ?: ""
 
+val releaseKeystorePassword = localProperties.getProperty("RELEASE_KEYSTORE_PASSWORD")
+    ?: System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: ""
+val releaseKeyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+    ?: System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+val releaseKeyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
+    ?: System.getenv("RELEASE_KEY_ALIAS") ?: "dotnotes"
+
 android {
     namespace = "com.dotnotes.app"
     compileSdk = 36
@@ -37,9 +44,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("release.jks")
-            storePassword = "dotnotes2026"
-            keyAlias = "dotnotes"
-            keyPassword = "dotnotes2026"
+            storePassword = releaseKeystorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
         }
     }
 
@@ -105,5 +112,6 @@ dependencies {
     // Image loading
     implementation(libs.coil.compose)
 
+    testImplementation(libs.junit)
     debugImplementation(libs.androidx.ui.tooling)
 }

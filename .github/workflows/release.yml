@@ -1,0 +1,49 @@
+name: Automated Release & Asset Publisher
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build_and_release:
+    name: Build Signed APK & Publish Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Grant Execute Permission for Gradle
+        run: chmod +x gradlew
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Prepare Release Artifact & Generate Checksum
+        run: |
+          VERSION_TAG="${GITHUB_REF#refs/tags/}"
+          APK_SRC="app/build/outputs/apk/release/app-release.apk"
+          APK_DEST="dotnotes-${VERSION_TAG}.apk"
+          cp "$APK_SRC" "$APK_DEST"
+          sha256sum "$APK_DEST" > "${APK_DEST}.sha256"
+          echo "Release APK prepared: $APK_DEST"
+          cat "${APK_DEST}.sha256"
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dotnotes-*.apk
+            dotnotes-*.apk.sha256
+          draft: false
+          prerelease: false
+          generate_release_notes: true
