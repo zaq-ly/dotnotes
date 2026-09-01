@@ -1110,8 +1110,14 @@ private fun NoteBlockRow(
                     val cleaned = raw.replace("\u200B", "")
                     onTextChange(cleaned)
                 } else if (raw.isEmpty()) {
-                    // Soft keyboard Backspace deleted the sentinel on empty field!
-                    onBackspaceOnEmpty()
+                    if (block.text.isEmpty()) {
+                        // Soft keyboard Backspace deleted the sentinel on empty field!
+                        onBackspaceOnEmpty()
+                    } else {
+                        // User deleted last character: reset text to empty and restore sentinel
+                        textValue = TextFieldValue(text = "\u200B", selection = TextRange(1))
+                        onTextChange("")
+                    }
                 } else {
                     val cleaned = raw.replace("\u200B", "")
                     val safeText = if (cleaned.isEmpty()) "\u200B" else cleaned

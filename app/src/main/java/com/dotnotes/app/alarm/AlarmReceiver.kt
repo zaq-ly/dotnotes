@@ -12,6 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.MainActivity
+import com.dotnotes.app.data.model.Note
 import kotlinx.coroutines.runBlocking
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -64,7 +65,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         val noteTitle = intent.getStringExtra("note_title")?.ifBlank { "Untitled" } ?: "Untitled"
         val rawContent = intent.getStringExtra("note_content") ?: ""
-        val noteContent = rawContent.replace(Regex("<[^>]*>"), "").trim()
+        val noteContent = Note.getPreviewText(rawContent)
         val priority = intent.getIntExtra("priority", 1)
 
         val openIntent = Intent(context, MainActivity::class.java).apply {

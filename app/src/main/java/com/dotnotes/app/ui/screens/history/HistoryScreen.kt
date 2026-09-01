@@ -43,6 +43,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import com.dotnotes.app.data.model.previewText
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -383,12 +384,13 @@ private fun HistoryCard(
                 }
             }
 
-            if (note.content.isNotEmpty()) {
+            val preview = note.previewText
+            if (preview.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = note.content.replace(Regex("<[^>]*>"), ""),
+                    text = preview,
                     style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

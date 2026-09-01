@@ -18,4 +18,23 @@ data class Note(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false
-)
+) {
+    companion object {
+        fun getPreviewText(content: String): String {
+            if (content.isBlank()) return ""
+            val cleanHtml = content
+                .replace("<br>", "\n")
+                .replace("<br/>", "\n")
+                .replace("<br />", "\n")
+                .replace("</p>", "\n")
+                .replace("</li>", "\n")
+                .replace("</div>", "\n")
+            val rawText = cleanHtml.replace(Regex("<[^>]*>"), "")
+            return rawText.lines().firstOrNull { it.trim().isNotEmpty() }?.trim().orEmpty()
+        }
+    }
+}
+
+val Note.previewText: String
+    get() = Note.getPreviewText(content)
+
