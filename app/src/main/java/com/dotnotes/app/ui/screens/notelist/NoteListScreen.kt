@@ -433,175 +433,161 @@ private fun SelectableNoteCard(
     val dateFormat = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
     val reminderFormat = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
 
-    val outerShape = RoundedCornerShape(20.dp)
-    val innerShape = RoundedCornerShape(16.dp)
-
-    val cardCore = @Composable {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(innerShape)
-                .then(
-                    if (isSelected) {
-                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, innerShape)
-                    } else Modifier
-                )
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick
-                ),
-            shape = innerShape,
-            colors = CardDefaults.cardColors(
-                containerColor = if (isSelected)
-                    MaterialTheme.colorScheme.primaryContainer
-                else
-                    MaterialTheme.colorScheme.surfaceVariant
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .then(
+                if (isSelected) {
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                } else Modifier
             )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = note.title.ifEmpty { strings.untitled },
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (hasCustomTheme) {
+                    Box(
+                        modifier = Modifier
+                            .size(9.dp)
+                            .clip(CircleShape)
+                            .background(noteTheme.swatchColor)
                     )
-                    if (isSelectionMode) {
-                        Box(
-                            modifier = Modifier
-                                .size(22.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-                                )
-                                .border(
-                                    width = 2.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isSelected) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                        }
-                    } else if (note.isPinned) {
-                        Icon(
-                            Icons.Default.PushPin,
-                            contentDescription = strings.pinned,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Spacer(Modifier.width(8.dp))
                 }
-
-                val preview = note.previewText
-                if (preview.isNotEmpty()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = preview,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                if (note.reminderTime != null && !note.isAlarmDismissed) {
-                    Spacer(Modifier.height(10.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                Text(
+                    text = note.title.ifEmpty { strings.untitled },
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                if (isSelectionMode) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+                            )
+                            .border(
+                                width = 2.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (note.priority == 2)
-                                MaterialTheme.colorScheme.errorContainer
-                            else
-                                Color(0xFF1976D2).copy(alpha = 0.22f)
+                        if (isSelected) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                } else if (note.isPinned) {
+                    Icon(
+                        Icons.Default.PushPin,
+                        contentDescription = strings.pinned,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            val preview = note.previewText
+            if (preview.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = preview,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (note.reminderTime != null && !note.isAlarmDismissed) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (note.priority == 2)
+                            MaterialTheme.colorScheme.errorContainer
+                        else
+                            Color(0xFF1976D2).copy(alpha = 0.22f)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
+                            Icon(
+                                imageVector = if (note.priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (note.priority == 2) MaterialTheme.colorScheme.error else Color(0xFF42A5F5)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = reminderFormat.format(Date(note.reminderTime)),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF42A5F5)
+                            )
+                            if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                                Spacer(Modifier.width(4.dp))
                                 Icon(
-                                    imageVector = if (note.priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
+                                    imageVector = Icons.Default.Repeat,
                                     contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
+                                    modifier = Modifier.size(12.dp),
                                     tint = if (note.priority == 2) MaterialTheme.colorScheme.error else Color(0xFF42A5F5)
                                 )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = reminderFormat.format(Date(note.reminderTime)),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF42A5F5)
-                                )
-                                if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
-                                    Spacer(Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.Repeat,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(12.dp),
-                                        tint = if (note.priority == 2) MaterialTheme.colorScheme.error else Color(0xFF42A5F5)
-                                    )
-                                }
-                            }
-                        }
-
-                        if (!isSelectionMode) {
-                            FilledTonalButton(
-                                onClick = onDismissReminder,
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                                modifier = Modifier.height(30.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = strings.markDone,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = strings.markDone,
-                                    style = MaterialTheme.typography.labelSmall
-                                )
                             }
                         }
                     }
+
+                    if (!isSelectionMode) {
+                        FilledTonalButton(
+                            onClick = onDismissReminder,
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                            modifier = Modifier.height(30.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = strings.markDone,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = strings.markDone,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
                 }
-
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                )
             }
-        }
-    }
 
-    if (hasCustomTheme && !isSelected) {
-        Surface(
-            shape = outerShape,
-            color = noteTheme.strokeColor,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp)
-            ) {
-                cardCore()
-            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+            )
         }
-    } else {
-        cardCore()
     }
 }

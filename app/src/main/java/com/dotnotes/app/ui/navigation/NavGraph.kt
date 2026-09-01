@@ -1,10 +1,12 @@
 package com.dotnotes.app.ui.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -17,8 +19,7 @@ import com.dotnotes.app.ui.screens.notelist.NoteListScreen
 import com.dotnotes.app.ui.screens.settings.SettingsScreen
 import com.dotnotes.app.ui.screens.splash.SplashScreen
 
-private val IosEasing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
-private const val IosDuration = 380
+private const val MotionDuration = 280
 
 object Routes {
     const val SPLASH = "splash"
@@ -39,34 +40,40 @@ fun NavGraph(navController: NavHostController) {
         enterTransition = {
             slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                animationSpec = tween(IosDuration, easing = IosEasing)
-            )
+                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            ) + scaleIn(
+                initialScale = 0.95f,
+                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(MotionDuration))
         },
         exitTransition = {
             slideOutOfContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
                 targetOffset = { it / 4 },
-                animationSpec = tween(IosDuration, easing = IosEasing)
-            ) + fadeOut(
-                animationSpec = tween(IosDuration, easing = IosEasing),
-                targetAlpha = 0.85f
-            )
+                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            ) + scaleOut(
+                targetScale = 0.98f,
+                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(MotionDuration))
         },
         popEnterTransition = {
             slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.End,
                 initialOffset = { -it / 4 },
-                animationSpec = tween(IosDuration, easing = IosEasing)
-            ) + fadeIn(
-                animationSpec = tween(IosDuration, easing = IosEasing),
-                initialAlpha = 0.85f
-            )
+                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            ) + scaleIn(
+                initialScale = 0.98f,
+                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(MotionDuration))
         },
         popExitTransition = {
             slideOutOfContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.End,
-                animationSpec = tween(IosDuration, easing = IosEasing)
-            )
+                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            ) + scaleOut(
+                targetScale = 0.95f,
+                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(MotionDuration))
         }
     ) {
         composable(
