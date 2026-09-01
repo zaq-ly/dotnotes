@@ -1,13 +1,14 @@
 package com.dotnotes.app.ui.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -19,7 +20,9 @@ import com.dotnotes.app.ui.screens.notelist.NoteListScreen
 import com.dotnotes.app.ui.screens.settings.SettingsScreen
 import com.dotnotes.app.ui.screens.splash.SplashScreen
 
-private const val MotionDuration = 280
+private const val FadeInDuration = 210
+private const val FadeInDelay = 60
+private const val FadeOutDuration = 90
 
 object Routes {
     const val SPLASH = "splash"
@@ -37,43 +40,32 @@ fun NavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
+        modifier = Modifier.background(MaterialTheme.colorScheme.background),
         enterTransition = {
-            slideIntoContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            fadeIn(
+                animationSpec = tween(FadeInDuration, delayMillis = FadeInDelay, easing = FastOutSlowInEasing)
             ) + scaleIn(
-                initialScale = 0.95f,
-                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(MotionDuration))
+                initialScale = 0.92f,
+                animationSpec = tween(FadeInDuration, delayMillis = FadeInDelay, easing = FastOutSlowInEasing)
+            )
         },
         exitTransition = {
-            slideOutOfContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                targetOffset = { it / 4 },
-                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
-            ) + scaleOut(
-                targetScale = 0.98f,
-                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(MotionDuration))
+            fadeOut(
+                animationSpec = tween(FadeOutDuration, easing = FastOutSlowInEasing)
+            )
         },
         popEnterTransition = {
-            slideIntoContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.End,
-                initialOffset = { -it / 4 },
-                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
+            fadeIn(
+                animationSpec = tween(FadeInDuration, delayMillis = FadeInDelay, easing = FastOutSlowInEasing)
             ) + scaleIn(
-                initialScale = 0.98f,
-                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(MotionDuration))
+                initialScale = 0.92f,
+                animationSpec = tween(FadeInDuration, delayMillis = FadeInDelay, easing = FastOutSlowInEasing)
+            )
         },
         popExitTransition = {
-            slideOutOfContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.End,
-                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
-            ) + scaleOut(
-                targetScale = 0.95f,
-                animationSpec = tween(MotionDuration, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(MotionDuration))
+            fadeOut(
+                animationSpec = tween(FadeOutDuration, easing = FastOutSlowInEasing)
+            )
         }
     ) {
         composable(
