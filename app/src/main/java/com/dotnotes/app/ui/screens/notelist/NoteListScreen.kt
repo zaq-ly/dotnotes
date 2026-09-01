@@ -192,26 +192,19 @@ fun NoteListScreen(
                         // Settings / Update Icon Button
                         IconButton(
                             onClick = onSettingsClick,
-                            modifier = if (hasUpdate) {
-                                Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), CircleShape)
-                            } else Modifier
-                        ) {
-                            BadgedBox(
-                                badge = {
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .then(
                                     if (hasUpdate) {
-                                        Badge(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(7.dp)
-                                        )
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
-                                    contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
-                                    tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), CircleShape)
+                                    } else Modifier
                                 )
-                            }
+                        ) {
+                            Icon(
+                                imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
+                                contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
+                                tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     }
                 )
