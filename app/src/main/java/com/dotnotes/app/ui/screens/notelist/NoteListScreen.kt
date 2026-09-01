@@ -456,15 +456,6 @@ private fun SelectableNoteCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (hasCustomTheme) {
-                    Box(
-                        modifier = Modifier
-                            .size(9.dp)
-                            .clip(CircleShape)
-                            .background(noteTheme.swatchColor)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
                 Text(
                     text = note.title.ifEmpty { strings.untitled },
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -583,11 +574,24 @@ private fun SelectableNoteCard(
             }
 
             Spacer(Modifier.height(10.dp))
-            Text(
-                text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
+                if (hasCustomTheme) {
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(5.5.dp)
+                            .clip(CircleShape)
+                            .background(noteTheme.swatchColor)
+                    )
+                }
+            }
         }
     }
 }
