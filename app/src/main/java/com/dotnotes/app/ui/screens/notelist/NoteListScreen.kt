@@ -200,19 +200,28 @@ fun NoteListScreen(
                         // Settings / Update Icon Button
                         IconButton(
                             onClick = onSettingsClick,
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .then(
-                                    if (hasUpdate) {
-                                        Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), CircleShape)
-                                    } else Modifier
-                                )
+                            modifier = Modifier.padding(end = 4.dp)
                         ) {
-                            Icon(
-                                imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
-                                contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
-                                tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .then(
+                                        if (hasUpdate) {
+                                            Modifier.background(
+                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                                CircleShape
+                                            )
+                                        } else Modifier
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
+                                    contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
                 )

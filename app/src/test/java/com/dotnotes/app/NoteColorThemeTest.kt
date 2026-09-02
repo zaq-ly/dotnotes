@@ -20,18 +20,15 @@ class NoteColorThemeTest {
 
     @Test
     fun allPresetThemes_returnCorrectKeyAndNonNullColors() {
-        val presets = listOf(
+        val corePresets = listOf(
             NoteColorThemes.DEFAULT,
             NoteColorThemes.BLUE,
-            NoteColorThemes.GREEN,
+            NoteColorThemes.RED,
             NoteColorThemes.YELLOW,
-            NoteColorThemes.PURPLE,
-            NoteColorThemes.ROSE,
-            NoteColorThemes.ORANGE,
-            NoteColorThemes.TEAL
+            NoteColorThemes.GREEN
         )
 
-        for (preset in presets) {
+        for (preset in corePresets) {
             val themeLight = NoteColorThemes.getThemeColors(preset, isDark = false)
             val themeDark = NoteColorThemes.getThemeColors(preset, isDark = true)
 

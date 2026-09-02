@@ -1006,17 +1006,14 @@ fun NoteEditorScreen(
                 val colorOptions = listOf(
                     NoteColorThemes.DEFAULT to strings.colorDefault,
                     NoteColorThemes.BLUE to strings.colorBlue,
-                    NoteColorThemes.GREEN to strings.colorGreen,
+                    NoteColorThemes.RED to strings.colorRed,
                     NoteColorThemes.YELLOW to strings.colorYellow,
-                    NoteColorThemes.PURPLE to strings.colorPurple,
-                    NoteColorThemes.ROSE to strings.colorRose,
-                    NoteColorThemes.ORANGE to strings.colorOrange,
-                    NoteColorThemes.TEAL to strings.colorTeal
+                    NoteColorThemes.GREEN to strings.colorGreen
                 )
 
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(4),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    columns = GridCells.Fixed(5),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
