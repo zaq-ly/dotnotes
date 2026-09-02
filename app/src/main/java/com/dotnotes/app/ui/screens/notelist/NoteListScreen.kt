@@ -59,6 +59,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -454,7 +456,32 @@ private fun SelectableNoteCard(
                 MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (hasCustomTheme && !isSelected) {
+                        Modifier.drawBehind {
+                            val glowRadius = size.width * 0.55f
+                            val glowCenter = Offset(size.width, 0f)
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        noteTheme.swatchColor.copy(alpha = if (isDark) 0.28f else 0.18f),
+                                        noteTheme.swatchColor.copy(alpha = if (isDark) 0.08f else 0.05f),
+                                        Color.Transparent
+                                    ),
+                                    center = glowCenter,
+                                    radius = glowRadius
+                                ),
+                                radius = glowRadius,
+                                center = glowCenter
+                            )
+                        }
+                    } else Modifier
+                )
+                .padding(16.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = note.title.ifEmpty { strings.untitled },
@@ -574,24 +601,11 @@ private fun SelectableNoteCard(
             }
 
             Spacer(Modifier.height(10.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                )
-                if (hasCustomTheme) {
-                    Spacer(Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(5.5.dp)
-                            .clip(CircleShape)
-                            .background(noteTheme.swatchColor)
-                    )
-                }
-            }
+            Text(
+                text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+            )
         }
     }
 }
