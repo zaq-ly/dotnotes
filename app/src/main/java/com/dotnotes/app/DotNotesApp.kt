@@ -68,6 +68,7 @@ class DotNotesApp : Application() {
             vibrationPattern = longArrayOf(0, 400, 200, 400)
             setSound(soundUri, notifAudioAttributes)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            setShowBadge(true)
         }
 
         val alarmSoundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
@@ -87,6 +88,7 @@ class DotNotesApp : Application() {
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 800, 400, 800)
             setSound(alarmSoundUri, alarmAudioAttributes)
+            setShowBadge(true)
         }
 
         val updateChannel = NotificationChannel(

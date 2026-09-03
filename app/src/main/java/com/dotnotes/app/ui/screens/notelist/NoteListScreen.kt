@@ -178,17 +178,19 @@ fun NoteListScreen(
                         )
                     },
                     actions = {
-                        // History Icon (Belum Selesai / Riwayat Pengingat)
-                        val pendingCount = notes.count { it.reminderTime != null && !it.isAlarmDismissed }
+                        // History Icon (Pengingat Terlewat / Riwayat)
+                        val overdueCount = notes.count {
+                            it.reminderTime != null && it.reminderTime <= System.currentTimeMillis() && !it.isAlarmDismissed
+                        }
                         IconButton(onClick = onHistoryClick) {
                             BadgedBox(
                                 badge = {
-                                    if (pendingCount > 0) {
+                                    if (overdueCount > 0) {
                                         Badge(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = MaterialTheme.colorScheme.onError
                                         ) {
-                                            Text(pendingCount.toString())
+                                            Text(overdueCount.toString())
                                         }
                                     }
                                 }

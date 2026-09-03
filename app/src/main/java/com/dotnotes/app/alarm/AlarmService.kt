@@ -95,6 +95,8 @@ class AlarmService : Service() {
             .addAction(android.R.drawable.ic_lock_idle_alarm, "Tunda", snoozePending)
             .setAutoCancel(false)
             .setOngoing(true)
+            .setNumber(1)
+            .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
             .build()
 
         try {

@@ -132,6 +132,8 @@ class AlarmReceiver : BroadcastReceiver() {
                 .addAction(android.R.drawable.ic_lock_idle_alarm, "Tunda", snoozePending)
                 .setAutoCancel(false)
                 .setOngoing(true)
+                .setNumber(1)
+                .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
                 .build()
 
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
@@ -163,7 +165,9 @@ class AlarmReceiver : BroadcastReceiver() {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setContentIntent(openPending)
                 .addAction(android.R.drawable.checkbox_on_background, "Tandai Selesai", dismissPending)
-                .setAutoCancel(true)
+                .setAutoCancel(false)
+                .setNumber(1)
+                .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
                 .build()
 
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||

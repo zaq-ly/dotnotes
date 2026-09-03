@@ -65,7 +65,12 @@ class NoteListViewModel(
     fun deleteHistoryReminders(context: android.content.Context, noteIds: Collection<String>) {
         viewModelScope.launch {
             val scheduler = com.dotnotes.app.alarm.AlarmScheduler(context)
-            noteIds.forEach { scheduler.cancel(it) }
+            val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
+            noteIds.forEach {
+                scheduler.cancel(it)
+                notificationManager.cancel(it.hashCode())
+                notificationManager.cancel(Math.abs(it.hashCode()) + 1)
+            }
             repository.clearReminders(noteIds)
         }
     }
@@ -80,6 +85,10 @@ class NoteListViewModel(
 
     fun dismissReminder(context: android.content.Context, noteId: String) {
         viewModelScope.launch {
+            val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
+            notificationManager.cancel(noteId.hashCode())
+            notificationManager.cancel(Math.abs(noteId.hashCode()) + 1)
+
             val note = repository.getNoteById(noteId)
             if (note != null && note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
                 val nextTime = com.dotnotes.app.alarm.ReminderHelper.getNextReminderTime(note.reminderTime ?: System.currentTimeMillis(), note.repeatInterval)
