@@ -23,7 +23,7 @@ data class EditorState(
     val snoozeDurationMin: Int = 5,
     val repeatInterval: String = com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE,
     val colorTheme: String = com.dotnotes.app.ui.theme.NoteColorThemes.DEFAULT,
-    val createdAt: Long = 0L,
+    val createdAt: Long = System.currentTimeMillis(),
     val isLoading: Boolean = true
 )
 
@@ -60,7 +60,7 @@ class NoteEditorViewModel(
                 }
             }
         } else {
-            _state.value = EditorState(isLoading = false)
+            _state.value = EditorState(createdAt = System.currentTimeMillis(), isLoading = false)
         }
     }
 

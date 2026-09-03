@@ -446,8 +446,6 @@ private fun SelectableNoteCard(
         NoteColorThemes.getThemeColors(note.colorTheme, isDark)
     }
     val hasCustomTheme = note.colorTheme.isNotEmpty() && note.colorTheme != NoteColorThemes.DEFAULT
-    val dateFormat = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
-    val reminderFormat = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
 
     Card(
         modifier = Modifier
@@ -528,13 +526,56 @@ private fun SelectableNoteCard(
                             )
                         }
                     }
-                } else if (note.isPinned) {
-                    Icon(
-                        Icons.Default.PushPin,
-                        contentDescription = strings.pinned,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                } else {
+                    val hasActiveReminder = note.reminderTime != null && !note.isAlarmDismissed
+                    if (hasActiveReminder) {
+                        val isAlarm = note.priority == 2
+                        val isDark = isSystemInDarkTheme()
+                        val chipBg = if (isAlarm) {
+                            if (isDark) Color(0xFFBE123C).copy(alpha = 0.15f) else Color(0xFFFFF1F2)
+                        } else {
+                            if (isDark) Color(0xFF1D4ED8).copy(alpha = 0.15f) else Color(0xFFEFF6FF)
+                        }
+                        val chipColor = if (isAlarm) {
+                            if (isDark) Color(0xFFFB7185) else Color(0xFFE11D48)
+                        } else {
+                            if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = chipBg,
+                            modifier = Modifier.padding(end = if (note.isPinned) 6.dp else 0.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = chipColor
+                                )
+                                Spacer(Modifier.width(3.dp))
+                                Text(
+                                    text = if (isAlarm) "Alarm" else "Pengingat",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    fontWeight = FontWeight.Medium,
+                                    color = chipColor
+                                )
+                            }
+                        }
+                    }
+
+                    if (note.isPinned) {
+                        Icon(
+                            Icons.Default.PushPin,
+                            contentDescription = strings.pinned,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
@@ -550,34 +591,39 @@ private fun SelectableNoteCard(
                 )
             }
 
-            Spacer(Modifier.height(10.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                )
-
-                if (note.reminderTime != null && !note.isAlarmDismissed && !isSelectionMode) {
-                    FilledTonalButton(
-                        onClick = onDismissReminder,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                        modifier = Modifier.height(28.dp)
+            if (note.reminderTime != null && !note.isAlarmDismissed && !isSelectionMode) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    val isDark = isSystemInDarkTheme()
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isDark) Color(0xFF27272A).copy(alpha = 0.6f) else Color(0xFFF4F4F5),
+                        border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46).copy(alpha = 0.6f) else Color(0xFFE4E4E7)),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onDismissReminder)
                     ) {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = strings.markDone,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = strings.markDone,
-                            style = MaterialTheme.typography.labelSmall
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = strings.markDone,
+                                modifier = Modifier.size(13.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                text = strings.markDone,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }

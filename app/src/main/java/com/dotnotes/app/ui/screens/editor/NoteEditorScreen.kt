@@ -418,9 +418,7 @@ fun NoteEditorScreen(
                             shape = RoundedCornerShape(20.dp),
                             color = if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5),
                             border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46) else Color(0xFFE4E4E7)),
-                            modifier = Modifier
-                                .padding(start = 16.dp, bottom = 4.dp)
-                                .clickable { showReminderDialog = true }
+                            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -481,6 +479,20 @@ fun NoteEditorScreen(
                             unfocusedIndicatorColor = Color.Transparent,
                             selectionColors = customTextSelectionColors
                         )
+                    )
+
+                    // Created At Timestamp (Static, Standard Placement)
+                    val createdDate = remember(state.createdAt) {
+                        if (state.createdAt > 0L) Date(state.createdAt) else Date()
+                    }
+                    val formattedCreated = remember(createdDate) {
+                        SimpleDateFormat("dd MMMM yyyy, hh:mm a", Locale.getDefault()).format(createdDate)
+                    }
+                    Text(
+                        text = formattedCreated,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        color = noteColors.onSurface.copy(alpha = 0.45f),
+                        modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 6.dp)
                     )
 
                     Spacer(Modifier.height(4.dp))
