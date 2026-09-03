@@ -407,6 +407,51 @@ fun NoteEditorScreen(
                         .padding(padding)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
+                    // Minimal Neutral Reminder Indicator (Above Title, Clickable)
+                    if (state.hasReminder && state.reminderTime != null) {
+                        val reminderDate = Date(state.reminderTime!!)
+                        val formattedReminder = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(reminderDate)
+                        val isAlarm = state.priority == 2
+                        val isDark = isSystemInDarkTheme()
+
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5),
+                            border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46) else Color(0xFFE4E4E7)),
+                            modifier = Modifier
+                                .padding(start = 16.dp, bottom = 4.dp)
+                                .clickable { showReminderDialog = true }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(13.dp),
+                                    tint = if (isDark) Color(0xFFA1A1AA) else Color(0xFF71717A)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = formattedReminder,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isDark) Color(0xFFD4D4D8) else Color(0xFF52525B)
+                                )
+                                if (state.repeatInterval != ReminderHelper.REPEAT_NONE && state.repeatInterval.isNotBlank()) {
+                                    Spacer(Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Repeat,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(11.dp),
+                                        tint = if (isDark) Color(0xFFA1A1AA) else Color(0xFF71717A)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     // 1. Title Input
                     TextField(
                         value = state.title,

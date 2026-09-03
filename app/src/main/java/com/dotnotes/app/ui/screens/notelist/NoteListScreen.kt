@@ -550,80 +550,37 @@ private fun SelectableNoteCard(
                 )
             }
 
-            if (note.reminderTime != null && !note.isAlarmDismissed) {
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val isDark = isSystemInDarkTheme()
-                    val isAlarm = note.priority == 2
-                    val pillBg = ReminderBadgeColors.containerColor(isAlarm = isAlarm, isDark = isDark)
-                    val pillBorder = ReminderBadgeColors.borderColor(isAlarm = isAlarm, isDark = isDark)
-                    val pillContent = ReminderBadgeColors.contentColor(isAlarm = isAlarm, isDark = isDark)
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
 
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = pillBg,
-                        border = BorderStroke(1.dp, pillBorder)
+                if (note.reminderTime != null && !note.isAlarmDismissed && !isSelectionMode) {
+                    FilledTonalButton(
+                        onClick = onDismissReminder,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                        modifier = Modifier.height(28.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = pillContent
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = reminderFormat.format(Date(note.reminderTime)),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = pillContent
-                            )
-                            if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
-                                Spacer(Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Repeat,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = pillContent
-                                )
-                            }
-                        }
-                    }
-
-                    if (!isSelectionMode) {
-                        FilledTonalButton(
-                            onClick = onDismissReminder,
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                            modifier = Modifier.height(30.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = strings.markDone,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = strings.markDone,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = strings.markDone,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = strings.markDone,
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                 }
             }
-
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "${strings.edited} ${dateFormat.format(Date(note.updatedAt))}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-            )
         }
     }
 }
