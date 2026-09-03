@@ -217,6 +217,8 @@ class UpdateManager {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setBadgeIconType(NotificationCompat.BADGE_ICON_NONE)
+                .setNumber(0)
                 .setContentIntent(openPending)
                 .setDeleteIntent(dismissPending)
                 .setAutoCancel(true)

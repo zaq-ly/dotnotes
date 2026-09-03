@@ -36,6 +36,7 @@ import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -444,7 +445,18 @@ fun SettingsScreen(
             // Check for Updates item
             ListItem(
                 leadingContent = {
-                    Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    BadgedBox(
+                        badge = {
+                            if (availableUpdate != null) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(8.dp)
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    }
                 },
                 headlineContent = { Text(strings.checkForUpdates) },
                 supportingContent = {

@@ -207,18 +207,15 @@ fun NoteListScreen(
                             onClick = onSettingsClick,
                             modifier = Modifier.padding(end = 4.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .then(
-                                        if (hasUpdate) {
-                                            Modifier.background(
-                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                                                CircleShape
-                                            )
-                                        } else Modifier
-                                    ),
-                                contentAlignment = Alignment.Center
+                            BadgedBox(
+                                badge = {
+                                    if (hasUpdate) {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(8.dp)
+                                        )
+                                    }
+                                }
                             ) {
                                 Icon(
                                     imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,

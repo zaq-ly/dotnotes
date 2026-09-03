@@ -99,6 +99,7 @@ class DotNotesApp : Application() {
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 300, 150, 300)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            setShowBadge(true)
         }
 
         val mgr = getSystemService(NotificationManager::class.java)
