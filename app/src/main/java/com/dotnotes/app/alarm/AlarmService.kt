@@ -81,6 +81,23 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val dismissAction = NotificationCompat.Action.Builder(
+            android.R.drawable.checkbox_on_background,
+            "Tandai Selesai",
+            dismissPending
+        )
+            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
+            .setShowsUserInterface(false)
+            .build()
+
+        val snoozeAction = NotificationCompat.Action.Builder(
+            android.R.drawable.ic_lock_idle_alarm,
+            "Tunda",
+            snoozePending
+        )
+            .setShowsUserInterface(false)
+            .build()
+
         val notification = NotificationCompat.Builder(this, DotNotesApp.CHANNEL_ALARM)
             .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
             .setContentTitle(noteTitle)
@@ -91,14 +108,15 @@ class AlarmService : Service() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setFullScreenIntent(fullScreenPending, true)
             .setContentIntent(fullScreenPending)
-            .addAction(android.R.drawable.checkbox_on_background, "Tandai Selesai", dismissPending)
-            .addAction(android.R.drawable.ic_lock_idle_alarm, "Tunda", snoozePending)
+            .addAction(dismissAction)
+            .addAction(snoozeAction)
             .setColor(0xFFBE123C.toInt())
             .setAutoCancel(false)
             .setOngoing(true)
             .setNumber(1)
             .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
             .build()
+        notification.flags = notification.flags or android.app.Notification.FLAG_ONGOING_EVENT or android.app.Notification.FLAG_NO_CLEAR
 
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {

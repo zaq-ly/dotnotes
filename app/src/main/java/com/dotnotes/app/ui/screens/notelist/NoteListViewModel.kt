@@ -70,10 +70,8 @@ class NoteListViewModel(
                 scheduler.cancel(it)
                 notificationManager.cancel(it.hashCode())
                 notificationManager.cancel(Math.abs(it.hashCode()) + 1)
-                notificationManager.cancel(Math.abs(it.hashCode()) + 10)
             }
             repository.clearReminders(noteIds)
-            com.dotnotes.app.alarm.AlarmReceiver.updateMiuiBadgeCount(context)
         }
     }
 
@@ -90,7 +88,6 @@ class NoteListViewModel(
             val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
             notificationManager.cancel(noteId.hashCode())
             notificationManager.cancel(Math.abs(noteId.hashCode()) + 1)
-            notificationManager.cancel(Math.abs(noteId.hashCode()) + 10)
 
             val note = repository.getNoteById(noteId)
             if (note != null && note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
@@ -106,7 +103,6 @@ class NoteListViewModel(
                 repository.dismissAlarm(noteId)
                 com.dotnotes.app.alarm.AlarmScheduler(context).cancel(noteId)
             }
-            com.dotnotes.app.alarm.AlarmReceiver.updateMiuiBadgeCount(context)
         }
     }
 

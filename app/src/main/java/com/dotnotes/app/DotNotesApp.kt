@@ -101,27 +101,16 @@ class DotNotesApp : Application() {
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
 
-        val silentChannel = NotificationChannel(
-            CHANNEL_SILENT, "Pengingat Tertunda",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Notifikasi pengingat tertunda tanpa suara untuk menjaga lencana"
-            setShowBadge(true)
-            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-        }
-
         val mgr = getSystemService(NotificationManager::class.java)
         mgr?.createNotificationChannel(notifChannel)
         mgr?.createNotificationChannel(alarmChannel)
         mgr?.createNotificationChannel(updateChannel)
-        mgr?.createNotificationChannel(silentChannel)
     }
 
     companion object {
         lateinit var instance: DotNotesApp
-        const val CHANNEL_REMINDER = "reminder_channel_v4"
-        const val CHANNEL_ALARM = "alarm_channel_v4"
-        const val CHANNEL_SILENT = "silent_reminder_channel_v1"
+        const val CHANNEL_REMINDER = "reminder_channel_v3"
+        const val CHANNEL_ALARM = "alarm_channel_v3"
         const val CHANNEL_UPDATE = "update_channel_v1"
     }
 }
