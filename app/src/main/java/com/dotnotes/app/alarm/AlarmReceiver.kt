@@ -1,7 +1,6 @@
 package com.dotnotes.app.alarm
 
 import android.app.ActivityOptions
-import android.app.Notification
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -39,6 +38,16 @@ class AlarmReceiver : BroadcastReceiver() {
                     AlarmScheduler(context).schedule(updatedNote)
                 } else {
                     DotNotesApp.instance.repository.dismissAlarm(noteId)
+                }
+            }
+            return
+        }
+
+        if (action == ACTION_SWIPE) {
+            runBlocking {
+                val note = DotNotesApp.instance.repository.getNoteById(noteId)
+                if (note != null && !note.isAlarmDismissed && note.reminderTime != null) {
+                    postStickyReminderNotification(context, note)
                 }
             }
             return
@@ -90,13 +99,10 @@ class AlarmReceiver : BroadcastReceiver() {
         )
 
         val dismissAction = NotificationCompat.Action.Builder(
-            android.R.drawable.checkbox_on_background,
+            com.dotnotes.app.R.drawable.ic_stat_notification,
             "Tandai Selesai",
             dismissPending
-        )
-            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
-            .setShowsUserInterface(false)
-            .build()
+        ).build()
 
         val snoozeIntent = Intent(context, AlarmReceiver::class.java).apply {
             this.action = ACTION_SNOOZE
@@ -108,12 +114,19 @@ class AlarmReceiver : BroadcastReceiver() {
         )
 
         val snoozeAction = NotificationCompat.Action.Builder(
-            android.R.drawable.ic_lock_idle_alarm,
+            com.dotnotes.app.R.drawable.ic_stat_notification,
             "Tunda",
             snoozePending
+        ).build()
+
+        val swipeIntent = Intent(context, AlarmReceiver::class.java).apply {
+            this.action = ACTION_SWIPE
+            putExtra("note_id", noteId)
+        }
+        val swipePending = PendingIntent.getBroadcast(
+            context, notifId + 5, swipeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-            .setShowsUserInterface(false)
-            .build()
 
         if (priority == 2) {
             AlarmPlayer.play(context)
@@ -148,12 +161,10 @@ class AlarmReceiver : BroadcastReceiver() {
                 .addAction(dismissAction)
                 .addAction(snoozeAction)
                 .setColor(0xFFBE123C.toInt())
-                .setAutoCancel(false)
-                .setOngoing(true)
+                .setDeleteIntent(swipePending)
                 .setNumber(1)
                 .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
                 .build()
-            notification.flags = notification.flags or Notification.FLAG_ONGOING_EVENT or Notification.FLAG_NO_CLEAR
 
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
                 Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -180,18 +191,16 @@ class AlarmReceiver : BroadcastReceiver() {
                 .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
                 .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
                 .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setContentIntent(openPending)
                 .addAction(dismissAction)
                 .addAction(snoozeAction)
                 .setColor(0xFF1D4ED8.toInt())
-                .setAutoCancel(false)
-                .setOngoing(true)
+                .setDeleteIntent(swipePending)
                 .setNumber(1)
                 .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
                 .build()
-            notification.flags = notification.flags or Notification.FLAG_ONGOING_EVENT or Notification.FLAG_NO_CLEAR
 
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
                 Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -200,8 +209,87 @@ class AlarmReceiver : BroadcastReceiver() {
         }
     }
 
+    private fun postStickyReminderNotification(context: Context, note: Note) {
+        val noteId = note.id
+        val notifId = Math.abs(noteId.hashCode()) + 1
+        val noteTitle = note.title.ifBlank { "Untitled" }
+        val noteContent = Note.getPreviewText(note.content)
+
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            putExtra("note_id", noteId)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openPending = PendingIntent.getActivity(
+            context, noteId.hashCode(), openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val dismissIntent = Intent(context, AlarmReceiver::class.java).apply {
+            this.action = ACTION_DISMISS
+            putExtra("note_id", noteId)
+        }
+        val dismissPending = PendingIntent.getBroadcast(
+            context, notifId + 2, dismissIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val dismissAction = NotificationCompat.Action.Builder(
+            com.dotnotes.app.R.drawable.ic_stat_notification,
+            "Tandai Selesai",
+            dismissPending
+        ).build()
+
+        val snoozeIntent = Intent(context, AlarmReceiver::class.java).apply {
+            this.action = ACTION_SNOOZE
+            putExtra("note_id", noteId)
+        }
+        val snoozePending = PendingIntent.getBroadcast(
+            context, notifId + 3, snoozeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val snoozeAction = NotificationCompat.Action.Builder(
+            com.dotnotes.app.R.drawable.ic_stat_notification,
+            "Tunda",
+            snoozePending
+        ).build()
+
+        val swipeIntent = Intent(context, AlarmReceiver::class.java).apply {
+            this.action = ACTION_SWIPE
+            putExtra("note_id", noteId)
+        }
+        val swipePending = PendingIntent.getBroadcast(
+            context, notifId + 5, swipeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)
+            .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
+            .setContentTitle(noteTitle)
+            .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(openPending)
+            .addAction(dismissAction)
+            .addAction(snoozeAction)
+            .setColor(0xFF1D4ED8.toInt())
+            .setDeleteIntent(swipePending)
+            .setSilent(true)
+            .setNumber(1)
+            .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
+            .build()
+
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            NotificationManagerCompat.from(context).notify(notifId, notification)
+        }
+    }
+
     companion object {
         const val ACTION_DISMISS = "com.dotnotes.app.ACTION_DISMISS"
         const val ACTION_SNOOZE = "com.dotnotes.app.ACTION_SNOOZE"
+        const val ACTION_SWIPE = "com.dotnotes.app.ACTION_SWIPE"
     }
 }

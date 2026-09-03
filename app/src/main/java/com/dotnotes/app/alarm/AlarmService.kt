@@ -82,21 +82,16 @@ class AlarmService : Service() {
         )
 
         val dismissAction = NotificationCompat.Action.Builder(
-            android.R.drawable.checkbox_on_background,
+            com.dotnotes.app.R.drawable.ic_stat_notification,
             "Tandai Selesai",
             dismissPending
-        )
-            .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
-            .setShowsUserInterface(false)
-            .build()
+        ).build()
 
         val snoozeAction = NotificationCompat.Action.Builder(
-            android.R.drawable.ic_lock_idle_alarm,
+            com.dotnotes.app.R.drawable.ic_stat_notification,
             "Tunda",
             snoozePending
-        )
-            .setShowsUserInterface(false)
-            .build()
+        ).build()
 
         val notification = NotificationCompat.Builder(this, DotNotesApp.CHANNEL_ALARM)
             .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
