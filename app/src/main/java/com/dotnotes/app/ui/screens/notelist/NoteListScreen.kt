@@ -530,41 +530,21 @@ private fun SelectableNoteCard(
                     val hasActiveReminder = note.reminderTime != null && !note.isAlarmDismissed
                     if (hasActiveReminder) {
                         val isAlarm = note.priority == 2
-                        val isDark = isSystemInDarkTheme()
-                        val chipBg = if (isAlarm) {
-                            if (isDark) Color(0xFFBE123C).copy(alpha = 0.15f) else Color(0xFFFFF1F2)
+                        val iconTint = if (hasCustomTheme) {
+                            noteTheme.swatchColor.copy(alpha = 0.85f)
                         } else {
-                            if (isDark) Color(0xFF1D4ED8).copy(alpha = 0.15f) else Color(0xFFEFF6FF)
-                        }
-                        val chipColor = if (isAlarm) {
-                            if (isDark) Color(0xFFFB7185) else Color(0xFFE11D48)
-                        } else {
-                            if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
                         }
 
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = chipBg,
-                            modifier = Modifier.padding(end = if (note.isPinned) 6.dp else 0.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = chipColor
-                                )
-                                Spacer(Modifier.width(3.dp))
-                                Text(
-                                    text = if (isAlarm) "Alarm" else "Pengingat",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    fontWeight = FontWeight.Medium,
-                                    color = chipColor
-                                )
-                            }
+                        Icon(
+                            imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
+                            contentDescription = if (isAlarm) "Alarm" else "Pengingat",
+                            modifier = Modifier.size(16.dp),
+                            tint = iconTint
+                        )
+
+                        if (note.isPinned) {
+                            Spacer(Modifier.width(6.dp))
                         }
                     }
 
@@ -573,7 +553,7 @@ private fun SelectableNoteCard(
                             Icons.Default.PushPin,
                             contentDescription = strings.pinned,
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = if (hasCustomTheme) noteTheme.swatchColor else MaterialTheme.colorScheme.primary
                         )
                     }
                 }
