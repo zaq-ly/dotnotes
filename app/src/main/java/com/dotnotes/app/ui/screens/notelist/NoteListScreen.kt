@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -66,6 +67,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import com.dotnotes.app.ui.theme.NoteColorThemes
+import com.dotnotes.app.ui.theme.ReminderBadgeColors
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -186,9 +188,10 @@ fun NoteListScreen(
                             BadgedBox(
                                 badge = {
                                     if (overdueCount > 0) {
+                                        val isDark = isSystemInDarkTheme()
                                         Badge(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            contentColor = MaterialTheme.colorScheme.onError
+                                            containerColor = if (isDark) ReminderBadgeColors.alarmContentDark else ReminderBadgeColors.alarmContentLight,
+                                            contentColor = if (isDark) Color(0xFF18181B) else Color.White
                                         ) {
                                             Text(overdueCount.toString())
                                         }
@@ -554,29 +557,33 @@ private fun SelectableNoteCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val isDark = isSystemInDarkTheme()
+                    val isAlarm = note.priority == 2
+                    val pillBg = ReminderBadgeColors.containerColor(isAlarm = isAlarm, isDark = isDark)
+                    val pillBorder = ReminderBadgeColors.borderColor(isAlarm = isAlarm, isDark = isDark)
+                    val pillContent = ReminderBadgeColors.contentColor(isAlarm = isAlarm, isDark = isDark)
+
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (note.priority == 2)
-                            MaterialTheme.colorScheme.errorContainer
-                        else
-                            Color(0xFF1976D2).copy(alpha = 0.22f)
+                        color = pillBg,
+                        border = BorderStroke(1.dp, pillBorder)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Icon(
-                                imageVector = if (note.priority == 2) Icons.Default.Alarm else Icons.Default.Notifications,
+                                imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
-                                tint = if (note.priority == 2) MaterialTheme.colorScheme.error else Color(0xFF42A5F5)
+                                tint = pillContent
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 text = reminderFormat.format(Date(note.reminderTime)),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (note.priority == 2) MaterialTheme.colorScheme.onErrorContainer else Color(0xFF42A5F5)
+                                color = pillContent
                             )
                             if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
                                 Spacer(Modifier.width(4.dp))
@@ -584,7 +591,7 @@ private fun SelectableNoteCard(
                                     imageVector = Icons.Default.Repeat,
                                     contentDescription = null,
                                     modifier = Modifier.size(12.dp),
-                                    tint = if (note.priority == 2) MaterialTheme.colorScheme.error else Color(0xFF42A5F5)
+                                    tint = pillContent
                                 )
                             }
                         }

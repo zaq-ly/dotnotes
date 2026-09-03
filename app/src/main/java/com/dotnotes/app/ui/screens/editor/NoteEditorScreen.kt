@@ -70,9 +70,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.BorderStroke
 import com.dotnotes.app.ui.theme.NoteColorThemes
 import com.dotnotes.app.ui.theme.NoteThemeColors
 import com.dotnotes.app.ui.theme.PureWhite
+import com.dotnotes.app.ui.theme.ReminderBadgeColors
 import com.dotnotes.app.alarm.ReminderHelper
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -556,10 +558,11 @@ fun NoteEditorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        val isDark = isSystemInDarkTheme()
                         Icon(
                             imageVector = if (state.priority == 2 && state.hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
                             contentDescription = null,
-                            tint = if (state.hasReminder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            tint = if (state.hasReminder) ReminderBadgeColors.contentColor(isAlarm = state.priority == 2, isDark = isDark) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(Modifier.width(12.dp))
@@ -741,6 +744,7 @@ fun NoteEditorScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val isDark = isSystemInDarkTheme()
                             FilterChip(
                                 selected = state.priority <= 1,
                                 onClick = { viewModel.setPriority(1) },
@@ -750,10 +754,11 @@ fun NoteEditorScreen(
                                     Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
                                 },
                                 shape = RoundedCornerShape(10.dp),
+                                border = if (state.priority <= 1) BorderStroke(1.dp, ReminderBadgeColors.borderColor(isAlarm = false, isDark = isDark)) else null,
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFF1976D2).copy(alpha = 0.22f),
-                                    selectedLabelColor = Color(0xFF42A5F5),
-                                    selectedLeadingIconColor = Color(0xFF42A5F5)
+                                    selectedContainerColor = ReminderBadgeColors.containerColor(isAlarm = false, isDark = isDark),
+                                    selectedLabelColor = ReminderBadgeColors.contentColor(isAlarm = false, isDark = isDark),
+                                    selectedLeadingIconColor = ReminderBadgeColors.contentColor(isAlarm = false, isDark = isDark)
                                 )
                             )
 
@@ -766,10 +771,11 @@ fun NoteEditorScreen(
                                     Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(16.dp))
                                 },
                                 shape = RoundedCornerShape(10.dp),
+                                border = if (state.priority == 2) BorderStroke(1.dp, ReminderBadgeColors.borderColor(isAlarm = true, isDark = isDark)) else null,
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.error,
-                                    selectedLeadingIconColor = MaterialTheme.colorScheme.error
+                                    selectedContainerColor = ReminderBadgeColors.containerColor(isAlarm = true, isDark = isDark),
+                                    selectedLabelColor = ReminderBadgeColors.contentColor(isAlarm = true, isDark = isDark),
+                                    selectedLeadingIconColor = ReminderBadgeColors.contentColor(isAlarm = true, isDark = isDark)
                                 )
                             )
                         }

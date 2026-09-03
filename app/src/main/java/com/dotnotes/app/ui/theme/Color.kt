@@ -22,3 +22,48 @@ val ErrorRedDark = Color(0xFFF87171)
 val ErrorRedContainer = Color(0xFFFEE2E2)
 val ErrorRedContainerDark = Color(0xFF450A0A)
 val AlarmRed = Color(0xFFFF1744)
+
+// Professional Editorial Tones for Reminder & Alarm (Subtle, Clean, Non-AI-Slop)
+object ReminderBadgeColors {
+    // Normal Reminder: Refined Cobalt / Slate
+    val reminderBgLight = Color(0xFFEFF6FF)
+    val reminderBorderLight = Color(0xFFDBEAFE)
+    val reminderContentLight = Color(0xFF1D4ED8)
+
+    val reminderBgDark = Color(0xFF172554).copy(alpha = 0.55f)
+    val reminderBorderDark = Color(0xFF1E3A8A).copy(alpha = 0.45f)
+    val reminderContentDark = Color(0xFF93C5FD)
+
+    // Alarm / Urgent / Overdue: Refined Crimson / Rose
+    val alarmBgLight = Color(0xFFFFF1F2)
+    val alarmBorderLight = Color(0xFFFFE4E6)
+    val alarmContentLight = Color(0xFFBE123C)
+
+    val alarmBgDark = Color(0xFF4C0519).copy(alpha = 0.55f)
+    val alarmBorderDark = Color(0xFF881337).copy(alpha = 0.45f)
+    val alarmContentDark = Color(0xFFFDA4AF)
+
+    fun containerColor(isAlarm: Boolean, isDark: Boolean): Color {
+        return if (isAlarm) {
+            if (isDark) alarmBgDark else alarmBgLight
+        } else {
+            if (isDark) reminderBgDark else reminderBgLight
+        }
+    }
+
+    fun contentColor(isAlarm: Boolean, isDark: Boolean): Color {
+        return if (isAlarm) {
+            if (isDark) alarmContentDark else alarmContentLight
+        } else {
+            if (isDark) reminderContentDark else reminderContentLight
+        }
+    }
+
+    fun borderColor(isAlarm: Boolean, isDark: Boolean): Color {
+        return if (isAlarm) {
+            if (isDark) alarmBorderDark else alarmBorderLight
+        } else {
+            if (isDark) reminderBorderDark else reminderBorderLight
+        }
+    }
+}

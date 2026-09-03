@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -73,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dotnotes.app.DotNotesApp
+import com.dotnotes.app.ui.theme.ReminderBadgeColors
 import com.dotnotes.app.data.model.Note
 import com.dotnotes.app.ui.i18n.LocalStrings
 import com.dotnotes.app.ui.screens.notelist.NoteListViewModel
@@ -402,21 +405,24 @@ private fun HistoryCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val isDark = isSystemInDarkTheme()
+                val isCompleted = selectedTab == 1
+                val isAlarm = note.priority == 2 || isOverdue
+                val pillBg = if (isCompleted) MaterialTheme.colorScheme.surfaceVariant else ReminderBadgeColors.containerColor(isAlarm = isAlarm, isDark = isDark)
+                val pillBorder = if (isCompleted) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f) else ReminderBadgeColors.borderColor(isAlarm = isAlarm, isDark = isDark)
+                val pillContent = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else ReminderBadgeColors.contentColor(isAlarm = isAlarm, isDark = isDark)
+
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (selectedTab == 1)
-                        MaterialTheme.colorScheme.surfaceVariant
-                    else if (note.priority == 2 || isOverdue)
-                        MaterialTheme.colorScheme.errorContainer
-                    else
-                        Color(0xFF1976D2).copy(alpha = 0.22f)
+                    color = pillBg,
+                    border = BorderStroke(1.dp, pillBorder)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Icon(
-                            imageVector = if (selectedTab == 1)
+                            imageVector = if (isCompleted)
                                 Icons.Default.CheckCircle
                             else if (note.priority == 2)
                                 Icons.Default.Alarm
@@ -424,39 +430,24 @@ private fun HistoryCard(
                                 Icons.Default.Notifications,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
-                            tint = if (selectedTab == 1)
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            else if (note.priority == 2 || isOverdue)
-                                MaterialTheme.colorScheme.error
-                            else
-                                Color(0xFF42A5F5)
+                            tint = pillContent
                         )
                         Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = if (reminderTime > 0) reminderFormat.format(Date(reminderTime)) else "",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (selectedTab == 1)
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                else if (note.priority == 2 || isOverdue)
-                                    MaterialTheme.colorScheme.onErrorContainer
-                                else
-                                    Color(0xFF42A5F5)
+                        Text(
+                            text = if (reminderTime > 0) reminderFormat.format(Date(reminderTime)) else "",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = pillContent
+                        )
+                        if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = pillContent
                             )
-                            if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
-                                Spacer(Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Repeat,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = if (selectedTab == 1)
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    else if (note.priority == 2 || isOverdue)
-                                        MaterialTheme.colorScheme.error
-                                    else
-                                        Color(0xFF42A5F5)
-                                )
-                            }
+                        }
                     }
                 }
 

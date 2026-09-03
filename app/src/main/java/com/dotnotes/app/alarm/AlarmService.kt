@@ -93,6 +93,7 @@ class AlarmService : Service() {
             .setContentIntent(fullScreenPending)
             .addAction(android.R.drawable.checkbox_on_background, "Tandai Selesai", dismissPending)
             .addAction(android.R.drawable.ic_lock_idle_alarm, "Tunda", snoozePending)
+            .setColor(0xFFBE123C.toInt())
             .setAutoCancel(false)
             .setOngoing(true)
             .setNumber(1)
