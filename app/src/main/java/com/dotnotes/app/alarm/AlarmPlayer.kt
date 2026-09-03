@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 object AlarmPlayer {
     private var mediaPlayer: MediaPlayer? = null
@@ -38,13 +40,29 @@ object AlarmPlayer {
         startVibrate(context)
     }
 
-    private fun startSound(context: Context) {
-        try {
-            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+    private fun getAlarmUri(): android.net.Uri? {
+        val customAlarmUri: String? = try {
+            runBlocking {
+                kotlinx.coroutines.withTimeoutOrNull(400L) {
+                    com.dotnotes.app.DotNotesApp.instance.settingsDataStore.alarmSoundUri.first()
+                }
+            }
+        } catch (_: Exception) {
+            null
+        }
+        return if (!customAlarmUri.isNullOrBlank()) {
+            android.net.Uri.parse(customAlarmUri)
+        } else {
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 ?: android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
+        }
+    }
 
+    private fun startSound(context: Context) {
+        try {
+            val alarmUri = getAlarmUri()
             if (alarmUri != null) {
                 mediaPlayer = MediaPlayer().apply {
                     setAudioAttributes(
@@ -65,20 +83,18 @@ object AlarmPlayer {
 
         // Fallback to Ringtone
         try {
-            val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                ?: android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
-
-            ringtone = RingtoneManager.getRingtone(context.applicationContext, ringtoneUri)?.apply {
-                audioAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    isLooping = true
+            val ringtoneUri = getAlarmUri()
+            if (ringtoneUri != null) {
+                ringtone = RingtoneManager.getRingtone(context.applicationContext, ringtoneUri)?.apply {
+                    audioAttributes = AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        isLooping = true
+                    }
+                    play()
                 }
-                play()
             }
         } catch (_: Exception) {}
     }

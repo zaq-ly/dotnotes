@@ -1,5 +1,6 @@
 package com.dotnotes.app.ui.screens.settings
 
+import android.content.Intent
 import android.widget.Toast
 import com.dotnotes.app.BuildConfig
 import androidx.compose.foundation.BorderStroke
@@ -20,15 +21,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import android.media.RingtoneManager
+import android.net.Uri
+import android.os.Build
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -106,12 +112,54 @@ fun SettingsScreen(
     val isLoggingIn by viewModel.isLoggingIn.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     val lastSyncTime by viewModel.lastSyncTime.collectAsState()
+    val reminderSoundUri by viewModel.reminderSoundUri.collectAsState()
+    val reminderSoundTitle by viewModel.reminderSoundTitle.collectAsState()
+    val alarmSoundUri by viewModel.alarmSoundUri.collectAsState()
+    val alarmSoundTitle by viewModel.alarmSoundTitle.collectAsState()
     
     val context = LocalContext.current
     var showThemeDialog by remember { mutableStateOf(false) }
     var showSnoozeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var signInError by remember { mutableStateOf<String?>(null) }
+
+    val reminderSoundPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val uri: Uri? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            }
+            val title = if (uri != null) {
+                RingtoneManager.getRingtone(context, uri)?.getTitle(context) ?: strings.defaultSound
+            } else {
+                strings.defaultSound
+            }
+            viewModel.setReminderSound(uri?.toString().orEmpty(), title)
+        }
+    }
+
+    val alarmSoundPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val uri: Uri? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            }
+            val title = if (uri != null) {
+                RingtoneManager.getRingtone(context, uri)?.getTitle(context) ?: strings.defaultSound
+            } else {
+                strings.defaultSound
+            }
+            viewModel.setAlarmSound(uri?.toString().orEmpty(), title)
+        }
+    }
 
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -373,6 +421,50 @@ fun SettingsScreen(
                 headlineContent = { Text(strings.snoozeDuration) },
                 supportingContent = { Text("$snoozeDuration ${strings.minutes}") },
                 modifier = Modifier.clickable { showSnoozeDialog = true }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            // Reminder Sound
+            ListItem(
+                leadingContent = {
+                    Icon(Icons.Default.Notifications, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
+                headlineContent = { Text(strings.reminderSound) },
+                supportingContent = { Text(reminderSoundTitle) },
+                modifier = Modifier.clickable {
+                    val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, strings.reminderSound)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                        val currentUri = reminderSoundUri.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
+                            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
+                    }
+                    reminderSoundPickerLauncher.launch(intent)
+                }
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            // Alarm Sound
+            ListItem(
+                leadingContent = {
+                    Icon(Icons.Default.Alarm, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
+                headlineContent = { Text(strings.alarmSound) },
+                supportingContent = { Text(alarmSoundTitle) },
+                modifier = Modifier.clickable {
+                    val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, strings.alarmSound)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                        val currentUri = alarmSoundUri.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
+                            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
+                    }
+                    alarmSoundPickerLauncher.launch(intent)
+                }
             )
 
             Spacer(Modifier.height(16.dp))

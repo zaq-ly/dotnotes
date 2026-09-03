@@ -44,6 +44,18 @@ class SettingsViewModel(
     val lastSyncTime = dataStore.lastSyncTime
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
+    val reminderSoundUri = dataStore.reminderSoundUri
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val reminderSoundTitle = dataStore.reminderSoundTitle
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Default")
+
+    val alarmSoundUri = dataStore.alarmSoundUri
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val alarmSoundTitle = dataStore.alarmSoundTitle
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Default")
+
     val authUserState = SupabaseClientProvider.client.auth.sessionStatus.map {
         val user = SupabaseClientProvider.client.auth.currentUserOrNull()
         if (user != null) {
@@ -92,6 +104,19 @@ class SettingsViewModel(
 
     fun setLanguage(lang: String) {
         viewModelScope.launch { dataStore.setLanguage(lang) }
+    }
+
+    fun setReminderSound(uri: String, title: String) {
+        viewModelScope.launch {
+            dataStore.setReminderSound(uri, title)
+            com.dotnotes.app.DotNotesApp.instance.updateReminderChannelSound(uri)
+        }
+    }
+
+    fun setAlarmSound(uri: String, title: String) {
+        viewModelScope.launch {
+            dataStore.setAlarmSound(uri, title)
+        }
     }
 
     fun getGoogleSignInIntent(context: Context): Intent {

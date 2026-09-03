@@ -108,6 +108,32 @@ class DotNotesApp : Application() {
         mgr?.createNotificationChannel(updateChannel)
     }
 
+    fun updateReminderChannelSound(soundUriString: String) {
+        val soundUri = if (soundUriString.isNotBlank()) {
+            android.net.Uri.parse(soundUriString)
+        } else {
+            android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+        }
+        val notifAudioAttributes = android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+
+        val notifChannel = NotificationChannel(
+            CHANNEL_REMINDER, "Reminders",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Note reminders"
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 400, 200, 400)
+            setSound(soundUri, notifAudioAttributes)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            setShowBadge(true)
+        }
+        val mgr = getSystemService(NotificationManager::class.java)
+        mgr?.createNotificationChannel(notifChannel)
+    }
+
     companion object {
         lateinit var instance: DotNotesApp
         const val CHANNEL_REMINDER = "reminder_channel_v3"

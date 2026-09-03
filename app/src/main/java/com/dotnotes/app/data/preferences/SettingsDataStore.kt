@@ -19,6 +19,10 @@ class SettingsDataStore(private val context: Context) {
         val LANGUAGE = stringPreferencesKey("language")
         val LAST_SYNC_TIME = androidx.datastore.preferences.core.longPreferencesKey("last_sync_time")
         val DISMISSED_UPDATE_TAG = stringPreferencesKey("dismissed_update_tag")
+        val REMINDER_SOUND_URI = stringPreferencesKey("reminder_sound_uri")
+        val REMINDER_SOUND_TITLE = stringPreferencesKey("reminder_sound_title")
+        val ALARM_SOUND_URI = stringPreferencesKey("alarm_sound_uri")
+        val ALARM_SOUND_TITLE = stringPreferencesKey("alarm_sound_title")
     }
 
     val themeMode: Flow<String> = context.dataStore.data.map {
@@ -41,6 +45,22 @@ class SettingsDataStore(private val context: Context) {
         it[DISMISSED_UPDATE_TAG] ?: ""
     }
 
+    val reminderSoundUri: Flow<String> = context.dataStore.data.map {
+        it[REMINDER_SOUND_URI] ?: ""
+    }
+
+    val reminderSoundTitle: Flow<String> = context.dataStore.data.map {
+        it[REMINDER_SOUND_TITLE] ?: "Default"
+    }
+
+    val alarmSoundUri: Flow<String> = context.dataStore.data.map {
+        it[ALARM_SOUND_URI] ?: ""
+    }
+
+    val alarmSoundTitle: Flow<String> = context.dataStore.data.map {
+        it[ALARM_SOUND_TITLE] ?: "Default"
+    }
+
     suspend fun setThemeMode(mode: String) {
         context.dataStore.edit { it[THEME_MODE] = mode }
     }
@@ -59,5 +79,19 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setDismissedUpdateTag(tag: String) {
         context.dataStore.edit { it[DISMISSED_UPDATE_TAG] = tag }
+    }
+
+    suspend fun setReminderSound(uri: String, title: String) {
+        context.dataStore.edit {
+            it[REMINDER_SOUND_URI] = uri
+            it[REMINDER_SOUND_TITLE] = title
+        }
+    }
+
+    suspend fun setAlarmSound(uri: String, title: String) {
+        context.dataStore.edit {
+            it[ALARM_SOUND_URI] = uri
+            it[ALARM_SOUND_TITLE] = title
+        }
     }
 }
