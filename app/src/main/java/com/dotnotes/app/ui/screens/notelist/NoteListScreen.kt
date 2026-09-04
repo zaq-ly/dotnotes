@@ -553,6 +553,48 @@ private fun SelectableNoteCard(
                 }
             }
 
+            val hasActiveReminder = note.reminderTime != null && !note.isAlarmDismissed
+            if (hasActiveReminder) {
+                val isAlarm = note.priority == 2
+                val hasRepeat = note.repeatInterval.isNotBlank() && note.repeatInterval != ReminderHelper.REPEAT_NONE
+                val cardReminderFormat = remember { SimpleDateFormat("d MMM, hh:mm a", Locale.getDefault()) }
+
+                Spacer(Modifier.height(4.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (isDark) Color(0xFF27272A).copy(alpha = 0.4f) else Color(0xFFE4E4E7).copy(alpha = 0.45f),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46).copy(alpha = 0.35f) else Color(0xFFD4D4D8).copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
+                            contentDescription = null,
+                            modifier = Modifier.size(11.dp),
+                            tint = if (hasCustomTheme) noteTheme.swatchColor else MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = cardReminderFormat.format(Date(note.reminderTime)),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (hasRepeat) {
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = null,
+                                modifier = Modifier.size(10.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+            }
+
             val preview = note.previewText
             if (preview.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
@@ -565,52 +607,12 @@ private fun SelectableNoteCard(
                 )
             }
 
-            if (note.reminderTime != null && !note.isAlarmDismissed && !isSelectionMode) {
+            if (hasActiveReminder && !isSelectionMode) {
                 Spacer(Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    val hasRepeat = note.repeatInterval.isNotBlank() && note.repeatInterval != ReminderHelper.REPEAT_NONE
-                    val isAlarm = note.priority == 2
-                    val cardReminderFormat = remember { SimpleDateFormat("d MMM, hh:mm a", Locale.getDefault()) }
-
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (isDark) Color(0xFF27272A).copy(alpha = 0.5f) else Color(0xFFE4E4E7).copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46).copy(alpha = 0.5f) else Color(0xFFD4D4D8).copy(alpha = 0.6f)),
-                        modifier = Modifier.weight(1f, fill = false)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
-                                contentDescription = null,
-                                modifier = Modifier.size(13.dp),
-                                tint = if (hasCustomTheme) noteTheme.swatchColor else MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.width(5.dp))
-                            val dateText = cardReminderFormat.format(Date(note.reminderTime))
-                            Text(
-                                text = if (hasRepeat) {
-                                    "$dateText • ${ReminderHelper.getRepeatLabel(note.repeatInterval, strings)}"
-                                } else {
-                                    dateText
-                                },
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.width(8.dp))
-
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = if (isDark) Color(0xFF27272A).copy(alpha = 0.8f) else Color(0xFFF4F4F5),
