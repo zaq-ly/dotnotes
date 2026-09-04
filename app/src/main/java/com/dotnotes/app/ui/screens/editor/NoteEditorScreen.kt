@@ -1292,17 +1292,24 @@ private fun NoteBlockRow(
     ) {
         when (block.type) {
             BlockType.CHECKLIST -> {
-                Checkbox(
-                    checked = block.isChecked,
-                    onCheckedChange = onCheckedChange,
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = noteColors.primary,
-                        checkmarkColor = noteColors.onPrimary,
-                        uncheckedColor = noteColors.onSurface.copy(alpha = 0.5f)
-                    ),
-                    modifier = Modifier.size(36.dp)
-                )
-                Spacer(Modifier.width(4.dp))
+                Box(
+                    modifier = Modifier.size(20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Checkbox(
+                        checked = block.isChecked,
+                        onCheckedChange = onCheckedChange,
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = noteColors.primary,
+                            checkmarkColor = noteColors.onPrimary,
+                            uncheckedColor = noteColors.onSurface.copy(alpha = 0.5f)
+                        ),
+                        modifier = Modifier
+                            .size(20.dp)
+                            .scale(0.85f)
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
             }
             BlockType.BULLET -> {
                 Text(

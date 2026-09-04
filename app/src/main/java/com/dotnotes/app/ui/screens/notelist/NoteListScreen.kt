@@ -351,7 +351,7 @@ fun NoteListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            val reminderFeedbackFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
+            val reminderFeedbackFormat = remember { SimpleDateFormat("d MMM yyyy, hh:mm a", Locale.getDefault()) }
             val handleDismissReminder: (Note) -> Unit = { note ->
                 viewModel.dismissReminder(context, note.id) { nextTime ->
                     if (nextTime != null) {
@@ -542,27 +542,6 @@ private fun SelectableNoteCard(
                         }
                     }
                 } else {
-                    val hasActiveReminder = note.reminderTime != null && !note.isAlarmDismissed
-                    if (hasActiveReminder) {
-                        val isAlarm = note.priority == 2
-                        val iconTint = if (hasCustomTheme) {
-                            noteTheme.swatchColor.copy(alpha = 0.85f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-                        }
-
-                        Icon(
-                            imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
-                            contentDescription = if (isAlarm) "Alarm" else "Pengingat",
-                            modifier = Modifier.size(16.dp),
-                            tint = iconTint
-                        )
-
-                        if (note.isPinned) {
-                            Spacer(Modifier.width(6.dp))
-                        }
-                    }
-
                     if (note.isPinned) {
                         Icon(
                             Icons.Default.PushPin,
@@ -595,7 +574,7 @@ private fun SelectableNoteCard(
                 ) {
                     val hasRepeat = note.repeatInterval.isNotBlank() && note.repeatInterval != ReminderHelper.REPEAT_NONE
                     val isAlarm = note.priority == 2
-                    val cardReminderFormat = remember { SimpleDateFormat("d MMM, HH:mm", Locale.getDefault()) }
+                    val cardReminderFormat = remember { SimpleDateFormat("d MMM, hh:mm a", Locale.getDefault()) }
 
                     Surface(
                         shape = RoundedCornerShape(8.dp),
