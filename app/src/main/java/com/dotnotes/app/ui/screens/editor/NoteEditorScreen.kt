@@ -61,7 +61,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.dotnotes.app.ui.theme.isAppInDarkTheme
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -155,7 +155,7 @@ fun NoteEditorScreen(
 ) {
     val strings = LocalStrings.current
     val state by viewModel.state.collectAsState()
-    val isDark = isSystemInDarkTheme()
+    val isDark = isAppInDarkTheme()
     val noteColors = remember(state.colorTheme, isDark) {
         NoteColorThemes.getThemeColors(state.colorTheme, isDark)
     }
@@ -614,7 +614,7 @@ fun NoteEditorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val isDark = isSystemInDarkTheme()
+                        val isDark = isAppInDarkTheme()
                         Icon(
                             imageVector = if (state.priority == 2 && state.hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
                             contentDescription = null,
@@ -800,7 +800,7 @@ fun NoteEditorScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val isDark = isSystemInDarkTheme()
+                            val isDark = isAppInDarkTheme()
                             FilterChip(
                                 selected = state.priority <= 1,
                                 onClick = { viewModel.setPriority(1) },

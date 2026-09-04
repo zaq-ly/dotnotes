@@ -83,7 +83,11 @@ class NoteListViewModel(
         viewModelScope.launch { repository.togglePinNotes(noteIds, shouldPin) }
     }
 
-    fun dismissReminder(context: android.content.Context, noteId: String) {
+    fun dismissReminder(
+        context: android.content.Context,
+        noteId: String,
+        onFeedback: ((Long?) -> Unit)? = null
+    ) {
         viewModelScope.launch {
             val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
             notificationManager.cancel(noteId.hashCode())
@@ -99,9 +103,11 @@ class NoteListViewModel(
                 )
                 repository.upsertNote(updatedNote)
                 com.dotnotes.app.alarm.AlarmScheduler(context).schedule(updatedNote)
+                onFeedback?.invoke(nextTime)
             } else {
                 repository.dismissAlarm(noteId)
                 com.dotnotes.app.alarm.AlarmScheduler(context).cancel(noteId)
+                onFeedback?.invoke(null)
             }
         }
     }

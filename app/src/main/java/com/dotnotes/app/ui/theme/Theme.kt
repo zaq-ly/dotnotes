@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.luminance
 
 private val DarkColorScheme = darkColorScheme(
     primary = Zinc100,
@@ -86,3 +87,6 @@ fun DotNotesTheme(
         content = content
     )
 }
+
+@Composable
+fun isAppInDarkTheme(): Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f

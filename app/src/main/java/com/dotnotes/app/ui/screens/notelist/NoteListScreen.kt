@@ -60,7 +60,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.foundation.isSystemInDarkTheme
+import android.widget.Toast
+import com.dotnotes.app.alarm.ReminderHelper
+import com.dotnotes.app.ui.theme.isAppInDarkTheme
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.draw.drawWithContent
@@ -189,7 +191,7 @@ fun NoteListScreen(
                             BadgedBox(
                                 badge = {
                                     if (overdueCount > 0) {
-                                        val isDark = isSystemInDarkTheme()
+                                        val isDark = isAppInDarkTheme()
                                         Badge(
                                             containerColor = if (isDark) ReminderBadgeColors.alarmContentDark else ReminderBadgeColors.alarmContentLight,
                                             contentColor = if (isDark) Color(0xFF18181B) else Color.White
@@ -349,6 +351,18 @@ fun NoteListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            val reminderFeedbackFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
+            val handleDismissReminder: (Note) -> Unit = { note ->
+                viewModel.dismissReminder(context, note.id) { nextTime ->
+                    if (nextTime != null) {
+                        val dateStr = reminderFeedbackFormat.format(Date(nextTime))
+                        Toast.makeText(context, strings.reminderDoneRepeated.format(dateStr), Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, strings.reminderDoneOnce, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
             if (notes.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -389,7 +403,7 @@ fun NoteListScreen(
                                     selectedNoteIds = setOf(note.id)
                                 }
                             },
-                            onDismissReminder = { viewModel.dismissReminder(context, note.id) }
+                            onDismissReminder = { handleDismissReminder(note) }
                         )
                     }
                     item {
@@ -419,7 +433,7 @@ fun NoteListScreen(
                                 selectedNoteIds = setOf(note.id)
                             }
                         },
-                        onDismissReminder = { viewModel.dismissReminder(context, note.id) }
+                        onDismissReminder = { handleDismissReminder(note) }
                     )
                 }
             }
@@ -442,7 +456,7 @@ private fun SelectableNoteCard(
     onDismissReminder: () -> Unit
 ) {
     val strings = LocalStrings.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = isAppInDarkTheme()
     val noteTheme = remember(note.colorTheme, isDark) {
         NoteColorThemes.getThemeColors(note.colorTheme, isDark)
     }
@@ -576,12 +590,51 @@ private fun SelectableNoteCard(
                 Spacer(Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val isDark = isSystemInDarkTheme()
+                    val hasRepeat = note.repeatInterval.isNotBlank() && note.repeatInterval != ReminderHelper.REPEAT_NONE
+                    val isAlarm = note.priority == 2
+                    val cardReminderFormat = remember { SimpleDateFormat("d MMM, HH:mm", Locale.getDefault()) }
+
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isDark) Color(0xFF27272A).copy(alpha = 0.6f) else Color(0xFFF4F4F5),
+                        color = if (isDark) Color(0xFF27272A).copy(alpha = 0.5f) else Color(0xFFE4E4E7).copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46).copy(alpha = 0.5f) else Color(0xFFD4D4D8).copy(alpha = 0.6f)),
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
+                                contentDescription = null,
+                                modifier = Modifier.size(13.dp),
+                                tint = if (hasCustomTheme) noteTheme.swatchColor else MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            val dateText = cardReminderFormat.format(Date(note.reminderTime))
+                            Text(
+                                text = if (hasRepeat) {
+                                    "$dateText • ${ReminderHelper.getRepeatLabel(note.repeatInterval, strings)}"
+                                } else {
+                                    dateText
+                                },
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isDark) Color(0xFF27272A).copy(alpha = 0.8f) else Color(0xFFF4F4F5),
                         border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46).copy(alpha = 0.6f) else Color(0xFFE4E4E7)),
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))

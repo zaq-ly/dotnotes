@@ -7,7 +7,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.dotnotes.app.ui.theme.isAppInDarkTheme
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -249,11 +250,23 @@ fun HistoryScreen(
                 )
             }
 
+            val reminderFeedbackFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
+            val handleDismissReminder: (Note) -> Unit = { note ->
+                viewModel.dismissReminder(context, note.id) { nextTime ->
+                    if (nextTime != null) {
+                        val dateStr = reminderFeedbackFormat.format(Date(nextTime))
+                        Toast.makeText(context, strings.reminderDoneRepeated.format(dateStr), Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, strings.reminderDoneOnce, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
             if (currentList.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(32.dp),
+                        .padding(vertical = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -287,7 +300,7 @@ fun HistoryScreen(
                                     selectedNoteIds = setOf(note.id)
                                 }
                             },
-                            onDismissReminder = { viewModel.dismissReminder(context, note.id) }
+                            onDismissReminder = { handleDismissReminder(note) }
                         )
                     }
                 }
@@ -405,7 +418,7 @@ private fun HistoryCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                val isDark = isSystemInDarkTheme()
+                val isDark = isAppInDarkTheme()
                 val isCompleted = selectedTab == 1
                 val isAlarm = note.priority == 2 || isOverdue
                 val pillBg = if (isCompleted) MaterialTheme.colorScheme.surfaceVariant else ReminderBadgeColors.containerColor(isAlarm = isAlarm, isDark = isDark)
