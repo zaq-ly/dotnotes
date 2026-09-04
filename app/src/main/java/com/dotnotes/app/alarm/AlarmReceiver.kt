@@ -164,6 +164,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 .addAction(snoozeAction)
                 .setColor(0xFFBE123C.toInt())
                 .setDeleteIntent(swipePending)
+                .setSilent(true)
                 .setNumber(1)
                 .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
                 .build()

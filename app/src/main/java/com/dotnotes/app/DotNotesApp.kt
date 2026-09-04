@@ -71,13 +71,6 @@ class DotNotesApp : Application() {
             setShowBadge(true)
         }
 
-        val alarmSoundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
-            ?: soundUri
-        val alarmAudioAttributes = android.media.AudioAttributes.Builder()
-            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
-            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build()
-
         val alarmChannel = NotificationChannel(
             CHANNEL_ALARM, "Alarms",
             NotificationManager.IMPORTANCE_HIGH
@@ -85,9 +78,8 @@ class DotNotesApp : Application() {
             description = "Urgent note alarms"
             setBypassDnd(true)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-            enableVibration(true)
-            vibrationPattern = longArrayOf(0, 800, 400, 800)
-            setSound(alarmSoundUri, alarmAudioAttributes)
+            enableVibration(false)
+            setSound(null, null)
             setShowBadge(true)
         }
 
@@ -103,6 +95,9 @@ class DotNotesApp : Application() {
         }
 
         val mgr = getSystemService(NotificationManager::class.java)
+        try {
+            mgr?.deleteNotificationChannel("alarm_channel_v3")
+        } catch (_: Exception) {}
         mgr?.createNotificationChannel(notifChannel)
         mgr?.createNotificationChannel(alarmChannel)
         mgr?.createNotificationChannel(updateChannel)
@@ -162,7 +157,7 @@ class DotNotesApp : Application() {
     companion object {
         lateinit var instance: DotNotesApp
         const val CHANNEL_REMINDER = "reminder_channel_v3"
-        const val CHANNEL_ALARM = "alarm_channel_v3"
+        const val CHANNEL_ALARM = "alarm_channel_v4"
         const val CHANNEL_UPDATE = "update_channel_v1"
     }
 }
