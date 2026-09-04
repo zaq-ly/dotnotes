@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -207,15 +208,9 @@ fun NoteListScreen(
                             onClick = onSettingsClick,
                             modifier = Modifier.padding(end = 4.dp)
                         ) {
-                            BadgedBox(
-                                badge = {
-                                    if (hasUpdate) {
-                                        Badge(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(8.dp)
-                                        )
-                                    }
-                                }
+                            Box(
+                                modifier = Modifier.size(24.dp),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
@@ -223,6 +218,15 @@ fun NoteListScreen(
                                     modifier = Modifier.size(24.dp),
                                     tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
+                                if (hasUpdate) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .offset(x = (-2).dp, y = 0.dp)
+                                            .size(8.dp)
+                                            .background(MaterialTheme.colorScheme.error, CircleShape)
+                                    )
+                                }
                             }
                         }
                     }

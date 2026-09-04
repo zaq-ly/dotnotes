@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -537,17 +538,25 @@ fun SettingsScreen(
             // Check for Updates item
             ListItem(
                 leadingContent = {
-                    BadgedBox(
-                        badge = {
-                            if (availableUpdate != null) {
-                                Badge(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(8.dp)
-                                )
-                            }
-                        }
+                    Box(
+                        modifier = Modifier.size(24.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Default.SystemUpdate,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        if (availableUpdate != null) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = (-2).dp, y = 0.dp)
+                                    .size(8.dp)
+                                    .background(MaterialTheme.colorScheme.error, CircleShape)
+                            )
+                        }
                     }
                 },
                 headlineContent = { Text(strings.checkForUpdates) },
