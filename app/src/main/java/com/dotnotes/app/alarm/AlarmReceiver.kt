@@ -13,7 +13,9 @@ import androidx.core.content.ContextCompat
 import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.MainActivity
 import com.dotnotes.app.data.model.Note
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -185,7 +187,8 @@ class AlarmReceiver : BroadcastReceiver() {
             } catch (_: Exception) {
             }
         } else {
-            val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)
+            val channelId = getActiveReminderChannelId()
+            val notification = NotificationCompat.Builder(context, channelId)
                 .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
                 .setContentTitle(noteTitle)
                 .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
@@ -263,7 +266,8 @@ class AlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_REMINDER)
+        val channelId = getActiveReminderChannelId()
+        val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
             .setContentTitle(noteTitle)
             .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
@@ -285,6 +289,19 @@ class AlarmReceiver : BroadcastReceiver() {
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             NotificationManagerCompat.from(context).notify(notifId, notification)
         }
+    }
+
+    private fun getActiveReminderChannelId(): String {
+        val soundUri = try {
+            runBlocking {
+                withTimeoutOrNull(400L) {
+                    DotNotesApp.instance.settingsDataStore.reminderSoundUri.first()
+                }
+            }
+        } catch (_: Exception) {
+            null
+        }
+        return DotNotesApp.instance.ensureReminderChannel(soundUri)
     }
 
     companion object {

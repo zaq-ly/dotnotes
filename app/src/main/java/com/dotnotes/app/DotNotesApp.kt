@@ -108,8 +108,29 @@ class DotNotesApp : Application() {
         mgr?.createNotificationChannel(updateChannel)
     }
 
-    fun updateReminderChannelSound(soundUriString: String) {
-        val soundUri = if (soundUriString.isNotBlank()) {
+    fun getReminderChannelId(soundUriString: String?): String {
+        if (soundUriString.isNullOrBlank()) return CHANNEL_REMINDER
+        val hash = Math.abs(soundUriString.hashCode())
+        return "reminder_channel_$hash"
+    }
+
+    fun ensureReminderChannel(soundUriString: String?): String {
+        val channelId = getReminderChannelId(soundUriString)
+        val mgr = getSystemService(NotificationManager::class.java) ?: return channelId
+
+        val existing = mgr.getNotificationChannel(channelId)
+        if (existing != null) return channelId
+
+        // Clean up older custom reminder channels so system settings stay tidy
+        try {
+            mgr.notificationChannels?.forEach { ch ->
+                if (ch.id.startsWith("reminder_channel_") && ch.id != channelId && ch.id != CHANNEL_REMINDER) {
+                    mgr.deleteNotificationChannel(ch.id)
+                }
+            }
+        } catch (_: Exception) {}
+
+        val soundUri = if (!soundUriString.isNullOrBlank()) {
             android.net.Uri.parse(soundUriString)
         } else {
             android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
@@ -120,7 +141,7 @@ class DotNotesApp : Application() {
             .build()
 
         val notifChannel = NotificationChannel(
-            CHANNEL_REMINDER, "Reminders",
+            channelId, "Reminders",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "Note reminders"
@@ -130,8 +151,12 @@ class DotNotesApp : Application() {
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             setShowBadge(true)
         }
-        val mgr = getSystemService(NotificationManager::class.java)
-        mgr?.createNotificationChannel(notifChannel)
+        mgr.createNotificationChannel(notifChannel)
+        return channelId
+    }
+
+    fun updateReminderChannelSound(soundUriString: String): String {
+        return ensureReminderChannel(soundUriString)
     }
 
     companion object {
