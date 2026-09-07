@@ -550,8 +550,9 @@ private fun SelectableNoteCard(
                 Text(
                     text = note.title.ifEmpty { strings.untitled },
                     style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.15.sp
+                        letterSpacing = (-0.2).sp
                     ),
                     color = if (hasCustomTheme) noteTheme.onSurface else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -605,7 +606,7 @@ private fun SelectableNoteCard(
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = if (hasCustomTheme) noteTheme.onSurface.copy(alpha = 0.75f) else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (hasCustomTheme) noteTheme.onSurface.copy(alpha = 0.65f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
                 )
             }
 
@@ -615,7 +616,7 @@ private fun SelectableNoteCard(
                 val hasRepeat = note.repeatInterval.isNotBlank() && note.repeatInterval != ReminderHelper.REPEAT_NONE
                 val cardReminderFormat = remember { SimpleDateFormat("d MMM, hh:mm a", Locale.getDefault()) }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(20.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -655,33 +656,28 @@ private fun SelectableNoteCard(
                     }
 
                     if (!isSelectionMode) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (hasCustomTheme) noteTheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .clickable(onClick = onDismissReminder)
+                                .padding(horizontal = 6.dp, vertical = 3.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = strings.markDone,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = strings.markDone,
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    color = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = strings.markDone,
+                                modifier = Modifier.size(13.dp),
+                                tint = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = strings.markDone,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
                         }
                     }
                 }

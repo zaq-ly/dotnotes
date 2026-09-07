@@ -269,7 +269,7 @@ fun NoteEditorScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(18.dp),
+                            shape = RoundedCornerShape(16.dp),
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             tonalElevation = 6.dp,
                             shadowElevation = 6.dp,
@@ -280,7 +280,7 @@ fun NoteEditorScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 6.dp),
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.SpaceEvenly,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -869,7 +869,9 @@ fun NoteEditorScreen(
                                 tonalElevation = 4.dp,
                                 shadowElevation = 4.dp,
                                 border = null,
-                                modifier = Modifier.padding(vertical = 4.dp)
+                                modifier = Modifier
+                                    .widthIn(min = 230.dp, max = 240.dp)
+                                    .padding(vertical = 4.dp)
                             ) {
                                 val repeatOptions = listOf(
                                     ReminderHelper.REPEAT_NONE to strings.repeatNone,
@@ -892,7 +894,7 @@ fun NoteEditorScreen(
                                             viewModel.setRepeatInterval(optionKey)
                                             showRepeatMenu = false
                                         },
-                                        leadingIcon = if (isSelected) {
+                                        trailingIcon = if (isSelected) {
                                             {
                                                 Icon(
                                                     Icons.Default.Check,
@@ -902,8 +904,9 @@ fun NoteEditorScreen(
                                                 )
                                             }
                                         } else null,
-                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                                         modifier = Modifier
+                                            .fillMaxWidth()
                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(
@@ -1001,8 +1004,8 @@ fun NoteEditorScreen(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier
-                    .fillMaxWidth(0.88f)
-                    .widthIn(max = 330.dp)
+                    .fillMaxWidth(0.92f)
+                    .widthIn(min = 336.dp, max = 360.dp)
                     .padding(vertical = 12.dp)
             ) {
                 Column(
@@ -1014,7 +1017,7 @@ fun NoteEditorScreen(
                         text = strings.selectDate,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                     )
                     DatePicker(
                         state = datePickerState,
@@ -1026,7 +1029,7 @@ fun NoteEditorScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 4.dp, end = 16.dp, bottom = 4.dp),
+                            .padding(top = 4.dp, end = 20.dp, bottom = 4.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showDatePicker = false }) {
@@ -1036,7 +1039,7 @@ fun NoteEditorScreen(
                         TextButton(onClick = {
                             datePickerState.selectedDateMillis?.let { selectedDate ->
                                 val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                                timeInMillis = selectedDate
+                                    timeInMillis = selectedDate
                                 }
                                 val year = utcCal.get(Calendar.YEAR)
                                 val month = utcCal.get(Calendar.MONTH)
@@ -1083,8 +1086,8 @@ fun NoteEditorScreen(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier
-                    .fillMaxWidth(0.88f)
-                    .widthIn(max = 330.dp)
+                    .fillMaxWidth(0.92f)
+                    .widthIn(min = 336.dp, max = 360.dp)
                     .padding(vertical = 12.dp)
             ) {
                 Column(
