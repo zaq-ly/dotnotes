@@ -4,17 +4,19 @@ Dokumen ini adalah instruksi operasional wajib dan panduan arsitektur lengkap un
 
 ---
 
-## 0. Aturan Komunikasi & Mode Diskusi (Wajib Diikuti)
+## 0. Aturan Komunikasi, Mode Diskusi & Eksekusi Otomatis (Wajib Diikuti)
 
 1. **Mode Diskusi (Zero Code Execution)**:
    - Setiap kali user menyebut kata **"diskusi"**, meminta penjelasan, atau mengajak merundingkan fitur/alur:
    - AI Agent **DILARANG KERAS mengubah, membuat, atau mengeksekusi kode apa pun**.
    - Fokus 100% pada penjabaran ide, konsep arsitektur, diagram alur, dan analisis teknis.
-   - Pengerjaan kode **HANYA BOLEH DIMULAI** setelah user secara eksplisit memberikan instruksi persetujuan (misal: *"oke kerjakan"*, *"terapkan"*, atau *"lanjut eksekusi"*).
+   - Pengerjaan kode **HANYA BOLEH DIMULAI** setelah user secara eksplisit memberikan instruksi persetujuan (misal: *"oke kerjakan"*, *"terapkan"*, *"lanjut eksekusi"*, atau *"acc"*).
 
-2. **Aturan Commit & Push Mandiri**:
-   - Dilarang keras melakukan `git commit`, `git push`, atau membuat GitHub Release otomatis tanpa perintah eksplisit dari user.
-   - Pengujian lokal hanya dilakukan via compile APK dan install langsung ke HP via adb debugging.
+2. **Alur Eksekusi & Rilis Otomatis Pasca-ACC**:
+   - Begitu user menyetujui/ACC hasil diskusi dan menginstruksikan pengerjaan (*"oke kerjakan"*, *"terapkan"*, dsb.):
+   - AI Agent menyelesaikan seluruh modifikasi kode dan memverifikasi build (*compile/assemble*).
+   - **Setelah pengerjaan dan verifikasi build sukses, AI Agent LANGSUNG melanjutkan prosedur rilis secara otomatis**: bump version (`build.gradle.kts`), build signed release APK, `git commit`, `git push`, dan buat GitHub Release via `gh release create`, lalu cleanup file APK lokal.
+   - User tidak perlu lagi memberikan perintah commit/push terpisah setelah instruksi pengerjaan diberikan.
 
 ---
 

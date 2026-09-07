@@ -97,9 +97,10 @@ Untuk memastikan alarm dan pengingat bekerja optimal tanpa terlewat, aplikasi me
 
 ---
 
-## Kontribusi & Dukungan
+## Kontribusi & Panduan Pengembangan
 
 - **Laporan Masalah & Saran Fitur**: Ajukan melalui [**GitHub Issues**](https://github.com/zaq-ly/dotnotes/issues).
+- **Panduan AI Agent & Rilis**: Seluruh alur diskusi, pengerjaan pasca-ACC, dan rilis otomatis diatur di [`AGENTS.md`](AGENTS.md).
 - **Kontribusi Kode**: Ajukan *Pull Request* untuk perbaikan atau penambahan fitur.
 
 ---
