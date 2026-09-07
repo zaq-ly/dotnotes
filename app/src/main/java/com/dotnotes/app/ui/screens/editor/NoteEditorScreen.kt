@@ -439,8 +439,8 @@ fun NoteEditorScreen(
                     val createdDate = remember(state.createdAt) {
                         if (state.createdAt > 0L) Date(state.createdAt) else Date()
                     }
-                    val formattedCreated = remember(createdDate) {
-                        SimpleDateFormat("dd MMMM yyyy, hh:mm a", Locale.getDefault()).format(createdDate)
+                    val formattedCreated = remember(createdDate, strings.locale) {
+                        SimpleDateFormat("dd MMMM yyyy, hh:mm a", strings.locale).format(createdDate)
                     }
 
                     Row(
@@ -457,8 +457,8 @@ fun NoteEditorScreen(
 
                         if (state.hasReminder && state.reminderTime != null) {
                             val reminderDate = remember(state.reminderTime) { Date(state.reminderTime!!) }
-                            val formattedReminder = remember(reminderDate) {
-                                SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(reminderDate)
+                            val formattedReminder = remember(reminderDate, strings.locale) {
+                                SimpleDateFormat("dd MMM, hh:mm a", strings.locale).format(reminderDate)
                             }
                             val isAlarm = state.priority == 2
 
@@ -695,8 +695,8 @@ fun NoteEditorScreen(
         }
     }
 
-    val dateOnlyFormat = remember { SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()) }
-    val timeOnlyFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+    val dateOnlyFormat = remember(strings.locale) { SimpleDateFormat("EEE, dd MMM yyyy", strings.locale) }
+    val timeOnlyFormat = remember(strings.locale) { SimpleDateFormat("hh:mm a", strings.locale) }
 
     // Reminder Pop-up Dialog
     if (showReminderDialog) {
@@ -1032,6 +1032,15 @@ fun NoteEditorScreen(
         ) {
             DatePicker(
                 state = datePickerState,
+                title = null,
+                headline = {
+                    Text(
+                        text = dateOnlyFormat.format(Date(datePickerState.selectedDateMillis ?: initialDateCal.timeInMillis)),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 4.dp)
+                    )
+                },
                 showModeToggle = false
             )
         }
@@ -1050,6 +1059,8 @@ fun NoteEditorScreen(
         )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             confirmButton = {
                 TextButton(onClick = {
                     val updatedCal = Calendar.getInstance().apply {
@@ -1071,10 +1082,9 @@ fun NoteEditorScreen(
                     Text(strings.cancel)
                 }
             },
-            text = {
+            title = {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
                         ReminderHelper.formatRemainingTime(
@@ -1085,25 +1095,24 @@ fun NoteEditorScreen(
                             strings = strings
                         )
                     }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp)
-                    ) {
-                        Text(
-                            text = strings.selectTime,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text = remainingText,
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
+                    Text(
+                        text = strings.selectTime,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = remainingText,
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            text = {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
                     TimePicker(
                         state = timePickerState,
                         colors = TimePickerDefaults.colors(

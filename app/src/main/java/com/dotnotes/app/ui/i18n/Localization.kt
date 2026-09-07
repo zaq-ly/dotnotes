@@ -133,10 +133,12 @@ data class AppStrings(
     val newBadge: String,
     val googleSignInPrompt: String,
     val signingIn: String,
-    val autoSyncActive: String
+    val autoSyncActive: String,
+    val locale: java.util.Locale = java.util.Locale.ENGLISH
 )
 
 val EnglishStrings = AppStrings(
+    locale = java.util.Locale.ENGLISH,
     back = "Back",
     save = "Save",
     cancel = "Cancel",
@@ -258,6 +260,7 @@ val EnglishStrings = AppStrings(
 )
 
 val IndonesianStrings = AppStrings(
+    locale = java.util.Locale("id", "ID"),
     back = "Kembali",
     save = "Simpan",
     cancel = "Batal",

@@ -57,17 +57,17 @@ fun AlarmScreen(
     onSnooze: () -> Unit
 ) {
     val strings = LocalStrings.current
-    var currentTime by remember {
-        mutableStateOf(SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date()))
+    var currentTime by remember(strings.locale) {
+        mutableStateOf(SimpleDateFormat("hh:mm a", strings.locale).format(Date()))
     }
-    var currentDate by remember {
-        mutableStateOf(SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault()).format(Date()))
+    var currentDate by remember(strings.locale) {
+        mutableStateOf(SimpleDateFormat("EEEE, dd MMMM", strings.locale).format(Date()))
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(strings.locale) {
         while (true) {
-            currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
-            currentDate = SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault()).format(Date())
+            currentTime = SimpleDateFormat("hh:mm a", strings.locale).format(Date())
+            currentDate = SimpleDateFormat("EEEE, dd MMMM", strings.locale).format(Date())
             delay(1000)
         }
     }

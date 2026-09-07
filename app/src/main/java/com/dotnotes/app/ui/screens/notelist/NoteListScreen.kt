@@ -390,7 +390,7 @@ fun NoteListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            val reminderFeedbackFormat = remember { SimpleDateFormat("d MMM yyyy, hh:mm a", Locale.getDefault()) }
+            val reminderFeedbackFormat = remember(strings.locale) { SimpleDateFormat("d MMM yyyy, hh:mm a", strings.locale) }
             val handleDismissReminder: (Note) -> Unit = { note ->
                 viewModel.dismissReminder(context, note.id) { nextTime ->
                     if (nextTime != null) {
@@ -614,7 +614,7 @@ private fun SelectableNoteCard(
             if (hasActiveReminder) {
                 val isAlarm = note.priority == 2
                 val hasRepeat = note.repeatInterval.isNotBlank() && note.repeatInterval != ReminderHelper.REPEAT_NONE
-                val cardReminderFormat = remember { SimpleDateFormat("d MMM, hh:mm a", Locale.getDefault()) }
+                val cardReminderFormat = remember(strings.locale) { SimpleDateFormat("d MMM, hh:mm a", strings.locale) }
 
                 val badgeBg = if (hasCustomTheme) {
                     noteTheme.primary.copy(alpha = 0.12f)

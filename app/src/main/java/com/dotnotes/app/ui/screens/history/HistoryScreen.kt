@@ -284,7 +284,7 @@ fun HistoryScreen(
                 }
             }
 
-            val reminderFeedbackFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
+            val reminderFeedbackFormat = remember(strings.locale) { SimpleDateFormat("d MMM yyyy, HH:mm", strings.locale) }
             val handleDismissReminder: (Note) -> Unit = { note ->
                 viewModel.dismissReminder(context, note.id) { nextTime ->
                     if (nextTime != null) {
@@ -355,7 +355,7 @@ private fun HistoryCard(
     onDismissReminder: () -> Unit
 ) {
     val strings = LocalStrings.current
-    val reminderFormat = remember { SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()) }
+    val reminderFormat = remember(strings.locale) { SimpleDateFormat("dd MMM yyyy, hh:mm a", strings.locale) }
     val reminderTime = note.reminderTime ?: 0L
     val isOverdue = selectedTab == 0 && reminderTime < System.currentTimeMillis()
 

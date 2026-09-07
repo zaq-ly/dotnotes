@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlarmManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +19,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.dotnotes.app.sync.supabase.SupabaseClientProvider
@@ -29,6 +32,7 @@ import com.dotnotes.app.ui.navigation.Routes
 import com.dotnotes.app.ui.theme.DotNotesTheme
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private val openSettingsTrigger = kotlinx.coroutines.flow.MutableStateFlow(false)
@@ -76,8 +80,34 @@ class MainActivity : ComponentActivity() {
             val strings = remember(language) {
                 if (language == "id") IndonesianStrings else EnglishStrings
             }
+            val currentLocale = remember(language) { strings.locale }
 
-            CompositionLocalProvider(LocalStrings provides strings) {
+            LaunchedEffect(currentLocale) {
+                Locale.setDefault(currentLocale)
+            }
+
+            val configuration = LocalConfiguration.current
+            val localizedConfiguration = remember(configuration, currentLocale) {
+                Configuration(configuration).apply {
+                    setLocale(currentLocale)
+                    setLayoutDirection(currentLocale)
+                }
+            }
+
+            val context = LocalContext.current
+            val localizedContext = remember(context, currentLocale) {
+                val config = Configuration(context.resources.configuration).apply {
+                    setLocale(currentLocale)
+                    setLayoutDirection(currentLocale)
+                }
+                context.createConfigurationContext(config)
+            }
+
+            CompositionLocalProvider(
+                LocalConfiguration provides localizedConfiguration,
+                LocalContext provides localizedContext,
+                LocalStrings provides strings
+            ) {
                 DotNotesTheme(darkTheme = isDark) {
                     val navController = rememberNavController()
                     LaunchedEffect(shouldOpenSettings) {
