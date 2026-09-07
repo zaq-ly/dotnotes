@@ -124,6 +124,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -163,6 +164,7 @@ fun NoteEditorScreen(
 
     var blocks by remember { mutableStateOf<List<NoteBlock>>(listOf(NoteBlock())) }
     var focusedBlockId by remember { mutableStateOf<String?>(null) }
+    var targetCursor by remember { mutableStateOf<Pair<String, Int>?>(null) }
     val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
 
     var showReminderDialog by remember { mutableStateOf(false) }
@@ -503,6 +505,7 @@ fun NoteEditorScreen(
                             .weight(1f)
                             .verticalScroll(rememberScrollState())
                     ) {
+                        val isNoteCompletelyEmpty = blocks.size <= 1 && blocks.all { it.text.isEmpty() }
                         blocks.forEachIndexed { index, block ->
                             val requester = focusRequesters.getOrPut(block.id) { FocusRequester() }
                             val numberedIndex = if (block.type == BlockType.NUMBERED) getNumberedIndex(blocks, index) else 1
@@ -512,6 +515,8 @@ fun NoteEditorScreen(
                                 numberedIndex = numberedIndex,
                                 noteColors = noteColors,
                                 focusRequester = requester,
+                                showPlaceholder = isNoteCompletelyEmpty && index == 0,
+                                targetCursor = targetCursor,
                                 onFocus = { focusedBlockId = block.id },
                                 onTextChange = { newText ->
                                     val curIndex = blocks.indexOfFirst { it.id == block.id }
@@ -522,10 +527,9 @@ fun NoteEditorScreen(
                                             val firstPart = parts[0]
                                             if (block.type != BlockType.PARAGRAPH && firstPart.isEmpty()) {
                                                 updated[curIndex] = block.copy(text = "", type = BlockType.PARAGRAPH)
-                                                val newBlock = NoteBlock(text = "", type = BlockType.PARAGRAPH)
-                                                updated.add(curIndex + 1, newBlock)
                                                 blocks = updated
-                                                focusedBlockId = newBlock.id
+                                                focusedBlockId = block.id
+                                                targetCursor = block.id to 0
                                             } else {
                                                 updated[curIndex] = block.copy(text = firstPart)
                                                 val nextType = block.type
@@ -543,6 +547,7 @@ fun NoteEditorScreen(
                                                 }
                                                 blocks = updated
                                                 focusedBlockId = lastAddedId
+                                                targetCursor = lastAddedId to 0
                                             }
                                         } else {
                                             val updated = blocks.toMutableList()
@@ -559,20 +564,23 @@ fun NoteEditorScreen(
                                         blocks = updated
                                     }
                                 },
-                                onBackspaceOnEmpty = {
+                                onBackspaceAtStart = {
                                     val curIndex = blocks.indexOfFirst { it.id == block.id }
                                     if (curIndex != -1) {
                                         val updated = blocks.toMutableList()
                                         if (block.type != BlockType.PARAGRAPH) {
-                                            updated[curIndex] = block.copy(type = BlockType.PARAGRAPH, text = "")
+                                            updated[curIndex] = block.copy(type = BlockType.PARAGRAPH)
                                             blocks = updated
                                             focusedBlockId = block.id
-                                        } else if (blocks.size > 1) {
-                                            val prevIndex = (curIndex - 1).coerceAtLeast(0)
-                                            val prevId = blocks[prevIndex].id
+                                        } else if (curIndex > 0) {
+                                            val prevBlock = blocks[curIndex - 1]
+                                            val prevLen = prevBlock.text.length
+                                            val mergedText = prevBlock.text + block.text
+                                            updated[curIndex - 1] = prevBlock.copy(text = mergedText)
                                             updated.removeAt(curIndex)
                                             blocks = updated
-                                            focusedBlockId = prevId
+                                            focusedBlockId = prevBlock.id
+                                            targetCursor = prevBlock.id to prevLen
                                         }
                                     }
                                 }
@@ -991,10 +999,28 @@ fun NoteEditorScreen(
                             clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
+
+                    val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
+                        ReminderHelper.formatRemainingTime(
+                            targetHour = timePickerState.hour,
+                            targetMinute = timePickerState.minute,
+                            baseDateMillis = state.reminderTime,
+                            isAlarm = state.priority == 2,
+                            strings = strings
+                        )
+                    }
+
+                    Text(
+                        text = remainingText,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)
+                    )
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp),
+                            .padding(top = 8.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showTimePicker = false }) {
@@ -1268,20 +1294,36 @@ private fun NoteBlockRow(
     numberedIndex: Int,
     noteColors: NoteThemeColors,
     focusRequester: FocusRequester,
+    showPlaceholder: Boolean,
+    targetCursor: Pair<String, Int>?,
     onFocus: () -> Unit,
     onTextChange: (String) -> Unit,
     onCheckedChange: (Boolean) -> Unit,
-    onBackspaceOnEmpty: () -> Unit
+    onBackspaceAtStart: () -> Unit
 ) {
-    // When text is empty, seed with zero-width space (\u200B) so Android soft keyboard backspace always triggers
-    val initialText = if (block.text.isEmpty()) "\u200B" else block.text
-    var textValue by remember(block.id, block.text) {
+    var textValue by remember(block.id) {
         mutableStateOf(
             TextFieldValue(
-                text = initialText,
-                selection = TextRange(initialText.length)
+                text = block.text,
+                selection = TextRange(block.text.length)
             )
         )
+    }
+
+    LaunchedEffect(block.text) {
+        if (textValue.text != block.text) {
+            textValue = textValue.copy(
+                text = block.text,
+                selection = TextRange(block.text.length)
+            )
+        }
+    }
+
+    LaunchedEffect(targetCursor) {
+        if (targetCursor?.first == block.id) {
+            val pos = targetCursor.second.coerceIn(0, textValue.text.length)
+            textValue = textValue.copy(selection = TextRange(pos))
+        }
     }
 
     Row(
@@ -1341,30 +1383,10 @@ private fun NoteBlockRow(
             onValueChange = { newTfv ->
                 val raw = newTfv.text
                 if (raw.contains("\n")) {
-                    // Enter key pressed
-                    val cleaned = raw.replace("\u200B", "")
-                    onTextChange(cleaned)
-                } else if (raw.isEmpty()) {
-                    if (block.text.isEmpty()) {
-                        // Soft keyboard Backspace deleted the sentinel on empty field!
-                        onBackspaceOnEmpty()
-                    } else {
-                        // User deleted last character: reset text to empty and restore sentinel
-                        textValue = TextFieldValue(text = "\u200B", selection = TextRange(1))
-                        onTextChange("")
-                    }
+                    onTextChange(raw)
                 } else {
-                    val cleaned = raw.replace("\u200B", "")
-                    val safeText = if (cleaned.isEmpty()) "\u200B" else cleaned
-                    val safeSelection = TextRange(
-                        newTfv.selection.start.coerceIn(0, safeText.length),
-                        newTfv.selection.end.coerceIn(0, safeText.length)
-                    )
-                    textValue = newTfv.copy(
-                        text = safeText,
-                        selection = safeSelection
-                    )
-                    onTextChange(cleaned)
+                    textValue = newTfv
+                    onTextChange(raw)
                 }
             },
             modifier = Modifier
@@ -1373,13 +1395,13 @@ private fun NoteBlockRow(
                 .focusRequester(focusRequester)
                 .onFocusChanged { if (it.isFocused) onFocus() }
                 .onKeyEvent { keyEvent ->
-                    // Hardware backspace fallback
-                    if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace && (block.text.isEmpty() || textValue.text == "\u200B")) {
-                        onBackspaceOnEmpty()
-                        true
-                    } else {
-                        false
+                    if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace) {
+                        if (textValue.selection.start == 0 && textValue.selection.end == 0) {
+                            onBackspaceAtStart()
+                            return@onKeyEvent true
+                        }
                     }
+                    false
                 },
             textStyle = TextStyle(
                 fontSize = 16.sp,
@@ -1396,21 +1418,25 @@ private fun NoteBlockRow(
             ),
             cursorBrush = SolidColor(noteColors.primary),
             keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                autoCorrectEnabled = true,
                 imeAction = ImeAction.Default
             ),
             decorationBox = { innerTextField ->
-                val actual = textValue.text.replace("\u200B", "")
-                if (actual.isEmpty()) {
-                    Text(
-                        text = when (block.type) {
-                            BlockType.CHECKLIST -> "Item checklist..."
-                            BlockType.BULLET -> "Daftar butir..."
-                            BlockType.NUMBERED -> "Daftar bernomor..."
-                            BlockType.PARAGRAPH -> "Tulis catatan..."
-                        },
-                        fontSize = 16.sp,
-                        color = noteColors.onSurface.copy(alpha = 0.35f)
-                    )
+                if (textValue.text.isEmpty()) {
+                    val placeholder = when (block.type) {
+                        BlockType.CHECKLIST -> "Item checklist..."
+                        BlockType.BULLET -> "Daftar butir..."
+                        BlockType.NUMBERED -> "Daftar bernomor..."
+                        BlockType.PARAGRAPH -> if (showPlaceholder) "Tulis catatan..." else null
+                    }
+                    if (placeholder != null) {
+                        Text(
+                            text = placeholder,
+                            fontSize = 16.sp,
+                            color = noteColors.onSurface.copy(alpha = 0.35f)
+                        )
+                    }
                 }
                 innerTextField()
             }
