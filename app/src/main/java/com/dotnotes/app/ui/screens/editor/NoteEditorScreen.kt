@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -125,7 +126,6 @@ import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.alarm.ReminderHelper
 import com.dotnotes.app.ui.i18n.LocalStrings
 import com.dotnotes.app.ui.theme.NoteColorThemes
-import com.dotnotes.app.ui.theme.PureWhite
 import com.dotnotes.app.ui.theme.ReminderBadgeColors
 import com.dotnotes.app.ui.theme.isAppInDarkTheme
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
@@ -260,21 +260,24 @@ fun NoteEditorScreen(
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                 ) {
-                    Surface(
-                        color = noteColors.surface,
-                        tonalElevation = 6.dp,
-                        shadowElevation = 8.dp,
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .imePadding()
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            tonalElevation = 6.dp,
+                            shadowElevation = 6.dp,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                            modifier = Modifier.wrapContentSize()
+                        ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // 1. Bold
@@ -282,7 +285,7 @@ fun NoteEditorScreen(
                                     icon = Icons.Default.FormatBold,
                                     contentDescription = "Bold",
                                     isActive = richTextState.currentSpanStyle.fontWeight == FontWeight.Bold,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.2f),
                                     activeIconColor = noteColors.primary,
                                     onClick = {
                                         richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
@@ -294,7 +297,7 @@ fun NoteEditorScreen(
                                     icon = Icons.Default.FormatItalic,
                                     contentDescription = "Italic",
                                     isActive = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.2f),
                                     activeIconColor = noteColors.primary,
                                     onClick = {
                                         richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
@@ -306,7 +309,7 @@ fun NoteEditorScreen(
                                     icon = Icons.AutoMirrored.Filled.FormatListBulleted,
                                     contentDescription = "Bullet List",
                                     isActive = !isChecklistMode && richTextState.isUnorderedList,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.2f),
                                     activeIconColor = noteColors.primary,
                                     onClick = {
                                         if (isChecklistMode) {
@@ -324,7 +327,7 @@ fun NoteEditorScreen(
                                     icon = Icons.Default.FormatListNumbered,
                                     contentDescription = "Numbered List",
                                     isActive = !isChecklistMode && richTextState.isOrderedList,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.2f),
                                     activeIconColor = noteColors.primary,
                                     onClick = {
                                         if (isChecklistMode) {
@@ -342,7 +345,7 @@ fun NoteEditorScreen(
                                     icon = if (isChecklistMode) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                                     contentDescription = strings.checklist,
                                     isActive = isChecklistMode,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.2f),
                                     activeIconColor = noteColors.primary,
                                     onClick = {
                                         if (!isChecklistMode) {
@@ -375,7 +378,7 @@ fun NoteEditorScreen(
                                     icon = Icons.Default.Palette,
                                     contentDescription = strings.noteColor,
                                     isActive = state.colorTheme != NoteColorThemes.DEFAULT,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                    activeContainerColor = noteColors.primary.copy(alpha = 0.2f),
                                     activeIconColor = noteColors.primary,
                                     onClick = {
                                         showColorPicker = true
@@ -1233,7 +1236,7 @@ fun NoteEditorScreen(
                                     Icon(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
-                                        tint = if (colorKey == NoteColorThemes.DEFAULT && !isDark) PureWhite else if (colorKey == NoteColorThemes.YELLOW && isDark) Color.Black else PureWhite,
+                                        tint = if (colorKey == NoteColorThemes.DEFAULT && !isDark) Color.White else if (colorKey == NoteColorThemes.YELLOW && isDark) Color.Black else Color.White,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }

@@ -75,7 +75,7 @@ fun AlarmScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF09090B))
+            .background(Color(0xFF121316))
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -85,7 +85,7 @@ fun AlarmScreen(
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. TOP HEADER: Small Clock & Alarm Badge (Perkecil jam agar judul/deskripsi dominan)
+            // 1. TOP HEADER: Clock & Alarm Pill
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -96,8 +96,8 @@ fun AlarmScreen(
                 // Alarm Pill
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF27272A),
-                    border = BorderStroke(1.dp, Color(0xFF3F3F46))
+                    color = Color(0xFF601410),
+                    border = BorderStroke(1.dp, Color(0xFF8C1D18))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -106,15 +106,15 @@ fun AlarmScreen(
                         Icon(
                             imageVector = Icons.Default.Alarm,
                             contentDescription = null,
-                            tint = Color(0xFFF87171),
-                            modifier = Modifier.size(15.dp)
+                            tint = Color(0xFFFFB4AB),
+                            modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
                             text = strings.alarm.uppercase(),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFF4F4F5),
+                            color = Color(0xFFFFB4AB),
                             letterSpacing = 1.2.sp
                         )
                     }
@@ -126,69 +126,69 @@ fun AlarmScreen(
                         text = currentTime,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color(0xFFE3E2E6)
                     )
                     Text(
                         text = currentDate,
-                        fontSize = 11.sp,
-                        color = Color(0xFFA1A1AA),
+                        fontSize = 12.sp,
+                        color = Color(0xFF8E9099),
                         fontWeight = FontWeight.Normal
                     )
                 }
             }
 
-            // 2. CENTER: DOMINANT NOTE CONTENT CARD (Judul dan Deskripsi Sangat Jelas & Menonjol)
+            // 2. CENTER: DOMINANT NOTE CONTENT CARD
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(vertical = 12.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF18181B)
+                    containerColor = Color(0xFF1B1C20)
                 ),
-                border = BorderStroke(1.dp, Color(0xFF27272A))
+                border = BorderStroke(1.dp, Color(0xFF33353A))
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(22.dp)
+                        .padding(24.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // Note Title (Dominan, Tebal & Besar)
+                    // Note Title
                     Text(
                         text = noteTitle.ifBlank { strings.untitled },
-                        fontSize = 30.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
-                        lineHeight = 38.sp
+                        color = Color(0xFFE3E2E6),
+                        lineHeight = 36.sp
                     )
 
                     if (noteContent.isNotBlank()) {
-                        Spacer(Modifier.height(14.dp))
-                        HorizontalDivider(color = Color(0xFF27272A))
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(16.dp))
+                        HorizontalDivider(color = Color(0xFF33353A))
+                        Spacer(Modifier.height(16.dp))
 
-                        // Note Description / Content (Jelas, Terbaca Nyaman)
+                        // Note Description / Content
                         Text(
                             text = noteContent,
-                            fontSize = 18.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Normal,
-                            color = Color(0xFFE4E4E7),
-                            lineHeight = 26.sp
+                            color = Color(0xFFC4C6D0),
+                            lineHeight = 25.sp
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // 3. BOTTOM: Action Buttons (Tunda & Matikan)
+            // 3. BOTTOM: Action Buttons (Large Pill Buttons)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Snooze Button
@@ -196,17 +196,17 @@ fun AlarmScreen(
                     onClick = onSnooze,
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
+                        .height(58.dp),
+                    shape = RoundedCornerShape(29.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = Color(0xFF27272A),
-                        contentColor = Color(0xFFE4E4E7)
+                        containerColor = Color(0xFF2B2C32),
+                        contentColor = Color(0xFFE3E2E6)
                     )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Snooze,
                         contentDescription = strings.snooze,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
@@ -221,17 +221,17 @@ fun AlarmScreen(
                     onClick = onDismiss,
                     modifier = Modifier
                         .weight(1.1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
+                        .height(58.dp),
+                    shape = RoundedCornerShape(29.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF09090B)
+                        containerColor = Color(0xFFFFB4AB),
+                        contentColor = Color(0xFF690005)
                     )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = strings.dismiss,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(

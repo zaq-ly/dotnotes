@@ -178,7 +178,15 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(strings.settings, fontWeight = FontWeight.SemiBold) },
+                title = {
+                    Text(
+                        strings.settings,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.15.sp
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
@@ -195,63 +203,66 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 24.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // ==========================================
-            // 1. AKUN GOOGLE (PALING ATAS)
+            // 1. AKUN GOOGLE
             // ==========================================
-            SectionHeader(title = strings.googleAccount)
-
             if (!authUser.isLoggedIn) {
-                // Not Logged In Card with Google Branding
-                OutlinedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.outlinedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                // Not Logged In Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(20.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_google_logo),
-                                contentDescription = "Google",
-                                modifier = Modifier.size(24.dp),
-                                tint = Color.Unspecified
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                text = strings.googleAccount,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_google_logo),
+                                    contentDescription = "Google",
+                                    modifier = Modifier.size(22.dp),
+                                    tint = Color.Unspecified
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = strings.googleAccount,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = strings.googleSignInPrompt,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
 
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                        Text(
-                            text = strings.googleSignInPrompt,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Spacer(Modifier.height(14.dp))
-
-                        // Custom Styled Google Sign-In Button
+                        // Google Sign-In Pill Button
                         Surface(
                             shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                            shadowElevation = 2.dp,
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable(enabled = !isLoggingIn) {
@@ -265,7 +276,7 @@ fun SettingsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 10.dp, horizontal = 16.dp),
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
@@ -273,13 +284,13 @@ fun SettingsScreen(
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(18.dp),
                                         strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                     Spacer(Modifier.width(10.dp))
                                     Text(
                                         text = strings.signingIn,
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 } else {
                                     Icon(
@@ -291,8 +302,8 @@ fun SettingsScreen(
                                     Spacer(Modifier.width(10.dp))
                                     Text(
                                         text = strings.signInWithGoogle,
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
                             }
@@ -302,33 +313,32 @@ fun SettingsScreen(
             } else {
                 // Logged In Card with Profile
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                    )
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(18.dp)
                     ) {
                         if (!authUser.avatarUrl.isNullOrBlank()) {
                             AsyncImage(
                                 model = authUser.avatarUrl,
                                 contentDescription = null,
                                 modifier = Modifier
-                                    .size(44.dp)
+                                    .size(46.dp)
                                     .clip(CircleShape),
                                 contentScale = ContentScale.Crop
                             )
                         } else {
                             Box(
                                 modifier = Modifier
-                                    .size(44.dp)
+                                    .size(46.dp)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
@@ -344,7 +354,7 @@ fun SettingsScreen(
                             }
                         }
 
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(14.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -363,242 +373,262 @@ fun SettingsScreen(
                             }
                         }
 
-                        TextButton(onClick = {
-                            viewModel.signOut(context) {
-                                Toast.makeText(context, strings.signOut, Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
+                        TextButton(
+                            onClick = {
+                                viewModel.signOut(context) {
+                                    Toast.makeText(context, strings.signOut, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
                             Text(
                                 text = strings.signOut,
                                 color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-
             // ==========================================
-            // 2. PREFERENSI APLIKASI
+            // 2. PREFERENSI APLIKASI (Pixel Grouped Card)
             // ==========================================
-            SectionHeader(title = strings.preferences)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(title = strings.preferences)
 
-            // Language
-            ListItem(
-                leadingContent = {
-                    Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                },
-                headlineContent = { Text(strings.language) },
-                supportingContent = { Text(if (language == "id") strings.indonesian else strings.english) },
-                modifier = Modifier.clickable { showLanguageDialog = true }
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Theme
-            ListItem(
-                leadingContent = {
-                    Icon(Icons.Default.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                },
-                headlineContent = { Text(strings.theme) },
-                supportingContent = {
-                    val label = when (themeMode) {
-                        "light" -> strings.themeLight
-                        "dark" -> strings.themeDark
-                        else -> strings.themeSystem
-                    }
-                    Text(label)
-                },
-                modifier = Modifier.clickable { showThemeDialog = true }
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Snooze Duration
-            ListItem(
-                leadingContent = {
-                    Icon(Icons.Default.Snooze, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                },
-                headlineContent = { Text(strings.snoozeDuration) },
-                supportingContent = { Text("$snoozeDuration ${strings.minutes}") },
-                modifier = Modifier.clickable { showSnoozeDialog = true }
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Reminder Sound
-            ListItem(
-                leadingContent = {
-                    Icon(Icons.Default.Notifications, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                },
-                headlineContent = { Text(strings.reminderSound) },
-                supportingContent = { Text(reminderSoundTitle) },
-                modifier = Modifier.clickable {
-                    val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, strings.reminderSound)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                        val currentUri = reminderSoundUri.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
-                            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
-                    }
-                    reminderSoundPickerLauncher.launch(intent)
-                }
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Alarm Sound
-            ListItem(
-                leadingContent = {
-                    Icon(Icons.Default.Alarm, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                },
-                headlineContent = { Text(strings.alarmSound) },
-                supportingContent = { Text(alarmSoundTitle) },
-                modifier = Modifier.clickable {
-                    val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, strings.alarmSound)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                        val currentUri = alarmSoundUri.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
-                            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
-                    }
-                    alarmSoundPickerLauncher.launch(intent)
-                }
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            // ==========================================
-            // 3. TENTANG & PEMBARUAN
-            // ==========================================
-            SectionHeader(title = strings.aboutAndUpdates)
-
-            // Update Notification Banner (jika update ditemukan)
-            if (availableUpdate != null) {
-                val update = availableUpdate!!
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-                    )
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                Icons.Default.NewReleases,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = "${strings.updateAvailable} (${update.tagName})",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Spacer(Modifier.weight(1f))
-                            Badge(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Language
+                        PixelSettingsItem(
+                            icon = Icons.Default.Language,
+                            iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.primary,
+                            title = strings.language,
+                            subtitle = if (language == "id") strings.indonesian else strings.english,
+                            onClick = { showLanguageDialog = true }
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
+
+                        // Theme
+                        val themeLabel = when (themeMode) {
+                            "light" -> strings.themeLight
+                            "dark" -> strings.themeDark
+                            else -> strings.themeSystem
+                        }
+                        PixelSettingsItem(
+                            icon = Icons.Default.DarkMode,
+                            iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
+                            iconTint = MaterialTheme.colorScheme.secondary,
+                            title = strings.theme,
+                            subtitle = themeLabel,
+                            onClick = { showThemeDialog = true }
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
+
+                        // Snooze Duration
+                        PixelSettingsItem(
+                            icon = Icons.Default.Snooze,
+                            iconBgColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            iconTint = MaterialTheme.colorScheme.tertiary,
+                            title = strings.snoozeDuration,
+                            subtitle = "$snoozeDuration ${strings.minutes}",
+                            onClick = { showSnoozeDialog = true }
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
+
+                        // Reminder Sound
+                        PixelSettingsItem(
+                            icon = Icons.Default.Notifications,
+                            iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.primary,
+                            title = strings.reminderSound,
+                            subtitle = reminderSoundTitle,
+                            onClick = {
+                                val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, strings.reminderSound)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                                    val currentUri = reminderSoundUri.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
+                                        ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
+                                }
+                                reminderSoundPickerLauncher.launch(intent)
+                            }
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
+
+                        // Alarm Sound
+                        PixelSettingsItem(
+                            icon = Icons.Default.Alarm,
+                            iconBgColor = MaterialTheme.colorScheme.errorContainer,
+                            iconTint = MaterialTheme.colorScheme.error,
+                            title = strings.alarmSound,
+                            subtitle = alarmSoundTitle,
+                            onClick = {
+                                val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, strings.alarmSound)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                                    val currentUri = alarmSoundUri.takeIf { it.isNotBlank() }?.let { Uri.parse(it) }
+                                        ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
+                                }
+                                alarmSoundPickerLauncher.launch(intent)
+                            }
+                        )
+                    }
+                }
+            }
+
+            // ==========================================
+            // 3. TENTANG & PEMBARUAN (Pixel Grouped Card)
+            // ==========================================
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(title = strings.aboutAndUpdates)
+
+                // Update Notification Banner (jika update ditemukan)
+                if (availableUpdate != null) {
+                    val update = availableUpdate!!
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(strings.newBadge, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Icon(
+                                    Icons.Default.NewReleases,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "${strings.updateAvailable} (${update.tagName})",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                ) {
+                                    Text(strings.newBadge, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            if (update.changelog.isNotBlank()) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = update.changelog,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                                    maxLines = 3
+                                )
+                            }
+
+                            Spacer(Modifier.height(14.dp))
+
+                            Button(
+                                onClick = { viewModel.downloadAndInstall(context, update) },
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(strings.updateNow, fontWeight = FontWeight.Bold)
                             }
                         }
+                    }
+                }
 
-                        if (update.changelog.isNotBlank()) {
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                text = update.changelog,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                                maxLines = 2
-                            )
-                        }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Check for Updates item
+                        PixelSettingsItem(
+                            icon = Icons.Default.SystemUpdate,
+                            iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.primary,
+                            title = strings.checkForUpdates,
+                            subtitle = if (availableUpdate != null) {
+                                "${strings.updateAvailable} (${availableUpdate!!.tagName})"
+                            } else {
+                                strings.checkForUpdatesDesc
+                            },
+                            trailingContent = {
+                                if (isCheckingUpdate) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                } else if (availableUpdate != null) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    ) {
+                                        Text(strings.newBadge, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            },
+                            onClick = {
+                                if (!isCheckingUpdate && downloadProgress == null) {
+                                    viewModel.checkForUpdate(BuildConfig.VERSION_NAME) {
+                                        Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        )
 
-                        Spacer(Modifier.height(10.dp))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
 
-                        Button(
-                            onClick = { viewModel.downloadAndInstall(context, update) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(strings.updateNow)
-                        }
+                        // About item
+                        PixelSettingsItem(
+                            icon = Icons.Default.Info,
+                            iconBgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            title = strings.about,
+                            subtitle = "dotnotes v${BuildConfig.VERSION_NAME}",
+                            onClick = {}
+                        )
                     }
                 }
             }
-
-            // Check for Updates item
-            ListItem(
-                leadingContent = {
-                    Box(
-                        modifier = Modifier.size(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.SystemUpdate,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        if (availableUpdate != null) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = (-2).dp, y = 0.dp)
-                                    .size(8.dp)
-                                    .background(MaterialTheme.colorScheme.error, CircleShape)
-                            )
-                        }
-                    }
-                },
-                headlineContent = { Text(strings.checkForUpdates) },
-                supportingContent = {
-                    if (availableUpdate != null) {
-                        Text(
-                            text = "${strings.updateAvailable} (${availableUpdate!!.tagName})",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    } else {
-                        Text(strings.checkForUpdatesDesc)
-                    }
-                },
-                trailingContent = {
-                    if (isCheckingUpdate) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else if (availableUpdate != null) {
-                        Badge(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
-                        ) {
-                            Text(strings.newBadge, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                },
-                modifier = Modifier.clickable(enabled = !isCheckingUpdate && downloadProgress == null) {
-                    viewModel.checkForUpdate(BuildConfig.VERSION_NAME) {
-                        Toast.makeText(context, strings.alreadyLatest, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // About item
-            ListItem(
-                leadingContent = {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                },
-                headlineContent = { Text(strings.about) },
-                supportingContent = { Text("dotnotes v${BuildConfig.VERSION_NAME}") }
-            )
         }
     }
 
@@ -778,6 +808,66 @@ private fun SectionHeader(title: String) {
             color = MaterialTheme.colorScheme.primary,
             letterSpacing = 0.5.sp
         ),
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
     )
+}
+
+@Composable
+private fun PixelSettingsItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconBgColor: Color,
+    iconTint: Color,
+    title: String,
+    subtitle: String,
+    trailingContent: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(iconBgColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (subtitle.isNotBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        if (trailingContent != null) {
+            Spacer(Modifier.width(8.dp))
+            trailingContent()
+        }
+    }
 }

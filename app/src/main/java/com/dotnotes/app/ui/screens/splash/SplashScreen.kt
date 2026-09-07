@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.dotnotes.app.R
-import com.dotnotes.app.ui.theme.Zinc950
 import kotlinx.coroutines.delay
 
 @Composable
@@ -43,7 +42,7 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
     }
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val splashBg = if (isDark) Zinc950 else Color.White
+    val splashBg = MaterialTheme.colorScheme.background
     val logoRes = if (isDark) R.drawable.app_logo_dark else R.drawable.app_logo
 
     Box(

@@ -142,12 +142,12 @@ fun NoteListScreen(
     Scaffold(
         topBar = {
             if (isSelectionMode) {
-                // TopBar in Selection Mode
+                // TopBar in Selection Mode (Pill Header)
                 TopAppBar(
                     title = {
                         Text(
                             text = String.format(strings.selectedCount, selectedNoteIds.size),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                     },
                     navigationIcon = {
@@ -174,65 +174,90 @@ fun NoteListScreen(
                     }
                 )
             } else {
-                // Standard TopBar with History Icon and Settings Icon
-                TopAppBar(
-                    title = {
+                // Google Pixel Floating Search Bar Style Header
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 2.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             text = strings.appName,
-                            modifier = Modifier.padding(start = 6.dp)
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.2.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
                         )
-                    },
-                    actions = {
+
                         // History Icon (Pengingat Terlewat / Riwayat)
                         val overdueCount = notes.count {
                             it.reminderTime != null && it.reminderTime <= System.currentTimeMillis() && !it.isAlarmDismissed
                         }
-                        IconButton(onClick = onHistoryClick) {
+                        IconButton(
+                            onClick = onHistoryClick,
+                            modifier = Modifier.size(38.dp)
+                        ) {
                             BadgedBox(
                                 badge = {
                                     if (overdueCount > 0) {
-                                        val isDark = isAppInDarkTheme()
                                         Badge(
-                                            containerColor = if (isDark) ReminderBadgeColors.alarmContentDark else ReminderBadgeColors.alarmContentLight,
-                                            contentColor = if (isDark) Color(0xFF18181B) else Color.White
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = MaterialTheme.colorScheme.onError
                                         ) {
                                             Text(overdueCount.toString())
                                         }
                                     }
                                 }
                             ) {
-                                Icon(Icons.Default.History, contentDescription = strings.reminderHistory)
+                                Icon(
+                                    Icons.Default.History,
+                                    contentDescription = strings.reminderHistory,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
+
+                        Spacer(Modifier.width(4.dp))
 
                         // Settings / Update Icon Button
                         IconButton(
                             onClick = onSettingsClick,
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Box(
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(20.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
                                     contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
                                 )
                                 if (hasUpdate) {
                                     Box(
                                         modifier = Modifier
                                             .align(Alignment.TopEnd)
-                                            .offset(x = (-2).dp, y = 0.dp)
-                                            .size(8.dp)
+                                            .offset(x = (-1).dp, y = (-1).dp)
+                                            .size(7.dp)
                                             .background(MaterialTheme.colorScheme.error, CircleShape)
                                     )
                                 }
                             }
                         }
                     }
-                )
+                }
             }
         },
         bottomBar = {
@@ -254,6 +279,7 @@ fun NoteListScreen(
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         tonalElevation = 6.dp,
                         shadowElevation = 8.dp,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                         modifier = Modifier.wrapContentSize()
                     ) {
                         Row(
@@ -329,18 +355,22 @@ fun NoteListScreen(
         },
         floatingActionButton = {
             if (!isSelectionMode) {
+                // Pixel-style squircle FAB
                 FloatingActionButton(
                     onClick = onNewNote,
                     modifier = Modifier.padding(end = 4.dp, bottom = 4.dp),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = CircleShape,
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 3.dp,
+                        pressedElevation = 6.dp
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = strings.newNote,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
@@ -368,24 +398,64 @@ fun NoteListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(strings.noNotesYet, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        strings.noNotesYet,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                if (pinnedNotes.isNotEmpty()) {
-                    item {
-                        Text(
-                            strings.pinned,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
+                    if (pinnedNotes.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = strings.pinned,
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+                            )
+                        }
+                        items(pinnedNotes, key = { it.id }) { note ->
+                            val isSelected = selectedNoteIds.contains(note.id)
+                            SelectableNoteCard(
+                                note = note,
+                                isSelected = isSelected,
+                                isSelectionMode = isSelectionMode,
+                                onClick = {
+                                    if (isSelectionMode) {
+                                        selectedNoteIds = if (isSelected) selectedNoteIds - note.id else selectedNoteIds + note.id
+                                    } else {
+                                        onNoteClick(note.id)
+                                    }
+                                },
+                                onLongClick = {
+                                    if (!isSelectionMode) {
+                                        selectedNoteIds = setOf(note.id)
+                                    }
+                                },
+                                onDismissReminder = { handleDismissReminder(note) }
+                            )
+                        }
+                        item {
+                            Text(
+                                text = strings.others,
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 2.dp)
+                            )
+                        }
                     }
-                    items(pinnedNotes, key = { it.id }) { note ->
+                    items(otherNotes, key = { it.id }) { note ->
                         val isSelected = selectedNoteIds.contains(note.id)
                         SelectableNoteCard(
                             note = note,
@@ -406,44 +476,14 @@ fun NoteListScreen(
                             onDismissReminder = { handleDismissReminder(note) }
                         )
                     }
-                    item {
-                        Text(
-                            strings.others,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                        )
-                    }
-                }
-                items(otherNotes, key = { it.id }) { note ->
-                    val isSelected = selectedNoteIds.contains(note.id)
-                    SelectableNoteCard(
-                        note = note,
-                        isSelected = isSelected,
-                        isSelectionMode = isSelectionMode,
-                        onClick = {
-                            if (isSelectionMode) {
-                                selectedNoteIds = if (isSelected) selectedNoteIds - note.id else selectedNoteIds + note.id
-                            } else {
-                                onNoteClick(note.id)
-                            }
-                        },
-                        onLongClick = {
-                            if (!isSelectionMode) {
-                                selectedNoteIds = setOf(note.id)
-                            }
-                        },
-                        onDismissReminder = { handleDismissReminder(note) }
-                    )
                 }
             }
         }
     }
 }
-}
 
 /**
- * Solid, opaque note card supporting multi-selection and long press.
+ * Pixel Material You squircle note card with soft tonal styling.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -465,54 +505,44 @@ private fun SelectableNoteCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(22.dp))
             .then(
                 if (isSelected) {
-                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                } else Modifier
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(22.dp))
+                } else if (hasCustomTheme) {
+                    Modifier.border(1.dp, noteTheme.strokeColor.copy(alpha = if (isDark) 0.35f else 0.5f), RoundedCornerShape(22.dp))
+                } else {
+                    Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(22.dp))
+                }
             )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
+            containerColor = if (isSelected) {
                 MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surfaceVariant
+            } else if (hasCustomTheme) {
+                noteTheme.background
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            }
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (hasCustomTheme && !isSelected) {
-                        Modifier.drawBehind {
-                            val glowRadius = size.width * 0.55f
-                            val glowCenter = Offset(size.width, 0f)
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        noteTheme.swatchColor.copy(alpha = if (isDark) 0.28f else 0.18f),
-                                        noteTheme.swatchColor.copy(alpha = if (isDark) 0.08f else 0.05f),
-                                        Color.Transparent
-                                    ),
-                                    center = glowCenter,
-                                    radius = glowRadius
-                                ),
-                                radius = glowRadius,
-                                center = glowCenter
-                            )
-                        }
-                    } else Modifier
-                )
-                .padding(16.dp)
+                .padding(18.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = note.title.ifEmpty { strings.untitled },
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.15.sp
+                    ),
+                    color = if (hasCustomTheme) noteTheme.onSurface else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
@@ -520,7 +550,7 @@ private fun SelectableNoteCard(
                 if (isSelectionMode) {
                     Box(
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(24.dp)
                             .clip(CircleShape)
                             .background(
                                 if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -537,7 +567,7 @@ private fun SelectableNoteCard(
                                 Icons.Default.Check,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -546,8 +576,8 @@ private fun SelectableNoteCard(
                         Icon(
                             Icons.Default.PushPin,
                             contentDescription = strings.pinned,
-                            modifier = Modifier.size(16.dp),
-                            tint = if (hasCustomTheme) noteTheme.swatchColor else MaterialTheme.colorScheme.primary
+                            modifier = Modifier.size(18.dp),
+                            tint = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -559,36 +589,36 @@ private fun SelectableNoteCard(
                 val hasRepeat = note.repeatInterval.isNotBlank() && note.repeatInterval != ReminderHelper.REPEAT_NONE
                 val cardReminderFormat = remember { SimpleDateFormat("d MMM, hh:mm a", Locale.getDefault()) }
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (isDark) Color(0xFF27272A).copy(alpha = 0.4f) else Color(0xFFE4E4E7).copy(alpha = 0.45f),
-                    border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46).copy(alpha = 0.35f) else Color(0xFFD4D4D8).copy(alpha = 0.5f))
+                    shape = RoundedCornerShape(12.dp),
+                    color = ReminderBadgeColors.containerColor(isAlarm, isDark),
+                    border = BorderStroke(1.dp, ReminderBadgeColors.borderColor(isAlarm, isDark))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Icon(
                             imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
                             contentDescription = null,
-                            modifier = Modifier.size(11.dp),
-                            tint = if (hasCustomTheme) noteTheme.swatchColor else MaterialTheme.colorScheme.primary
+                            modifier = Modifier.size(12.dp),
+                            tint = ReminderBadgeColors.contentColor(isAlarm, isDark)
                         )
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(5.dp))
                         Text(
                             text = cardReminderFormat.format(Date(note.reminderTime)),
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            fontWeight = FontWeight.Medium,
+                            color = ReminderBadgeColors.contentColor(isAlarm, isDark)
                         )
                         if (hasRepeat) {
                             Spacer(Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Default.Repeat,
                                 contentDescription = null,
-                                modifier = Modifier.size(10.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                modifier = Modifier.size(11.dp),
+                                tint = ReminderBadgeColors.contentColor(isAlarm, isDark).copy(alpha = 0.8f)
                             )
                         }
                     }
@@ -597,46 +627,50 @@ private fun SelectableNoteCard(
 
             val preview = note.previewText
             if (preview.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(
                     text = preview,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        lineHeight = 20.sp
+                    ),
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (hasCustomTheme) noteTheme.onSurface.copy(alpha = 0.75f) else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             if (hasActiveReminder && !isSelectionMode) {
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (isDark) Color(0xFF27272A).copy(alpha = 0.8f) else Color(0xFFF4F4F5),
-                        border = BorderStroke(1.dp, if (isDark) Color(0xFF3F3F46).copy(alpha = 0.6f) else Color(0xFFE4E4E7)),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .clickable(onClick = onDismissReminder)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = strings.markDone,
-                                modifier = Modifier.size(13.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(Modifier.width(5.dp))
+                            Spacer(Modifier.width(6.dp))
                             Text(
                                 text = strings.markDone,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

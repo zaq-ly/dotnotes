@@ -220,34 +220,70 @@ fun HistoryScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTab,
-                modifier = Modifier.fillMaxWidth()
+            // Segmented Pill Tab Row
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh
             ) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = {
-                        selectedTab = 0
-                    },
-                    text = {
-                        Text(
-                            text = "${strings.pendingTasks} (${pendingNotes.size})",
-                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
-                        )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Tab 0: Pending / Aktif
+                    val isTab0 = selectedTab == 0
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { selectedTab = 0 },
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isTab0) MaterialTheme.colorScheme.surface else Color.Transparent,
+                        shadowElevation = if (isTab0) 2.dp else 0.dp
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${strings.pendingTasks} (${pendingNotes.size})",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = if (isTab0) FontWeight.Bold else FontWeight.Medium
+                                ),
+                                color = if (isTab0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = {
-                        selectedTab = 1
-                    },
-                    text = {
-                        Text(
-                            text = "${strings.completedTasks} (${completedNotes.size})",
-                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
-                        )
+
+                    // Tab 1: Completed / Selesai
+                    val isTab1 = selectedTab == 1
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { selectedTab = 1 },
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isTab1) MaterialTheme.colorScheme.surface else Color.Transparent,
+                        shadowElevation = if (isTab1) 2.dp else 0.dp
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "${strings.completedTasks} (${completedNotes.size})",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = if (isTab1) FontWeight.Bold else FontWeight.Medium
+                                ),
+                                color = if (isTab1) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                )
+                }
             }
 
             val reminderFeedbackFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()) }
@@ -271,7 +307,7 @@ fun HistoryScreen(
                 ) {
                     Text(
                         text = if (selectedTab == 0) strings.noPendingTasks else strings.noCompletedTasks,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
@@ -279,7 +315,7 @@ fun HistoryScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(currentList, key = { it.id }) { note ->
                         val isSelected = selectedNoteIds.contains(note.id)
@@ -326,34 +362,36 @@ private fun HistoryCard(
     val isOverdue = selectedTab == 0 && reminderTime < System.currentTimeMillis()
 
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
                 MaterialTheme.colorScheme.primaryContainer
             else
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surfaceContainer
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .then(
-                if (isSelected) {
-                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                } else Modifier
-            )
+            .clip(RoundedCornerShape(22.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = note.title.ifEmpty { strings.untitled },
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.15.sp
+                    ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
@@ -362,7 +400,7 @@ private fun HistoryCard(
                 if (isSelectionMode) {
                     Box(
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(24.dp)
                             .clip(CircleShape)
                             .background(
                                 if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -379,22 +417,24 @@ private fun HistoryCard(
                                 Icons.Default.Check,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
                 } else if (isOverdue) {
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.errorContainer,
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
                         Text(
                             text = strings.overdue,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            ),
                             color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            fontWeight = FontWeight.Bold
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
                 }
@@ -402,17 +442,17 @@ private fun HistoryCard(
 
             val preview = note.previewText
             if (preview.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(
                     text = preview,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
+                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -421,12 +461,12 @@ private fun HistoryCard(
                 val isDark = isAppInDarkTheme()
                 val isCompleted = selectedTab == 1
                 val isAlarm = note.priority == 2 || isOverdue
-                val pillBg = if (isCompleted) MaterialTheme.colorScheme.surfaceVariant else ReminderBadgeColors.containerColor(isAlarm = isAlarm, isDark = isDark)
+                val pillBg = if (isCompleted) MaterialTheme.colorScheme.surfaceContainerHigh else ReminderBadgeColors.containerColor(isAlarm = isAlarm, isDark = isDark)
                 val pillBorder = if (isCompleted) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f) else ReminderBadgeColors.borderColor(isAlarm = isAlarm, isDark = isDark)
                 val pillContent = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else ReminderBadgeColors.contentColor(isAlarm = isAlarm, isDark = isDark)
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = pillBg,
                     border = BorderStroke(1.dp, pillBorder)
                 ) {
@@ -442,13 +482,13 @@ private fun HistoryCard(
                             else
                                 Icons.Default.Notifications,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp),
+                            modifier = Modifier.size(13.dp),
                             tint = pillContent
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(5.dp))
                         Text(
                             text = if (reminderTime > 0) reminderFormat.format(Date(reminderTime)) else "",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                             fontWeight = FontWeight.SemiBold,
                             color = pillContent
                         )
@@ -457,7 +497,7 @@ private fun HistoryCard(
                             Icon(
                                 imageVector = Icons.Default.Repeat,
                                 contentDescription = null,
-                                modifier = Modifier.size(12.dp),
+                                modifier = Modifier.size(11.dp),
                                 tint = pillContent
                             )
                         }
@@ -465,21 +505,33 @@ private fun HistoryCard(
                 }
 
                 if (selectedTab == 0 && !isSelectionMode) {
-                    FilledTonalButton(
-                        onClick = onDismissReminder,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                        modifier = Modifier.height(30.dp)
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable(onClick = onDismissReminder)
                     ) {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = strings.markDone,
-                            style = MaterialTheme.typography.labelSmall
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(13.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = strings.markDone,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                 }
             }
