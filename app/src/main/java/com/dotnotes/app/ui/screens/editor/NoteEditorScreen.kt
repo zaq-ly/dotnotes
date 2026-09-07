@@ -60,7 +60,6 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -1057,34 +1056,20 @@ fun NoteEditorScreen(
             initialMinute = initialTimeCal.get(Calendar.MINUTE),
             is24Hour = false
         )
-        AlertDialog(
+        Dialog(
             onDismissRequest = { showTimePicker = false },
-            shape = RoundedCornerShape(28.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            confirmButton = {
-                TextButton(onClick = {
-                    val updatedCal = Calendar.getInstance().apply {
-                        (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                        set(Calendar.MINUTE, timePickerState.minute)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }
-                    viewModel.setReminderTime(updatedCal.timeInMillis)
-                    viewModel.setReminder(true)
-                    showTimePicker = false
-                }) {
-                    Text(strings.save, fontWeight = FontWeight.SemiBold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(strings.cancel)
-                }
-            },
-            title = {
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
+                modifier = Modifier
+                    .width(360.dp)
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+            ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(24.dp)
                 ) {
                     val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
                         ReminderHelper.formatRemainingTime(
@@ -1106,32 +1091,59 @@ fun NoteEditorScreen(
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-            },
-            text = {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    TimePicker(
-                        state = timePickerState,
-                        colors = TimePickerDefaults.colors(
-                            timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
-                            timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
-                            periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            selectorColor = MaterialTheme.colorScheme.primary,
-                            clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        TimePicker(
+                            state = timePickerState,
+                            colors = TimePickerDefaults.colors(
+                                timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                                timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                                periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                selectorColor = MaterialTheme.colorScheme.primary,
+                                clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         )
-                    )
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showTimePicker = false }) {
+                            Text(strings.cancel)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            val updatedCal = Calendar.getInstance().apply {
+                                (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+                                set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                set(Calendar.MINUTE, timePickerState.minute)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            viewModel.setReminderTime(updatedCal.timeInMillis)
+                            viewModel.setReminder(true)
+                            showTimePicker = false
+                        }) {
+                            Text(strings.save, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
-        )
+        }
     }
 
     // Color Swatch Picker Sheet (Option B)
