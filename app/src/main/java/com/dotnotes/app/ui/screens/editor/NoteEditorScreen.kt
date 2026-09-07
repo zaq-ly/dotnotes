@@ -34,21 +34,32 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -87,13 +98,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -143,10 +165,21 @@ fun NoteEditorScreen(
     var showRepeatMenu by remember { mutableStateOf(false) }
     var isContentInitialized by remember { mutableStateOf(false) }
 
+    var isChecklistMode by remember { mutableStateOf(false) }
+    var checklistItems by remember { mutableStateOf<List<ChecklistItem>>(emptyList()) }
+    var isCheckedSectionExpanded by remember { mutableStateOf(true) }
+    var focusItemId by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(state.isLoading) {
         if (!state.isLoading && !isContentInitialized) {
-            if (state.content.isNotEmpty()) {
-                richTextState.setHtml(state.content)
+            if (isContentChecklist(state.content)) {
+                isChecklistMode = true
+                checklistItems = parseChecklistItems(state.content)
+            } else {
+                isChecklistMode = false
+                if (state.content.isNotEmpty()) {
+                    richTextState.setHtml(state.content)
+                }
             }
             isContentInitialized = true
         }
@@ -160,7 +193,12 @@ fun NoteEditorScreen(
     }
 
     fun saveAndExit() {
-        viewModel.updateContent(richTextState.toHtml())
+        val finalContent = if (isChecklistMode) {
+            checklistToHtml(checklistItems)
+        } else {
+            richTextState.toHtml()
+        }
+        viewModel.updateContent(finalContent)
         viewModel.save()
         onBack()
     }
@@ -240,55 +278,90 @@ fun NoteEditorScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // 1. Bold
+                                if (!isChecklistMode) {
+                                    // 1. Bold
+                                    FormattingButton(
+                                        icon = Icons.Default.FormatBold,
+                                        contentDescription = "Bold",
+                                        isActive = richTextState.currentSpanStyle.fontWeight == FontWeight.Bold,
+                                        activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                        activeIconColor = noteColors.primary,
+                                        onClick = {
+                                            richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                                        }
+                                    )
+
+                                    // 2. Italic
+                                    FormattingButton(
+                                        icon = Icons.Default.FormatItalic,
+                                        contentDescription = "Italic",
+                                        isActive = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic,
+                                        activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                        activeIconColor = noteColors.primary,
+                                        onClick = {
+                                            richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
+                                        }
+                                    )
+
+                                    // 3. Bulleted List
+                                    FormattingButton(
+                                        icon = Icons.AutoMirrored.Filled.FormatListBulleted,
+                                        contentDescription = "Bullet List",
+                                        isActive = richTextState.isUnorderedList,
+                                        activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                        activeIconColor = noteColors.primary,
+                                        onClick = {
+                                            richTextState.toggleUnorderedList()
+                                        }
+                                    )
+
+                                    // 4. Numbered List
+                                    FormattingButton(
+                                        icon = Icons.Default.FormatListNumbered,
+                                        contentDescription = "Numbered List",
+                                        isActive = richTextState.isOrderedList,
+                                        activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
+                                        activeIconColor = noteColors.primary,
+                                        onClick = {
+                                            richTextState.toggleOrderedList()
+                                        }
+                                    )
+                                }
+
+                                // Checklist Mode Toggle Button
                                 FormattingButton(
-                                    icon = Icons.Default.FormatBold,
-                                    contentDescription = "Bold",
-                                    isActive = richTextState.currentSpanStyle.fontWeight == FontWeight.Bold,
+                                    icon = if (isChecklistMode) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                    contentDescription = strings.checklist,
+                                    isActive = isChecklistMode,
                                     activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
                                     activeIconColor = noteColors.primary,
                                     onClick = {
-                                        richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                                        if (!isChecklistMode) {
+                                            val html = richTextState.toHtml()
+                                            val cleanHtml = html
+                                                .replace("<br>", "\n")
+                                                .replace("<br/>", "\n")
+                                                .replace("<br />", "\n")
+                                                .replace("</p>", "\n")
+                                                .replace("</li>", "\n")
+                                                .replace("</div>", "\n")
+                                            val rawText = cleanHtml.replace(Regex("<[^>]*>"), "").trimEnd('\n')
+                                            val lines = if (rawText.isBlank()) emptyList() else rawText.split("\n")
+                                            checklistItems = if (lines.isEmpty()) {
+                                                listOf(ChecklistItem())
+                                            } else {
+                                                lines.map { ChecklistItem(text = it.trim(), isChecked = false) }
+                                            }
+                                            isChecklistMode = true
+                                        } else {
+                                            val html = checklistItems.joinToString("") { "<p>${it.text}</p>" }
+                                            richTextState.setHtml(html)
+                                            isChecklistMode = false
+                                        }
                                     }
                                 )
 
-                                // 2. Italic
-                                FormattingButton(
-                                    icon = Icons.Default.FormatItalic,
-                                    contentDescription = "Italic",
-                                    isActive = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
-                                    activeIconColor = noteColors.primary,
-                                    onClick = {
-                                        richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                                    }
-                                )
-
-                                // 3. Bulleted List
-                                FormattingButton(
-                                    icon = Icons.AutoMirrored.Filled.FormatListBulleted,
-                                    contentDescription = "Bullet List",
-                                    isActive = richTextState.isUnorderedList,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
-                                    activeIconColor = noteColors.primary,
-                                    onClick = {
-                                        richTextState.toggleUnorderedList()
-                                    }
-                                )
-
-                                // 4. Numbered List
-                                FormattingButton(
-                                    icon = Icons.Default.FormatListNumbered,
-                                    contentDescription = "Numbered List",
-                                    isActive = richTextState.isOrderedList,
-                                    activeContainerColor = noteColors.primary.copy(alpha = 0.18f),
-                                    activeIconColor = noteColors.primary,
-                                    onClick = {
-                                        richTextState.toggleOrderedList()
-                                    }
-                                )
-
-                                // 5. Color Palette
+                                // Color Palette
                                 FormattingButton(
                                     icon = Icons.Default.Palette,
                                     contentDescription = strings.noteColor,
@@ -405,35 +478,286 @@ fun NoteEditorScreen(
 
                     Spacer(Modifier.height(4.dp))
 
-                    // 2. Single Unified Rich Text Canvas
-                    RichTextEditor(
-                        state = richTextState,
-                        placeholder = {
-                            Text(
-                                strings.noteContentHint,
-                                style = TextStyle(
-                                    fontSize = 16.sp,
-                                    color = noteColors.onSurface.copy(alpha = 0.35f)
+                    if (isChecklistMode) {
+                        val uncheckedItems = checklistItems.filter { !it.isChecked }
+                        val checkedItems = checklistItems.filter { it.isChecked }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            // Unchecked Items
+                            uncheckedItems.forEach { item ->
+                                val itemFocusRequester = remember(item.id) { FocusRequester() }
+                                LaunchedEffect(focusItemId) {
+                                    if (focusItemId == item.id) {
+                                        itemFocusRequester.requestFocus()
+                                        focusItemId = null
+                                    }
+                                }
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 2.dp)
+                                ) {
+                                    Checkbox(
+                                        checked = false,
+                                        onCheckedChange = {
+                                            checklistItems = checklistItems.map {
+                                                if (it.id == item.id) it.copy(isChecked = true) else it
+                                            }
+                                        },
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = noteColors.primary,
+                                            checkmarkColor = noteColors.onPrimary,
+                                            uncheckedColor = noteColors.onSurface.copy(alpha = 0.5f)
+                                        ),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    BasicTextField(
+                                        value = item.text,
+                                        onValueChange = { newText ->
+                                            if (newText.contains("\n")) {
+                                                val lines = newText.split("\n")
+                                                val firstPart = lines.firstOrNull().orEmpty()
+                                                val secondPart = lines.drop(1).joinToString("\n")
+                                                val newItem = ChecklistItem(text = secondPart, isChecked = false)
+                                                val currentPos = checklistItems.indexOfFirst { it.id == item.id }
+                                                val updated = checklistItems.toMutableList()
+                                                if (currentPos >= 0) {
+                                                    updated[currentPos] = item.copy(text = firstPart)
+                                                    updated.add(currentPos + 1, newItem)
+                                                } else {
+                                                    updated.add(newItem)
+                                                }
+                                                checklistItems = updated
+                                                focusItemId = newItem.id
+                                            } else {
+                                                checklistItems = checklistItems.map {
+                                                    if (it.id == item.id) it.copy(text = newText) else it
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(vertical = 6.dp)
+                                            .focusRequester(itemFocusRequester)
+                                            .onKeyEvent { keyEvent ->
+                                                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace && item.text.isEmpty()) {
+                                                    if (checklistItems.size > 1) {
+                                                        val currentPos = checklistItems.indexOfFirst { it.id == item.id }
+                                                        val prevItem = checklistItems.getOrNull(currentPos - 1)
+                                                        checklistItems = checklistItems.filter { it.id != item.id }
+                                                        if (prevItem != null) {
+                                                            focusItemId = prevItem.id
+                                                        }
+                                                        return@onKeyEvent true
+                                                    }
+                                                }
+                                                false
+                                            },
+                                        textStyle = TextStyle(
+                                            fontSize = 16.sp,
+                                            color = noteColors.onSurface,
+                                            lineHeight = 22.sp
+                                        ),
+                                        cursorBrush = SolidColor(noteColors.primary),
+                                        keyboardOptions = KeyboardOptions(
+                                            capitalization = KeyboardCapitalization.Sentences,
+                                            autoCorrectEnabled = true,
+                                            imeAction = ImeAction.Next
+                                        ),
+                                        keyboardActions = KeyboardActions(
+                                            onNext = {
+                                                val newItem = ChecklistItem(text = "", isChecked = false)
+                                                val currentPos = checklistItems.indexOfFirst { it.id == item.id }
+                                                val updated = checklistItems.toMutableList()
+                                                if (currentPos >= 0) {
+                                                    updated.add(currentPos + 1, newItem)
+                                                } else {
+                                                    updated.add(newItem)
+                                                }
+                                                checklistItems = updated
+                                                focusItemId = newItem.id
+                                            }
+                                        ),
+                                        decorationBox = { innerTextField ->
+                                            if (item.text.isEmpty()) {
+                                                Text(
+                                                    text = strings.addChecklistItem,
+                                                    fontSize = 16.sp,
+                                                    color = noteColors.onSurface.copy(alpha = 0.35f)
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    )
+                                    IconButton(
+                                        onClick = {
+                                            if (checklistItems.size > 1) {
+                                                checklistItems = checklistItems.filter { it.id != item.id }
+                                            } else {
+                                                checklistItems = listOf(ChecklistItem())
+                                            }
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = strings.delete,
+                                            tint = noteColors.onSurface.copy(alpha = 0.35f),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Add Item Button
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        val newItem = ChecklistItem(text = "", isChecked = false)
+                                        checklistItems = checklistItems + newItem
+                                        focusItemId = newItem.id
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = noteColors.primary,
+                                    modifier = Modifier.size(20.dp)
                                 )
-                            )
-                        },
-                        textStyle = TextStyle(
-                            fontSize = 16.sp,
-                            color = noteColors.onSurface,
-                            lineHeight = 24.sp
-                        ),
-                        colors = RichTextEditorDefaults.richTextEditorColors(
-                            containerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                            cursorColor = noteColors.primary,
-                            selectionColors = customTextSelectionColors
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    text = strings.addChecklistItem,
+                                    fontSize = 15.sp,
+                                    color = noteColors.primary.copy(alpha = 0.85f),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            // Checked Items Section (Collapsible)
+                            if (checkedItems.isNotEmpty()) {
+                                Spacer(Modifier.height(10.dp))
+                                HorizontalDivider(color = noteColors.onSurface.copy(alpha = 0.12f))
+                                Spacer(Modifier.height(6.dp))
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { isCheckedSectionExpanded = !isCheckedSectionExpanded }
+                                        .padding(vertical = 8.dp, horizontal = 2.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isCheckedSectionExpanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = noteColors.onSurface.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = String.format(strings.checkedItemsCount, checkedItems.size),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = noteColors.onSurface.copy(alpha = 0.55f)
+                                    )
+                                }
+
+                                if (isCheckedSectionExpanded) {
+                                    checkedItems.forEach { item ->
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 2.dp)
+                                        ) {
+                                            Checkbox(
+                                                checked = true,
+                                                onCheckedChange = {
+                                                    checklistItems = checklistItems.map {
+                                                        if (it.id == item.id) it.copy(isChecked = false) else it
+                                                    }
+                                                },
+                                                colors = CheckboxDefaults.colors(
+                                                    checkedColor = noteColors.primary.copy(alpha = 0.6f),
+                                                    checkmarkColor = noteColors.onPrimary,
+                                                    uncheckedColor = noteColors.onSurface.copy(alpha = 0.5f)
+                                                ),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                text = item.text,
+                                                style = TextStyle(
+                                                    fontSize = 16.sp,
+                                                    color = noteColors.onSurface.copy(alpha = 0.45f),
+                                                    textDecoration = TextDecoration.LineThrough,
+                                                    lineHeight = 22.sp
+                                                ),
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .padding(vertical = 6.dp)
+                                            )
+                                            IconButton(
+                                                onClick = {
+                                                    checklistItems = checklistItems.filter { it.id != item.id }
+                                                },
+                                                modifier = Modifier.size(28.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = strings.delete,
+                                                    tint = noteColors.onSurface.copy(alpha = 0.35f),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // 2. Single Unified Rich Text Canvas
+                        RichTextEditor(
+                            state = richTextState,
+                            placeholder = {
+                                Text(
+                                    strings.noteContentHint,
+                                    style = TextStyle(
+                                        fontSize = 16.sp,
+                                        color = noteColors.onSurface.copy(alpha = 0.35f)
+                                    )
+                                )
+                            },
+                            textStyle = TextStyle(
+                                fontSize = 16.sp,
+                                color = noteColors.onSurface,
+                                lineHeight = 24.sp
+                            ),
+                            colors = RichTextEditorDefaults.richTextEditorColors(
+                                containerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                cursorColor = noteColors.primary,
+                                selectionColors = customTextSelectionColors
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        )
+                    }
                 }
             }
         }
@@ -1036,4 +1360,58 @@ private fun FormattingButton(
         )
     }
 }
+
+data class ChecklistItem(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val text: String = "",
+    val isChecked: Boolean = false
+)
+
+private const val CHECKLIST_MODE_HEADER = "<!--mode:checklist-->"
+
+private fun isContentChecklist(content: String): Boolean {
+    if (content.startsWith(CHECKLIST_MODE_HEADER)) return true
+    val trimmed = content.trim()
+    return trimmed.startsWith("<p>☐") || trimmed.startsWith("<p>☑") ||
+           trimmed.startsWith("☐") || trimmed.startsWith("☑") ||
+           trimmed.startsWith("[ ]") || trimmed.startsWith("[x]")
+}
+
+private fun parseChecklistItems(content: String): List<ChecklistItem> {
+    val cleanHtml = content
+        .removePrefix(CHECKLIST_MODE_HEADER)
+        .replace("<br>", "\n")
+        .replace("<br/>", "\n")
+        .replace("<br />", "\n")
+        .replace("</p>", "\n")
+        .replace("</li>", "\n")
+        .replace("</div>", "\n")
+    val rawText = cleanHtml.replace(Regex("<[^>]*>"), "").trimEnd('\n')
+    val lines = rawText.split("\n")
+    val items = mutableListOf<ChecklistItem>()
+    for (line in lines) {
+        val trimmed = line.trim()
+        if (trimmed.isEmpty() && lines.size > 1) continue
+        val isChecked = trimmed.startsWith("☑") || trimmed.startsWith("[x]") || trimmed.startsWith("[X]") || trimmed.startsWith("✓")
+        val cleanLine = when {
+            trimmed.startsWith("☑ ") || trimmed.startsWith("☐ ") -> trimmed.substring(2)
+            trimmed.startsWith("☑") || trimmed.startsWith("☐") -> trimmed.substring(1)
+            trimmed.startsWith("[x] ") || trimmed.startsWith("[X] ") || trimmed.startsWith("[ ] ") -> trimmed.substring(4)
+            trimmed.startsWith("[x]") || trimmed.startsWith("[X]") || trimmed.startsWith("[ ]") -> trimmed.substring(3)
+            else -> line
+        }
+        items.add(ChecklistItem(text = cleanLine, isChecked = isChecked))
+    }
+    return if (items.isEmpty()) listOf(ChecklistItem()) else items
+}
+
+private fun checklistToHtml(items: List<ChecklistItem>): String {
+    val sb = StringBuilder(CHECKLIST_MODE_HEADER)
+    for (item in items) {
+        val prefix = if (item.isChecked) "☑ " else "☐ "
+        sb.append("<p>").append(prefix).append(item.text).append("</p>")
+    }
+    return sb.toString()
+}
+
 
