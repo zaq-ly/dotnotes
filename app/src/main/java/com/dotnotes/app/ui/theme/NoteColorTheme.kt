@@ -39,7 +39,7 @@ object NoteColorThemes {
                     primary = Color(0xFFA8C7FA),
                     onPrimary = Color(0xFF042B59),
                     onSurface = Color(0xFFD2E3FC),
-                    strokeColor = Color(0xFF2C435E),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFFA8C7FA)
                 )
             } else {
@@ -50,7 +50,7 @@ object NoteColorThemes {
                     primary = Color(0xFF1A73E8),
                     onPrimary = Color.White,
                     onSurface = Color(0xFF174EA6),
-                    strokeColor = Color(0xFFD2E3FC),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFF1A73E8)
                 )
             }
@@ -63,7 +63,7 @@ object NoteColorThemes {
                     primary = Color(0xFFFFB4AB),
                     onPrimary = Color(0xFF5C111C),
                     onSurface = Color(0xFFFAD2CF),
-                    strokeColor = Color(0xFF5C2B30),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFFFFB4AB)
                 )
             } else {
@@ -74,7 +74,7 @@ object NoteColorThemes {
                     primary = Color(0xFFD93025),
                     onPrimary = Color.White,
                     onSurface = Color(0xFF9A1B14),
-                    strokeColor = Color(0xFFFAD2CF),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFFD93025)
                 )
             }
@@ -87,7 +87,7 @@ object NoteColorThemes {
                     primary = Color(0xFFFFDF70),
                     onPrimary = Color(0xFF423400),
                     onSurface = Color(0xFFFEEFC3),
-                    strokeColor = Color(0xFF574424),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFFFFDF70)
                 )
             } else {
@@ -98,7 +98,7 @@ object NoteColorThemes {
                     primary = Color(0xFFE37400),
                     onPrimary = Color.White,
                     onSurface = Color(0xFF7A4300),
-                    strokeColor = Color(0xFFFEEFC3),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFFE37400)
                 )
             }
@@ -111,7 +111,7 @@ object NoteColorThemes {
                     primary = Color(0xFFA8E3BA),
                     onPrimary = Color(0xFF0F3B20),
                     onSurface = Color(0xFFCEEAD6),
-                    strokeColor = Color(0xFF2A4D37),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFFA8E3BA)
                 )
             } else {
@@ -122,7 +122,7 @@ object NoteColorThemes {
                     primary = Color(0xFF1E8E3E),
                     onPrimary = Color.White,
                     onSurface = Color(0xFF0D652D),
-                    strokeColor = Color(0xFFCEEAD6),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFF1E8E3E)
                 )
             }
@@ -135,7 +135,7 @@ object NoteColorThemes {
                     primary = Color(0xFFD0BCFF),
                     onPrimary = Color(0xFF381E72),
                     onSurface = Color(0xFFE8D0FB),
-                    strokeColor = Color(0xFF48305F),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFFD0BCFF)
                 )
             } else {
@@ -146,7 +146,7 @@ object NoteColorThemes {
                     primary = Color(0xFF8430CE),
                     onPrimary = Color.White,
                     onSurface = Color(0xFF5B1A99),
-                    strokeColor = Color(0xFFE8D0FB),
+                    strokeColor = Color.Transparent,
                     swatchColor = Color(0xFF8430CE)
                 )
             }
@@ -157,10 +157,10 @@ object NoteColorThemes {
                     background = PixelDarkSurface,
                     surface = PixelDarkSurface,
                     primary = PixelPrimaryDark,
-                    onPrimary = Color(0xFF003258),
+                    onPrimary = Color(0xFF14171E),
                     onSurface = TextPrimaryDark,
-                    strokeColor = PixelDarkOutlineVariant,
-                    swatchColor = PixelDarkOutline
+                    strokeColor = Color.Transparent,
+                    swatchColor = PixelPrimaryDark
                 )
             } else {
                 NoteThemeColors(
@@ -170,8 +170,8 @@ object NoteColorThemes {
                     primary = PixelPrimaryLight,
                     onPrimary = Color.White,
                     onSurface = TextPrimaryLight,
-                    strokeColor = PixelLightOutlineVariant,
-                    swatchColor = PixelLightOutline
+                    strokeColor = Color.Transparent,
+                    swatchColor = PixelPrimaryLight
                 )
             }
         }

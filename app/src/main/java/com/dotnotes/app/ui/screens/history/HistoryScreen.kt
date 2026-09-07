@@ -242,8 +242,7 @@ fun HistoryScreen(
                             .clip(RoundedCornerShape(20.dp))
                             .clickable { selectedTab = 0 },
                         shape = RoundedCornerShape(20.dp),
-                        color = if (isTab0) MaterialTheme.colorScheme.surface else Color.Transparent,
-                        shadowElevation = if (isTab0) 2.dp else 0.dp
+                        color = if (isTab0) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                     ) {
                         Box(
                             modifier = Modifier.padding(vertical = 10.dp),
@@ -254,7 +253,7 @@ fun HistoryScreen(
                                 style = MaterialTheme.typography.labelLarge.copy(
                                     fontWeight = if (isTab0) FontWeight.Bold else FontWeight.Medium
                                 ),
-                                color = if (isTab0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isTab0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -267,8 +266,7 @@ fun HistoryScreen(
                             .clip(RoundedCornerShape(20.dp))
                             .clickable { selectedTab = 1 },
                         shape = RoundedCornerShape(20.dp),
-                        color = if (isTab1) MaterialTheme.colorScheme.surface else Color.Transparent,
-                        shadowElevation = if (isTab1) 2.dp else 0.dp
+                        color = if (isTab1) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                     ) {
                         Box(
                             modifier = Modifier.padding(vertical = 10.dp),
@@ -279,7 +277,7 @@ fun HistoryScreen(
                                 style = MaterialTheme.typography.labelLarge.copy(
                                     fontWeight = if (isTab1) FontWeight.Bold else FontWeight.Medium
                                 ),
-                                color = if (isTab1) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isTab1) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -362,20 +360,27 @@ private fun HistoryCard(
     val isOverdue = selectedTab == 0 && reminderTime < System.currentTimeMillis()
 
     Card(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
                 MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.surface
         ),
-        border = BorderStroke(
-            1.dp,
-            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.5.dp,
+            pressedElevation = 2.dp
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .then(
+                if (isSelected) {
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp))
+                } else {
+                    Modifier
+                }
+            )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick

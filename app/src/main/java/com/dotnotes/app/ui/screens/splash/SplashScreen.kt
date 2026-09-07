@@ -42,7 +42,7 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
     }
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val splashBg = MaterialTheme.colorScheme.background
+    val splashBg = if (isDark) Color(0xFF09090B) else Color(0xFFFFFFFF)
     val logoRes = if (isDark) R.drawable.app_logo_dark else R.drawable.app_logo
 
     Box(

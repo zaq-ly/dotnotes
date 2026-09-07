@@ -189,8 +189,7 @@ fun NoteListScreen(
                             .height(52.dp),
                         shape = RoundedCornerShape(26.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        tonalElevation = 2.dp,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        tonalElevation = 2.dp
                     ) {
                         Row(
                             modifier = Modifier
@@ -369,12 +368,12 @@ fun NoteListScreen(
                 FloatingActionButton(
                     onClick = onNewNote,
                     modifier = Modifier.padding(end = 4.dp, bottom = 4.dp),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = RoundedCornerShape(20.dp),
                     elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 3.dp,
-                        pressedElevation = 6.dp
+                        defaultElevation = 2.dp,
+                        pressedElevation = 4.dp
                     )
                 ) {
                     Icon(
@@ -515,21 +514,19 @@ private fun SelectableNoteCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
             .then(
                 if (isSelected) {
-                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(18.dp))
-                } else if (hasCustomTheme) {
-                    Modifier.border(1.dp, noteTheme.strokeColor.copy(alpha = if (isDark) 0.5f else 0.7f), RoundedCornerShape(18.dp))
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp))
                 } else {
-                    Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f), RoundedCornerShape(18.dp))
+                    Modifier
                 }
             )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
                 MaterialTheme.colorScheme.primaryContainer
@@ -538,6 +535,10 @@ private fun SelectableNoteCard(
             } else {
                 MaterialTheme.colorScheme.surface
             }
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.5.dp,
+            pressedElevation = 2.dp
         )
     ) {
         Column(
@@ -602,8 +603,7 @@ private fun SelectableNoteCard(
                 Spacer(Modifier.height(6.dp))
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = ReminderBadgeColors.containerColor(isAlarm, isDark),
-                    border = BorderStroke(1.dp, ReminderBadgeColors.borderColor(isAlarm, isDark))
+                    color = ReminderBadgeColors.containerColor(isAlarm, isDark)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -657,8 +657,7 @@ private fun SelectableNoteCard(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (hasCustomTheme) noteTheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                        border = BorderStroke(1.dp, if (hasCustomTheme) noteTheme.strokeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                        color = if (hasCustomTheme) noteTheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer,
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .clickable(onClick = onDismissReminder)
@@ -671,7 +670,7 @@ private fun SelectableNoteCard(
                                 Icons.Default.Check,
                                 contentDescription = strings.markDone,
                                 modifier = Modifier.size(13.dp),
-                                tint = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.primary
+                                tint = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Spacer(Modifier.width(5.dp))
                             Text(
@@ -680,7 +679,7 @@ private fun SelectableNoteCard(
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold
                                 ),
-                                color = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.primary
+                                color = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }

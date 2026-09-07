@@ -216,9 +216,9 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -232,7 +232,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -316,9 +316,9 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -401,9 +401,9 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         // Language
@@ -429,8 +429,8 @@ fun SettingsScreen(
                         }
                         PixelSettingsItem(
                             icon = Icons.Default.DarkMode,
-                            iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
-                            iconTint = MaterialTheme.colorScheme.secondary,
+                            iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.primary,
                             title = strings.theme,
                             subtitle = themeLabel,
                             onClick = { showThemeDialog = true }
@@ -444,8 +444,8 @@ fun SettingsScreen(
                         // Snooze Duration
                         PixelSettingsItem(
                             icon = Icons.Default.Snooze,
-                            iconBgColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            iconTint = MaterialTheme.colorScheme.tertiary,
+                            iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.primary,
                             title = strings.snoozeDuration,
                             subtitle = "$snoozeDuration ${strings.minutes}",
                             onClick = { showSnoozeDialog = true }
@@ -485,8 +485,8 @@ fun SettingsScreen(
                         // Alarm Sound
                         PixelSettingsItem(
                             icon = Icons.Default.Alarm,
-                            iconBgColor = MaterialTheme.colorScheme.errorContainer,
-                            iconTint = MaterialTheme.colorScheme.error,
+                            iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.primary,
                             title = strings.alarmSound,
                             subtitle = alarmSoundTitle,
                             onClick = {
@@ -575,9 +575,9 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         // Check for Updates item
@@ -620,8 +620,8 @@ fun SettingsScreen(
                         // About item
                         PixelSettingsItem(
                             icon = Icons.Default.Info,
-                            iconBgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.primary,
                             title = strings.about,
                             subtitle = "dotnotes v${BuildConfig.VERSION_NAME}",
                             onClick = {}
