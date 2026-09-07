@@ -4,7 +4,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -146,6 +149,17 @@ class UpdateManager {
 
     fun installApk(context: Context, apkFile: File) {
         try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (!context.packageManager.canRequestPackageInstalls()) {
+                    val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(settingsIntent)
+                    return
+                }
+            }
+
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -156,12 +170,9 @@ class UpdateManager {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
             context.startActivity(intent)
-
-            if (context is android.app.Activity) {
-                context.moveTaskToBack(true)
-            }
         } catch (e: Exception) {
             e.printStackTrace()
+            Toast.makeText(context, "Gagal memasang pembaruan: ${e.localizedMessage ?: e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
