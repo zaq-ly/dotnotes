@@ -57,7 +57,7 @@ val AlarmRed = Color(0xFFFF5252)
 // Reminder & Alarm Badges (Material You Tonal)
 // ==========================================
 object ReminderBadgeColors {
-    // Normal Reminder: Pixel Slate Tonal Pill
+    // Pixel Slate Tonal Pill (Unified for Reminder & Alarm)
     val reminderBgLight = Color(0xFFE1E3EB)
     val reminderBorderLight = Color.Transparent
     val reminderContentLight = Color(0xFF2D3139)
@@ -66,29 +66,12 @@ object ReminderBadgeColors {
     val reminderBorderDark = Color.Transparent
     val reminderContentDark = Color(0xFFE1E3EB)
 
-    // Alarm / Urgent: Pixel Coral Tonal Pill
-    val alarmBgLight = Color(0xFFFCE8E6)
-    val alarmBorderLight = Color.Transparent
-    val alarmContentLight = Color(0xFFC5221F)
-
-    val alarmBgDark = Color(0xFF3D1D1E)
-    val alarmBorderDark = Color.Transparent
-    val alarmContentDark = Color(0xFFFFB4AB)
-
     fun containerColor(isAlarm: Boolean, isDark: Boolean): Color {
-        return if (isAlarm) {
-            if (isDark) alarmBgDark else alarmBgLight
-        } else {
-            if (isDark) reminderBgDark else reminderBgLight
-        }
+        return if (isDark) reminderBgDark else reminderBgLight
     }
 
     fun contentColor(isAlarm: Boolean, isDark: Boolean): Color {
-        return if (isAlarm) {
-            if (isDark) alarmContentDark else alarmContentLight
-        } else {
-            if (isDark) reminderContentDark else reminderContentLight
-        }
+        return if (isDark) reminderContentDark else reminderContentLight
     }
 
     fun borderColor(isAlarm: Boolean, isDark: Boolean): Color {

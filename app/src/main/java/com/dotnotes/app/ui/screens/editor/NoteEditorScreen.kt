@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -264,19 +265,23 @@ fun NoteEditorScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .imePadding()
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(24.dp),
+                            shape = RoundedCornerShape(18.dp),
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             tonalElevation = 6.dp,
                             shadowElevation = 6.dp,
-                            modifier = Modifier.wrapContentSize()
+                            modifier = Modifier
+                                .fillMaxWidth(0.88f)
+                                .height(52.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // 1. Bold
@@ -859,7 +864,12 @@ fun NoteEditorScreen(
                             DropdownMenu(
                                 expanded = showRepeatMenu,
                                 onDismissRequest = { showRepeatMenu = false },
-                                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                shape = RoundedCornerShape(18.dp),
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                tonalElevation = 4.dp,
+                                shadowElevation = 4.dp,
+                                border = null,
+                                modifier = Modifier.padding(vertical = 4.dp)
                             ) {
                                 val repeatOptions = listOf(
                                     ReminderHelper.REPEAT_NONE to strings.repeatNone,
@@ -869,19 +879,20 @@ fun NoteEditorScreen(
                                     ReminderHelper.REPEAT_YEARLY to strings.repeatYearly
                                 )
                                 repeatOptions.forEach { (optionKey, optionLabel) ->
+                                    val isSelected = state.repeatInterval == optionKey
                                     DropdownMenuItem(
                                         text = {
                                             Text(
                                                 text = optionLabel,
-                                                fontWeight = if (state.repeatInterval == optionKey) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (state.repeatInterval == optionKey) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                             )
                                         },
                                         onClick = {
                                             viewModel.setRepeatInterval(optionKey)
                                             showRepeatMenu = false
                                         },
-                                        leadingIcon = if (state.repeatInterval == optionKey) {
+                                        leadingIcon = if (isSelected) {
                                             {
                                                 Icon(
                                                     Icons.Default.Check,
@@ -890,7 +901,14 @@ fun NoteEditorScreen(
                                                     modifier = Modifier.size(18.dp)
                                                 )
                                             }
-                                        } else null
+                                        } else null,
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                                        modifier = Modifier
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
+                                            )
                                     )
                                 }
                             }
@@ -903,38 +921,43 @@ fun NoteEditorScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val isDark = isAppInDarkTheme()
                             FilterChip(
                                 selected = state.priority <= 1,
                                 onClick = { viewModel.setPriority(1) },
-                                modifier = Modifier.height(36.dp),
+                                modifier = Modifier.height(38.dp),
                                 label = { Text(strings.notification, style = MaterialTheme.typography.labelMedium) },
                                 leadingIcon = {
                                     Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
                                 },
-                                shape = RoundedCornerShape(10.dp),
-                                border = if (state.priority <= 1) BorderStroke(1.dp, ReminderBadgeColors.borderColor(isAlarm = false, isDark = isDark)) else null,
+                                shape = RoundedCornerShape(12.dp),
+                                border = null,
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = ReminderBadgeColors.containerColor(isAlarm = false, isDark = isDark),
-                                    selectedLabelColor = ReminderBadgeColors.contentColor(isAlarm = false, isDark = isDark),
-                                    selectedLeadingIconColor = ReminderBadgeColors.contentColor(isAlarm = false, isDark = isDark)
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
 
                             FilterChip(
                                 selected = state.priority == 2,
                                 onClick = { viewModel.setPriority(2) },
-                                modifier = Modifier.height(36.dp),
+                                modifier = Modifier.height(38.dp),
                                 label = { Text(strings.alarm, style = MaterialTheme.typography.labelMedium) },
                                 leadingIcon = {
                                     Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(16.dp))
                                 },
-                                shape = RoundedCornerShape(10.dp),
-                                border = if (state.priority == 2) BorderStroke(1.dp, ReminderBadgeColors.borderColor(isAlarm = true, isDark = isDark)) else null,
+                                shape = RoundedCornerShape(12.dp),
+                                border = null,
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = ReminderBadgeColors.containerColor(isAlarm = true, isDark = isDark),
-                                    selectedLabelColor = ReminderBadgeColors.contentColor(isAlarm = true, isDark = isDark),
-                                    selectedLeadingIconColor = ReminderBadgeColors.contentColor(isAlarm = true, isDark = isDark)
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
                         }
@@ -974,24 +997,24 @@ fun NoteEditorScreen(
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .widthIn(max = 400.dp)
-                    .padding(vertical = 16.dp)
+                    .fillMaxWidth(0.88f)
+                    .widthIn(max = 330.dp)
+                    .padding(vertical = 12.dp)
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(vertical = 16.dp)
+                        .padding(vertical = 12.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
                         text = strings.selectDate,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
                     )
                     DatePicker(
                         state = datePickerState,
@@ -1003,7 +1026,7 @@ fun NoteEditorScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp, end = 24.dp),
+                            .padding(top = 4.dp, end = 16.dp, bottom = 4.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showDatePicker = false }) {
@@ -1013,7 +1036,7 @@ fun NoteEditorScreen(
                         TextButton(onClick = {
                             datePickerState.selectedDateMillis?.let { selectedDate ->
                                 val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                                    timeInMillis = selectedDate
+                                timeInMillis = selectedDate
                                 }
                                 val year = utcCal.get(Calendar.YEAR)
                                 val month = utcCal.get(Calendar.MONTH)
@@ -1056,17 +1079,17 @@ fun NoteEditorScreen(
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .widthIn(max = 400.dp)
-                    .padding(vertical = 16.dp)
+                    .fillMaxWidth(0.88f)
+                    .widthIn(max = 330.dp)
+                    .padding(vertical = 12.dp)
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(20.dp)
+                        .padding(16.dp)
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -1083,7 +1106,7 @@ fun NoteEditorScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp)
+                            .padding(bottom = 8.dp)
                     ) {
                         Text(
                             text = strings.selectTime,
@@ -1118,7 +1141,7 @@ fun NoteEditorScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp),
+                            .padding(top = 8.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showTimePicker = false }) {
@@ -1272,8 +1295,8 @@ private fun FormattingButton(
 
     Box(
         modifier = Modifier
-            .size(38.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .size(42.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(containerColor)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
