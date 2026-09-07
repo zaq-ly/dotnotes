@@ -101,6 +101,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -507,84 +508,86 @@ fun NoteEditorScreen(
                     ) {
                         val isNoteCompletelyEmpty = blocks.size <= 1 && blocks.all { it.text.isEmpty() }
                         blocks.forEachIndexed { index, block ->
-                            val requester = focusRequesters.getOrPut(block.id) { FocusRequester() }
-                            val numberedIndex = if (block.type == BlockType.NUMBERED) getNumberedIndex(blocks, index) else 1
+                            key(block.id) {
+                                val requester = focusRequesters.getOrPut(block.id) { FocusRequester() }
+                                val numberedIndex = if (block.type == BlockType.NUMBERED) getNumberedIndex(blocks, index) else 1
 
-                            NoteBlockRow(
-                                block = block,
-                                numberedIndex = numberedIndex,
-                                noteColors = noteColors,
-                                focusRequester = requester,
-                                showPlaceholder = isNoteCompletelyEmpty && index == 0,
-                                targetCursor = targetCursor,
-                                onFocus = { focusedBlockId = block.id },
-                                onTextChange = { newText ->
-                                    val curIndex = blocks.indexOfFirst { it.id == block.id }
-                                    if (curIndex != -1) {
-                                        if (newText.contains("\n")) {
-                                            val parts = newText.split("\n")
+                                NoteBlockRow(
+                                    block = block,
+                                    numberedIndex = numberedIndex,
+                                    noteColors = noteColors,
+                                    focusRequester = requester,
+                                    showPlaceholder = isNoteCompletelyEmpty && index == 0,
+                                    targetCursor = targetCursor,
+                                    onFocus = { focusedBlockId = block.id },
+                                    onTextChange = { newText ->
+                                        val curIndex = blocks.indexOfFirst { it.id == block.id }
+                                        if (curIndex != -1) {
+                                            if (newText.contains("\n")) {
+                                                val parts = newText.split("\n")
+                                                val updated = blocks.toMutableList()
+                                                val firstPart = parts[0]
+                                                if (block.type != BlockType.PARAGRAPH && firstPart.isEmpty()) {
+                                                    updated[curIndex] = block.copy(text = "", type = BlockType.PARAGRAPH)
+                                                    blocks = updated
+                                                    focusedBlockId = block.id
+                                                    targetCursor = block.id to 0
+                                                } else {
+                                                    updated[curIndex] = block.copy(text = firstPart)
+                                                    val nextType = block.type
+                                                    var lastAddedId = block.id
+                                                    for (i in 1 until parts.size) {
+                                                        val newBlock = NoteBlock(
+                                                            text = parts[i],
+                                                            type = nextType,
+                                                            isChecked = false,
+                                                            isBold = block.isBold,
+                                                            isItalic = block.isItalic
+                                                        )
+                                                        updated.add(curIndex + i, newBlock)
+                                                        lastAddedId = newBlock.id
+                                                    }
+                                                    blocks = updated
+                                                    focusedBlockId = lastAddedId
+                                                    targetCursor = lastAddedId to 0
+                                                }
+                                            } else {
+                                                val updated = blocks.toMutableList()
+                                                updated[curIndex] = block.copy(text = newText)
+                                                blocks = updated
+                                            }
+                                        }
+                                    },
+                                    onCheckedChange = { checked ->
+                                        val curIndex = blocks.indexOfFirst { it.id == block.id }
+                                        if (curIndex != -1) {
                                             val updated = blocks.toMutableList()
-                                            val firstPart = parts[0]
-                                            if (block.type != BlockType.PARAGRAPH && firstPart.isEmpty()) {
-                                                updated[curIndex] = block.copy(text = "", type = BlockType.PARAGRAPH)
+                                            updated[curIndex] = block.copy(isChecked = checked)
+                                            blocks = updated
+                                        }
+                                    },
+                                    onBackspaceAtStart = {
+                                        val curIndex = blocks.indexOfFirst { it.id == block.id }
+                                        if (curIndex != -1) {
+                                            val updated = blocks.toMutableList()
+                                            if (block.type != BlockType.PARAGRAPH) {
+                                                updated[curIndex] = block.copy(type = BlockType.PARAGRAPH)
                                                 blocks = updated
                                                 focusedBlockId = block.id
-                                                targetCursor = block.id to 0
-                                            } else {
-                                                updated[curIndex] = block.copy(text = firstPart)
-                                                val nextType = block.type
-                                                var lastAddedId = block.id
-                                                for (i in 1 until parts.size) {
-                                                    val newBlock = NoteBlock(
-                                                        text = parts[i],
-                                                        type = nextType,
-                                                        isChecked = false,
-                                                        isBold = block.isBold,
-                                                        isItalic = block.isItalic
-                                                    )
-                                                    updated.add(curIndex + i, newBlock)
-                                                    lastAddedId = newBlock.id
-                                                }
+                                            } else if (curIndex > 0) {
+                                                val prevBlock = blocks[curIndex - 1]
+                                                val prevLen = prevBlock.text.length
+                                                val mergedText = prevBlock.text + block.text
+                                                updated[curIndex - 1] = prevBlock.copy(text = mergedText)
+                                                updated.removeAt(curIndex)
                                                 blocks = updated
-                                                focusedBlockId = lastAddedId
-                                                targetCursor = lastAddedId to 0
+                                                focusedBlockId = prevBlock.id
+                                                targetCursor = prevBlock.id to prevLen
                                             }
-                                        } else {
-                                            val updated = blocks.toMutableList()
-                                            updated[curIndex] = block.copy(text = newText)
-                                            blocks = updated
                                         }
                                     }
-                                },
-                                onCheckedChange = { checked ->
-                                    val curIndex = blocks.indexOfFirst { it.id == block.id }
-                                    if (curIndex != -1) {
-                                        val updated = blocks.toMutableList()
-                                        updated[curIndex] = block.copy(isChecked = checked)
-                                        blocks = updated
-                                    }
-                                },
-                                onBackspaceAtStart = {
-                                    val curIndex = blocks.indexOfFirst { it.id == block.id }
-                                    if (curIndex != -1) {
-                                        val updated = blocks.toMutableList()
-                                        if (block.type != BlockType.PARAGRAPH) {
-                                            updated[curIndex] = block.copy(type = BlockType.PARAGRAPH)
-                                            blocks = updated
-                                            focusedBlockId = block.id
-                                        } else if (curIndex > 0) {
-                                            val prevBlock = blocks[curIndex - 1]
-                                            val prevLen = prevBlock.text.length
-                                            val mergedText = prevBlock.text + block.text
-                                            updated[curIndex - 1] = prevBlock.copy(text = mergedText)
-                                            updated.removeAt(curIndex)
-                                            blocks = updated
-                                            focusedBlockId = prevBlock.id
-                                            targetCursor = prevBlock.id to prevLen
-                                        }
-                                    }
-                                }
-                            )
+                                )
+                            }
                         }
 
                         Spacer(Modifier.height(48.dp))
@@ -975,14 +978,34 @@ fun NoteEditorScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = strings.selectTime,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
+                    val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
+                        ReminderHelper.formatRemainingTime(
+                            targetHour = timePickerState.hour,
+                            targetMinute = timePickerState.minute,
+                            baseDateMillis = state.reminderTime,
+                            isAlarm = state.priority == 2,
+                            strings = strings
+                        )
+                    }
+
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 12.dp)
-                    )
+                    ) {
+                        Text(
+                            text = strings.selectTime,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = remainingText,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
                     TimePicker(
                         state = timePickerState,
                         colors = TimePickerDefaults.colors(
@@ -1000,27 +1023,10 @@ fun NoteEditorScreen(
                         )
                     )
 
-                    val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
-                        ReminderHelper.formatRemainingTime(
-                            targetHour = timePickerState.hour,
-                            targetMinute = timePickerState.minute,
-                            baseDateMillis = state.reminderTime,
-                            isAlarm = state.priority == 2,
-                            strings = strings
-                        )
-                    }
-
-                    Text(
-                        text = remainingText,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)
-                    )
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = 12.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showTimePicker = false }) {
@@ -1301,28 +1307,31 @@ private fun NoteBlockRow(
     onCheckedChange: (Boolean) -> Unit,
     onBackspaceAtStart: () -> Unit
 ) {
+    val initialText = if (block.text.isEmpty()) "\u200B" else block.text
     var textValue by remember(block.id) {
         mutableStateOf(
             TextFieldValue(
-                text = block.text,
-                selection = TextRange(block.text.length)
+                text = initialText,
+                selection = TextRange(initialText.length)
             )
         )
     }
 
     LaunchedEffect(block.text) {
-        if (textValue.text != block.text) {
-            textValue = textValue.copy(
-                text = block.text,
-                selection = TextRange(block.text.length)
-            )
+        val currentClean = textValue.text.replace("\u200B", "")
+        if (currentClean != block.text) {
+            val safeText = if (block.text.isEmpty()) "\u200B" else block.text
+            val safePos = if (block.text.isEmpty()) 1 else block.text.length
+            textValue = TextFieldValue(text = safeText, selection = TextRange(safePos))
         }
     }
 
     LaunchedEffect(targetCursor) {
         if (targetCursor?.first == block.id) {
-            val pos = targetCursor.second.coerceIn(0, textValue.text.length)
-            textValue = textValue.copy(selection = TextRange(pos))
+            val cleanLen = block.text.length
+            val targetPos = targetCursor.second.coerceIn(0, cleanLen)
+            val actualPos = if (block.text.isEmpty()) 1 else targetPos
+            textValue = textValue.copy(selection = TextRange(actualPos))
         }
     }
 
@@ -1383,10 +1392,31 @@ private fun NoteBlockRow(
             onValueChange = { newTfv ->
                 val raw = newTfv.text
                 if (raw.contains("\n")) {
-                    onTextChange(raw)
+                    val cleaned = raw.replace("\u200B", "")
+                    onTextChange(cleaned)
+                } else if (raw.isEmpty()) {
+                    // Soft keyboard Backspace deleted sentinel \u200B on empty block!
+                    onBackspaceAtStart()
                 } else {
-                    textValue = newTfv
-                    onTextChange(raw)
+                    val cleaned = raw.replace("\u200B", "")
+                    if (cleaned.isEmpty()) {
+                        // User deleted the last visible character, restore sentinel \u200B
+                        textValue = TextFieldValue(text = "\u200B", selection = TextRange(1))
+                        onTextChange("")
+                    } else {
+                        // Normal typing: remove sentinel so text stays pure
+                        if (raw.contains("\u200B")) {
+                            val cleanText = raw.replace("\u200B", "")
+                            val delta = raw.length - cleanText.length
+                            val newStart = (newTfv.selection.start - delta).coerceIn(0, cleanText.length)
+                            val newEnd = (newTfv.selection.end - delta).coerceIn(0, cleanText.length)
+                            textValue = newTfv.copy(text = cleanText, selection = TextRange(newStart, newEnd))
+                            onTextChange(cleanText)
+                        } else {
+                            textValue = newTfv
+                            onTextChange(cleaned)
+                        }
+                    }
                 }
             },
             modifier = Modifier
@@ -1396,7 +1426,8 @@ private fun NoteBlockRow(
                 .onFocusChanged { if (it.isFocused) onFocus() }
                 .onKeyEvent { keyEvent ->
                     if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace) {
-                        if (textValue.selection.start == 0 && textValue.selection.end == 0) {
+                        val clean = textValue.text.replace("\u200B", "")
+                        if (clean.isEmpty() || (textValue.selection.start == 0 && textValue.selection.end == 0)) {
                             onBackspaceAtStart()
                             return@onKeyEvent true
                         }
@@ -1423,7 +1454,8 @@ private fun NoteBlockRow(
                 imeAction = ImeAction.Default
             ),
             decorationBox = { innerTextField ->
-                if (textValue.text.isEmpty()) {
+                val actual = textValue.text.replace("\u200B", "")
+                if (actual.isEmpty()) {
                     val placeholder = when (block.type) {
                         BlockType.CHECKLIST -> "Item checklist..."
                         BlockType.BULLET -> "Daftar butir..."
