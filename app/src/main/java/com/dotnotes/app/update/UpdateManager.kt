@@ -146,17 +146,6 @@ class UpdateManager {
 
     fun installApk(context: Context, apkFile: File) {
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                if (!context.packageManager.canRequestPackageInstalls()) {
-                    val settingsIntent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                        data = android.net.Uri.parse("package:${context.packageName}")
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(settingsIntent)
-                    return
-                }
-            }
-
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -168,7 +157,6 @@ class UpdateManager {
             }
             context.startActivity(intent)
 
-            // Gracefully move app to background so OS PackageInstaller doesn't kill an active foreground window
             if (context is android.app.Activity) {
                 context.moveTaskToBack(true)
             }
