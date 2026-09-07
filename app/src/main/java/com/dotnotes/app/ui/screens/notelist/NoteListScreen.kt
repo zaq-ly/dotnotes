@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -144,6 +145,7 @@ fun NoteListScreen(
             if (isSelectionMode) {
                 // TopBar in Selection Mode (Pill Header)
                 TopAppBar(
+                    modifier = Modifier.statusBarsPadding(),
                     title = {
                         Text(
                             text = String.format(strings.selectedCount, selectedNoteIds.size),
@@ -174,85 +176,93 @@ fun NoteListScreen(
                     }
                 )
             } else {
-                // Google Pixel Floating Search Bar Style Header
-                Surface(
+                // Google Pixel Search Bar Style Header with status bar padding
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    tonalElevation = 2.dp
+                        .statusBarsPadding()
+                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
                 ) {
-                    Row(
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .height(52.dp),
+                        shape = RoundedCornerShape(26.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = 2.dp,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     ) {
-                        Text(
-                            text = strings.appName,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.2.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        // History Icon (Pengingat Terlewat / Riwayat)
-                        val overdueCount = notes.count {
-                            it.reminderTime != null && it.reminderTime <= System.currentTimeMillis() && !it.isAlarmDismissed
-                        }
-                        IconButton(
-                            onClick = onHistoryClick,
-                            modifier = Modifier.size(38.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            BadgedBox(
-                                badge = {
-                                    if (overdueCount > 0) {
-                                        Badge(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            contentColor = MaterialTheme.colorScheme.onError
-                                        ) {
-                                            Text(overdueCount.toString())
+                            Text(
+                                text = strings.appName,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    letterSpacing = 0.3.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            // History Icon (Pengingat Terlewat / Riwayat)
+                            val overdueCount = notes.count {
+                                it.reminderTime != null && it.reminderTime <= System.currentTimeMillis() && !it.isAlarmDismissed
+                            }
+                            IconButton(
+                                onClick = onHistoryClick,
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                BadgedBox(
+                                    badge = {
+                                        if (overdueCount > 0) {
+                                            Badge(
+                                                containerColor = MaterialTheme.colorScheme.error,
+                                                contentColor = MaterialTheme.colorScheme.onError
+                                            ) {
+                                                Text(overdueCount.toString())
+                                            }
                                         }
                                     }
-                                }
-                            ) {
-                                Icon(
-                                    Icons.Default.History,
-                                    contentDescription = strings.reminderHistory,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.width(4.dp))
-
-                        // Settings / Update Icon Button
-                        IconButton(
-                            onClick = onSettingsClick,
-                            modifier = Modifier.size(38.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier.size(20.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
-                                    contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
-                                    tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                if (hasUpdate) {
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .offset(x = (-1).dp, y = (-1).dp)
-                                            .size(7.dp)
-                                            .background(MaterialTheme.colorScheme.error, CircleShape)
+                                ) {
+                                    Icon(
+                                        Icons.Default.History,
+                                        contentDescription = strings.reminderHistory,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(22.dp)
                                     )
+                                }
+                            }
+
+                            Spacer(Modifier.width(2.dp))
+
+                            // Settings / Update Icon Button
+                            IconButton(
+                                onClick = onSettingsClick,
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(24.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (hasUpdate) Icons.Default.SystemUpdate else Icons.Default.Settings,
+                                        contentDescription = if (hasUpdate) strings.updateAvailable else strings.settings,
+                                        tint = if (hasUpdate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    if (hasUpdate) {
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .size(8.dp)
+                                                .background(MaterialTheme.colorScheme.error, CircleShape)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -505,35 +515,35 @@ private fun SelectableNoteCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(18.dp))
             .then(
                 if (isSelected) {
-                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(22.dp))
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(18.dp))
                 } else if (hasCustomTheme) {
-                    Modifier.border(1.dp, noteTheme.strokeColor.copy(alpha = if (isDark) 0.35f else 0.5f), RoundedCornerShape(22.dp))
+                    Modifier.border(1.dp, noteTheme.strokeColor.copy(alpha = if (isDark) 0.5f else 0.7f), RoundedCornerShape(18.dp))
                 } else {
-                    Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(22.dp))
+                    Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f), RoundedCornerShape(18.dp))
                 }
             )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
                 MaterialTheme.colorScheme.primaryContainer
             } else if (hasCustomTheme) {
                 noteTheme.background
             } else {
-                MaterialTheme.colorScheme.surfaceContainer
+                MaterialTheme.colorScheme.surface
             }
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -640,37 +650,37 @@ private fun SelectableNoteCard(
             }
 
             if (hasActiveReminder && !isSelectionMode) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (hasCustomTheme) noteTheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, if (hasCustomTheme) noteTheme.strokeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(14.dp))
                             .clickable(onClick = onDismissReminder)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = strings.markDone,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                modifier = Modifier.size(13.dp),
+                                tint = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.primary
                             )
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(5.dp))
                             Text(
                                 text = strings.markDone,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold
                                 ),
-                                color = MaterialTheme.colorScheme.primary
+                                color = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.primary
                             )
                         }
                     }

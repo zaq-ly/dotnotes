@@ -8,18 +8,18 @@ import androidx.compose.ui.graphics.Color
 
 // Base Neutrals (Slate / Zinc Tonal)
 val PixelDarkBg = Color(0xFF121316)
-val PixelDarkSurface = Color(0xFF1B1C20)
-val PixelDarkSurfaceContainer = Color(0xFF222328)
-val PixelDarkSurfaceHigh = Color(0xFF2B2C32)
-val PixelDarkOutline = Color(0xFF44474E)
-val PixelDarkOutlineVariant = Color(0xFF33353A)
+val PixelDarkSurface = Color(0xFF1E1F24)
+val PixelDarkSurfaceContainer = Color(0xFF25262C)
+val PixelDarkSurfaceHigh = Color(0xFF2E3036)
+val PixelDarkOutline = Color(0xFF494B52)
+val PixelDarkOutlineVariant = Color(0xFF383A40)
 
-val PixelLightBg = Color(0xFFF7F9FC)
+val PixelLightBg = Color(0xFFF8F9FA)
 val PixelLightSurface = Color(0xFFFFFFFF)
-val PixelLightSurfaceContainer = Color(0xFFEFF2F8)
-val PixelLightSurfaceHigh = Color(0xFFE4E8F0)
-val PixelLightOutline = Color(0xFFD6DBE4)
-val PixelLightOutlineVariant = Color(0xFFE8ECF2)
+val PixelLightSurfaceContainer = Color(0xFFEDEEF3)
+val PixelLightSurfaceHigh = Color(0xFFE3E5EB)
+val PixelLightOutline = Color(0xFFD0D5DD)
+val PixelLightOutlineVariant = Color(0xFFE2E6EC)
 
 // Pixel Signature Accents
 val PixelPrimaryLight = Color(0xFF1A73E8) // Google Blue
@@ -38,7 +38,7 @@ val PixelTertiaryContainerLight = Color(0xFFEADDFF)
 val PixelTertiaryContainerDark = Color(0xFF4F378B)
 
 // Neutral Text
-val TextPrimaryLight = Color(0xFF1B1B1F)
+val TextPrimaryLight = Color(0xFF1F1F1F)
 val TextSecondaryLight = Color(0xFF44474E)
 val TextTertiaryLight = Color(0xFF74777F)
 
@@ -62,8 +62,8 @@ object ReminderBadgeColors {
     val reminderBorderLight = Color(0xFFD2E3FC)
     val reminderContentLight = Color(0xFF1967D2)
 
-    val reminderBgDark = Color(0xFF004A77).copy(alpha = 0.65f)
-    val reminderBorderDark = Color(0xFF0842A0).copy(alpha = 0.5f)
+    val reminderBgDark = Color(0xFF1A2C3D)
+    val reminderBorderDark = Color(0xFF284869)
     val reminderContentDark = Color(0xFFA8C7FA)
 
     // Alarm / Urgent: Pixel Coral/Rose Tonal Pill
@@ -71,9 +71,9 @@ object ReminderBadgeColors {
     val alarmBorderLight = Color(0xFFFAD2CF)
     val alarmContentLight = Color(0xFFC5221F)
 
-    val alarmBgDark = Color(0xFF601410).copy(alpha = 0.65f)
-    val alarmBorderDark = Color(0xFF8C1D18).copy(alpha = 0.5f)
-    val alarmContentDark = Color(0xFFF28B82)
+    val alarmBgDark = Color(0xFF3D1D1E)
+    val alarmBorderDark = Color(0xFF63282B)
+    val alarmContentDark = Color(0xFFFFB4AB)
 
     fun containerColor(isAlarm: Boolean, isDark: Boolean): Color {
         return if (isAlarm) {

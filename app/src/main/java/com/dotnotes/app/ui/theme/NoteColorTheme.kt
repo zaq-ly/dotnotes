@@ -34,23 +34,23 @@ object NoteColorThemes {
             BLUE -> if (isDark) {
                 NoteThemeColors(
                     key = BLUE,
-                    background = Color(0xFF131D2E),
-                    surface = Color(0xFF1D283E),
+                    background = Color(0xFF1B2836),
+                    surface = Color(0xFF1B2836),
                     primary = Color(0xFFA8C7FA),
                     onPrimary = Color(0xFF042B59),
-                    onSurface = Color(0xFFE1EDFF),
-                    strokeColor = Color(0xFF2C4166),
+                    onSurface = Color(0xFFD2E3FC),
+                    strokeColor = Color(0xFF2C435E),
                     swatchColor = Color(0xFFA8C7FA)
                 )
             } else {
                 NoteThemeColors(
                     key = BLUE,
-                    background = Color(0xFFEEF4FF),
-                    surface = Color(0xFFFFFFFF),
+                    background = Color(0xFFE8F0FE),
+                    surface = Color(0xFFE8F0FE),
                     primary = Color(0xFF1A73E8),
-                    onPrimary = Color(0xFFFFFFFF),
-                    onSurface = Color(0xFF101C30),
-                    strokeColor = Color(0xFFD3E3FD),
+                    onPrimary = Color.White,
+                    onSurface = Color(0xFF174EA6),
+                    strokeColor = Color(0xFFD2E3FC),
                     swatchColor = Color(0xFF1A73E8)
                 )
             }
@@ -58,22 +58,22 @@ object NoteColorThemes {
             RED, ROSE -> if (isDark) {
                 NoteThemeColors(
                     key = RED,
-                    background = Color(0xFF2B1618),
-                    surface = Color(0xFF3B1E22),
-                    primary = Color(0xFFFFB3B9),
+                    background = Color(0xFF351F22),
+                    surface = Color(0xFF351F22),
+                    primary = Color(0xFFFFB4AB),
                     onPrimary = Color(0xFF5C111C),
-                    onSurface = Color(0xFFFFECEE),
-                    strokeColor = Color(0xFF5E2B31),
-                    swatchColor = Color(0xFFFFB3B9)
+                    onSurface = Color(0xFFFAD2CF),
+                    strokeColor = Color(0xFF5C2B30),
+                    swatchColor = Color(0xFFFFB4AB)
                 )
             } else {
                 NoteThemeColors(
                     key = RED,
-                    background = Color(0xFFFFF0F1),
-                    surface = Color(0xFFFFFFFF),
+                    background = Color(0xFFFCE8E6),
+                    surface = Color(0xFFFCE8E6),
                     primary = Color(0xFFD93025),
-                    onPrimary = Color(0xFFFFFFFF),
-                    onSurface = Color(0xFF330B11),
+                    onPrimary = Color.White,
+                    onSurface = Color(0xFF9A1B14),
                     strokeColor = Color(0xFFFAD2CF),
                     swatchColor = Color(0xFFD93025)
                 )
@@ -82,71 +82,71 @@ object NoteColorThemes {
             YELLOW, ORANGE -> if (isDark) {
                 NoteThemeColors(
                     key = YELLOW,
-                    background = Color(0xFF272111),
-                    surface = Color(0xFF382F18),
+                    background = Color(0xFF332918),
+                    surface = Color(0xFF332918),
                     primary = Color(0xFFFFDF70),
                     onPrimary = Color(0xFF423400),
-                    onSurface = Color(0xFFFFF6D6),
-                    strokeColor = Color(0xFF594B26),
+                    onSurface = Color(0xFFFEEFC3),
+                    strokeColor = Color(0xFF574424),
                     swatchColor = Color(0xFFFFDF70)
                 )
             } else {
                 NoteThemeColors(
                     key = YELLOW,
-                    background = Color(0xFFFFF9E6),
-                    surface = Color(0xFFFFFFFF),
-                    primary = Color(0xFFEA8600),
-                    onPrimary = Color(0xFFFFFFFF),
-                    onSurface = Color(0xFF302200),
-                    strokeColor = Color(0xFFFEE7AC),
-                    swatchColor = Color(0xFFEA8600)
+                    background = Color(0xFFFEF7E0),
+                    surface = Color(0xFFFEF7E0),
+                    primary = Color(0xFFE37400),
+                    onPrimary = Color.White,
+                    onSurface = Color(0xFF7A4300),
+                    strokeColor = Color(0xFFFEEFC3),
+                    swatchColor = Color(0xFFE37400)
                 )
             }
 
             GREEN, TEAL -> if (isDark) {
                 NoteThemeColors(
                     key = GREEN,
-                    background = Color(0xFF14241B),
-                    surface = Color(0xFF1C3326),
+                    background = Color(0xFF1B2E22),
+                    surface = Color(0xFF1B2E22),
                     primary = Color(0xFFA8E3BA),
                     onPrimary = Color(0xFF0F3B20),
-                    onSurface = Color(0xFFE2F9EB),
-                    strokeColor = Color(0xFF2D543F),
+                    onSurface = Color(0xFFCEEAD6),
+                    strokeColor = Color(0xFF2A4D37),
                     swatchColor = Color(0xFFA8E3BA)
                 )
             } else {
                 NoteThemeColors(
                     key = GREEN,
-                    background = Color(0xFFF0F9F3),
-                    surface = Color(0xFFFFFFFF),
-                    primary = Color(0xFF188038),
-                    onPrimary = Color(0xFFFFFFFF),
-                    onSurface = Color(0xFF0A2914),
+                    background = Color(0xFFE6F4EA),
+                    surface = Color(0xFFE6F4EA),
+                    primary = Color(0xFF1E8E3E),
+                    onPrimary = Color.White,
+                    onSurface = Color(0xFF0D652D),
                     strokeColor = Color(0xFFCEEAD6),
-                    swatchColor = Color(0xFF188038)
+                    swatchColor = Color(0xFF1E8E3E)
                 )
             }
 
             PURPLE -> if (isDark) {
                 NoteThemeColors(
                     key = PURPLE,
-                    background = Color(0xFF22172F),
-                    surface = Color(0xFF302242),
+                    background = Color(0xFF2B1F38),
+                    surface = Color(0xFF2B1F38),
                     primary = Color(0xFFD0BCFF),
                     onPrimary = Color(0xFF381E72),
-                    onSurface = Color(0xFFF2ECFE),
-                    strokeColor = Color(0xFF4C3667),
+                    onSurface = Color(0xFFE8D0FB),
+                    strokeColor = Color(0xFF48305F),
                     swatchColor = Color(0xFFD0BCFF)
                 )
             } else {
                 NoteThemeColors(
                     key = PURPLE,
-                    background = Color(0xFFF6F0FF),
-                    surface = Color(0xFFFFFFFF),
+                    background = Color(0xFFF3E8FD),
+                    surface = Color(0xFFF3E8FD),
                     primary = Color(0xFF8430CE),
-                    onPrimary = Color(0xFFFFFFFF),
-                    onSurface = Color(0xFF240A42),
-                    strokeColor = Color(0xFFE8D5FD),
+                    onPrimary = Color.White,
+                    onSurface = Color(0xFF5B1A99),
+                    strokeColor = Color(0xFFE8D0FB),
                     swatchColor = Color(0xFF8430CE)
                 )
             }
@@ -154,7 +154,7 @@ object NoteColorThemes {
             else -> if (isDark) {
                 NoteThemeColors(
                     key = DEFAULT,
-                    background = PixelDarkBg,
+                    background = PixelDarkSurface,
                     surface = PixelDarkSurface,
                     primary = PixelPrimaryDark,
                     onPrimary = Color(0xFF003258),
@@ -165,7 +165,7 @@ object NoteColorThemes {
             } else {
                 NoteThemeColors(
                     key = DEFAULT,
-                    background = PixelLightBg,
+                    background = PixelLightSurface,
                     surface = PixelLightSurface,
                     primary = PixelPrimaryLight,
                     onPrimary = Color.White,
