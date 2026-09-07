@@ -20,7 +20,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.dotnotes.app.sync.supabase.SupabaseClientProvider
@@ -84,6 +83,14 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(currentLocale) {
                 Locale.setDefault(currentLocale)
+                @Suppress("DEPRECATION")
+                resources.updateConfiguration(
+                    Configuration(resources.configuration).apply {
+                        setLocale(currentLocale)
+                        setLayoutDirection(currentLocale)
+                    },
+                    resources.displayMetrics
+                )
             }
 
             val configuration = LocalConfiguration.current
@@ -94,18 +101,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            val context = LocalContext.current
-            val localizedContext = remember(context, currentLocale) {
-                val config = Configuration(context.resources.configuration).apply {
-                    setLocale(currentLocale)
-                    setLayoutDirection(currentLocale)
-                }
-                context.createConfigurationContext(config)
-            }
-
             CompositionLocalProvider(
                 LocalConfiguration provides localizedConfiguration,
-                LocalContext provides localizedContext,
                 LocalStrings provides strings
             ) {
                 DotNotesTheme(darkTheme = isDark) {
