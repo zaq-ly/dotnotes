@@ -606,7 +606,7 @@ private fun SelectableNoteCard(
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = if (hasCustomTheme) noteTheme.onSurface.copy(alpha = 0.65f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                    color = if (hasCustomTheme) noteTheme.onSurface.copy(alpha = 0.55f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
                 )
             }
 
@@ -616,7 +616,18 @@ private fun SelectableNoteCard(
                 val hasRepeat = note.repeatInterval.isNotBlank() && note.repeatInterval != ReminderHelper.REPEAT_NONE
                 val cardReminderFormat = remember { SimpleDateFormat("d MMM, hh:mm a", Locale.getDefault()) }
 
-                Spacer(Modifier.height(20.dp))
+                val badgeBg = if (hasCustomTheme) {
+                    noteTheme.primary.copy(alpha = 0.12f)
+                } else {
+                    if (isDark) Color(0xFF2A2D34).copy(alpha = 0.55f) else Color(0xFFE5E8EF).copy(alpha = 0.65f)
+                }
+                val badgeContent = if (hasCustomTheme) {
+                    noteTheme.primary
+                } else {
+                    if (isDark) Color(0xFFC4C7D0).copy(alpha = 0.75f) else Color(0xFF5E626B).copy(alpha = 0.85f)
+                }
+
+                Spacer(Modifier.height(24.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -624,7 +635,7 @@ private fun SelectableNoteCard(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = ReminderBadgeColors.containerColor(isAlarm, isDark)
+                        color = badgeBg
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -634,14 +645,14 @@ private fun SelectableNoteCard(
                                 imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
                                 contentDescription = null,
                                 modifier = Modifier.size(11.dp),
-                                tint = ReminderBadgeColors.contentColor(isAlarm, isDark)
+                                tint = badgeContent
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = cardReminderFormat.format(Date(note.reminderTime)),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                                 fontWeight = FontWeight.Normal,
-                                color = ReminderBadgeColors.contentColor(isAlarm, isDark)
+                                color = badgeContent
                             )
                             if (hasRepeat) {
                                 Spacer(Modifier.width(3.dp))
@@ -649,13 +660,14 @@ private fun SelectableNoteCard(
                                     imageVector = Icons.Default.Repeat,
                                     contentDescription = null,
                                     modifier = Modifier.size(10.dp),
-                                    tint = ReminderBadgeColors.contentColor(isAlarm, isDark).copy(alpha = 0.8f)
+                                    tint = badgeContent.copy(alpha = 0.8f)
                                 )
                             }
                         }
                     }
 
                     if (!isSelectionMode) {
+                        val doneColor = if (hasCustomTheme) noteTheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -667,7 +679,7 @@ private fun SelectableNoteCard(
                                 Icons.Default.Check,
                                 contentDescription = strings.markDone,
                                 modifier = Modifier.size(13.dp),
-                                tint = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                tint = doneColor
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
@@ -676,7 +688,7 @@ private fun SelectableNoteCard(
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
-                                color = if (hasCustomTheme) noteTheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                color = doneColor
                             )
                         }
                     }

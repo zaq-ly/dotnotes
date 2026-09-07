@@ -60,6 +60,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -995,74 +996,44 @@ fun NoteEditorScreen(
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = initialDateCal.timeInMillis
         )
-        Dialog(
+        DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp,
-                modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .widthIn(min = 336.dp, max = 360.dp)
-                    .padding(vertical = 12.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(vertical = 12.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Text(
-                        text = strings.selectDate,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
-                    )
-                    DatePicker(
-                        state = datePickerState,
-                        title = null,
-                        headline = null,
-                        showModeToggle = false,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp, end = 20.dp, bottom = 4.dp),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = { showDatePicker = false }) {
-                            Text(strings.cancel)
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { selectedDate ->
+                        val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                            timeInMillis = selectedDate
                         }
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(onClick = {
-                            datePickerState.selectedDateMillis?.let { selectedDate ->
-                                val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                                    timeInMillis = selectedDate
-                                }
-                                val year = utcCal.get(Calendar.YEAR)
-                                val month = utcCal.get(Calendar.MONTH)
-                                val day = utcCal.get(Calendar.DAY_OF_MONTH)
+                        val year = utcCal.get(Calendar.YEAR)
+                        val month = utcCal.get(Calendar.MONTH)
+                        val day = utcCal.get(Calendar.DAY_OF_MONTH)
 
-                                val updatedCal = Calendar.getInstance().apply {
-                                    (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                                    set(Calendar.YEAR, year)
-                                    set(Calendar.MONTH, month)
-                                    set(Calendar.DAY_OF_MONTH, day)
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }
-                                viewModel.setReminderTime(updatedCal.timeInMillis)
-                                viewModel.setReminder(true)
-                            }
-                            showDatePicker = false
-                        }) {
-                            Text(strings.save, fontWeight = FontWeight.SemiBold)
+                        val updatedCal = Calendar.getInstance().apply {
+                            (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+                            set(Calendar.YEAR, year)
+                            set(Calendar.MONTH, month)
+                            set(Calendar.DAY_OF_MONTH, day)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
                         }
+                        viewModel.setReminderTime(updatedCal.timeInMillis)
+                        viewModel.setReminder(true)
                     }
+                    showDatePicker = false
+                }) {
+                    Text(strings.save, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(strings.cancel)
                 }
             }
+        ) {
+            DatePicker(
+                state = datePickerState,
+                showModeToggle = false
+            )
         }
     }
 
@@ -1077,23 +1048,32 @@ fun NoteEditorScreen(
             initialMinute = initialTimeCal.get(Calendar.MINUTE),
             is24Hour = false
         )
-        Dialog(
+        AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp,
-                modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .widthIn(min = 336.dp, max = 360.dp)
-                    .padding(vertical = 12.dp)
-            ) {
+            confirmButton = {
+                TextButton(onClick = {
+                    val updatedCal = Calendar.getInstance().apply {
+                        (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                        set(Calendar.MINUTE, timePickerState.minute)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    viewModel.setReminderTime(updatedCal.timeInMillis)
+                    viewModel.setReminder(true)
+                    showTimePicker = false
+                }) {
+                    Text(strings.save, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text(strings.cancel)
+                }
+            },
+            text = {
                 Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
@@ -1140,35 +1120,9 @@ fun NoteEditorScreen(
                             clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = { showTimePicker = false }) {
-                            Text(strings.cancel)
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(onClick = {
-                            val updatedCal = Calendar.getInstance().apply {
-                                (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                                set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                                set(Calendar.MINUTE, timePickerState.minute)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }
-                            viewModel.setReminderTime(updatedCal.timeInMillis)
-                            viewModel.setReminder(true)
-                            showTimePicker = false
-                        }) {
-                            Text(strings.save, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
                 }
             }
-        }
+        )
     }
 
     // Color Swatch Picker Sheet (Option B)
