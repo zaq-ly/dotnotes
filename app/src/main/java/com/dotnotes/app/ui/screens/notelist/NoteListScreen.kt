@@ -137,8 +137,6 @@ fun NoteListScreen(
     val isSelectionMode = selectedNoteIds.isNotEmpty()
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    val pinnedNotes = notes.filter { it.isPinned }
-    val otherNotes = notes.filter { !it.isPinned }
 
     Scaffold(
         topBar = {
@@ -419,52 +417,7 @@ fun NoteListScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (pinnedNotes.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = strings.pinned,
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
-                            )
-                        }
-                        items(pinnedNotes, key = { it.id }) { note ->
-                            val isSelected = selectedNoteIds.contains(note.id)
-                            SelectableNoteCard(
-                                note = note,
-                                isSelected = isSelected,
-                                isSelectionMode = isSelectionMode,
-                                onClick = {
-                                    if (isSelectionMode) {
-                                        selectedNoteIds = if (isSelected) selectedNoteIds - note.id else selectedNoteIds + note.id
-                                    } else {
-                                        onNoteClick(note.id)
-                                    }
-                                },
-                                onLongClick = {
-                                    if (!isSelectionMode) {
-                                        selectedNoteIds = setOf(note.id)
-                                    }
-                                },
-                                onDismissReminder = { handleDismissReminder(note) }
-                            )
-                        }
-                        item {
-                            Text(
-                                text = strings.others,
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 2.dp)
-                            )
-                        }
-                    }
-                    items(otherNotes, key = { it.id }) { note ->
+                    items(notes, key = { it.id }) { note ->
                         val isSelected = selectedNoteIds.contains(note.id)
                         SelectableNoteCard(
                             note = note,
@@ -617,14 +570,14 @@ private fun SelectableNoteCard(
                 val cardReminderFormat = remember(strings.locale) { SimpleDateFormat("d MMM, hh:mm a", strings.locale) }
 
                 val badgeBg = if (hasCustomTheme) {
-                    noteTheme.primary.copy(alpha = 0.12f)
+                    noteTheme.primary.copy(alpha = 0.08f)
                 } else {
-                    if (isDark) Color(0xFF2A2D34).copy(alpha = 0.55f) else Color(0xFFE5E8EF).copy(alpha = 0.65f)
+                    if (isDark) Color(0xFF2A2D34).copy(alpha = 0.40f) else Color(0xFFE5E8EF).copy(alpha = 0.45f)
                 }
                 val badgeContent = if (hasCustomTheme) {
-                    noteTheme.primary
+                    noteTheme.primary.copy(alpha = 0.55f)
                 } else {
-                    if (isDark) Color(0xFFC4C7D0).copy(alpha = 0.75f) else Color(0xFF5E626B).copy(alpha = 0.85f)
+                    if (isDark) Color(0xFFC4C7D0).copy(alpha = 0.50f) else Color(0xFF5E626B).copy(alpha = 0.55f)
                 }
 
                 Spacer(Modifier.height(24.dp))
@@ -660,14 +613,14 @@ private fun SelectableNoteCard(
                                     imageVector = Icons.Default.Repeat,
                                     contentDescription = null,
                                     modifier = Modifier.size(10.dp),
-                                    tint = badgeContent.copy(alpha = 0.8f)
+                                    tint = badgeContent
                                 )
                             }
                         }
                     }
 
                     if (!isSelectionMode) {
-                        val doneColor = if (hasCustomTheme) noteTheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+                        val doneColor = if (hasCustomTheme) noteTheme.primary.copy(alpha = 0.55f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
