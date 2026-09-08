@@ -33,7 +33,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
 import java.util.Locale
 
-class MainActivity : androidx.fragment.app.FragmentActivity() {
+class MainActivity : ComponentActivity() {
     private val openSettingsTrigger = kotlinx.coroutines.flow.MutableStateFlow(false)
 
     private val notifPermissionLauncher = registerForActivityResult(

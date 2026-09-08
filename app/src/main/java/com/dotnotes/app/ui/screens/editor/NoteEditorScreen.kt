@@ -41,8 +41,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
@@ -995,52 +997,249 @@ fun NoteEditorScreen(
         }
     }
 
-    // Google Calendar style separate Date & Time pickers
-    // Google Calendar style native MaterialDatePicker
+    // Google Calendar style unified Date & Time pickers (consistent 340dp x 480dp container)
     if (showDatePicker) {
-        val activity = androidx.compose.ui.platform.LocalContext.current as? androidx.fragment.app.FragmentActivity
-        androidx.compose.runtime.LaunchedEffect(showDatePicker) {
-            if (activity != null) {
-                val existing = activity.supportFragmentManager.findFragmentByTag("MATERIAL_DATE_PICKER")
-                if (existing == null) {
-                    val localCal = Calendar.getInstance().apply {
-                        (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                    }
-                    val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                        clear()
-                        set(localCal.get(Calendar.YEAR), localCal.get(Calendar.MONTH), localCal.get(Calendar.DAY_OF_MONTH))
-                    }
-                    val picker = com.google.android.material.datepicker.MaterialDatePicker.Builder.datePicker()
-                        .setTitleText(strings.selectDate)
-                        .setSelection(utcCal.timeInMillis)
-                        .build()
-
-                    picker.addOnPositiveButtonClickListener { selectedUtcMillis ->
-                        val resUtcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                            timeInMillis = selectedUtcMillis
-                        }
-                        val updatedCal = Calendar.getInstance().apply {
-                            (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                            set(Calendar.YEAR, resUtcCal.get(Calendar.YEAR))
-                            set(Calendar.MONTH, resUtcCal.get(Calendar.MONTH))
-                            set(Calendar.DAY_OF_MONTH, resUtcCal.get(Calendar.DAY_OF_MONTH))
-                            set(Calendar.SECOND, 0)
-                            set(Calendar.MILLISECOND, 0)
-                        }
-                        viewModel.setReminderTime(updatedCal.timeInMillis)
-                        viewModel.setReminder(true)
-                        showDatePicker = false
-                    }
-                    picker.addOnDismissListener {
-                        showDatePicker = false
-                    }
-                    picker.addOnCancelListener {
-                        showDatePicker = false
-                    }
-                    picker.show(activity.supportFragmentManager, "MATERIAL_DATE_PICKER")
-                }
+        var currentMonthCal by remember(showDatePicker) {
+            val initial = state.reminderTime ?: System.currentTimeMillis()
+            mutableStateOf(Calendar.getInstance().apply { timeInMillis = initial })
+        }
+        var tempSelectedMillis by remember(showDatePicker) {
+            val initial = state.reminderTime ?: System.currentTimeMillis()
+            mutableStateOf(initial)
+        }
+        val monthYearFormat = remember(strings.locale) { SimpleDateFormat("MMMM yyyy", strings.locale) }
+        val dayHeaders = remember(strings.locale) {
+            if (strings.locale.language == "in" || strings.locale.language == "id") {
+                listOf("M", "S", "S", "R", "K", "J", "S")
             } else {
-                showDatePicker = false
+                listOf("S", "M", "T", "W", "T", "F", "S")
+            }
+        }
+
+        val year = currentMonthCal.get(Calendar.YEAR)
+        val month = currentMonthCal.get(Calendar.MONTH)
+
+        val daysInMonth = remember(year, month) {
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.YEAR, year)
+                set(Calendar.MONTH, month)
+                set(Calendar.DAY_OF_MONTH, 1)
+            }
+            cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+        }
+
+        val leadingEmpty = remember(year, month) {
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.YEAR, year)
+                set(Calendar.MONTH, month)
+                set(Calendar.DAY_OF_MONTH, 1)
+            }
+            cal.get(Calendar.DAY_OF_WEEK) - 1
+        }
+
+        val todayCal = remember { Calendar.getInstance() }
+        val tempSelectedCal = remember(tempSelectedMillis) {
+            Calendar.getInstance().apply { timeInMillis = tempSelectedMillis }
+        }
+
+        Dialog(
+            onDismissRequest = { showDatePicker = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
+                modifier = Modifier
+                    .width(340.dp)
+                    .height(480.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        // 1. Headline Date
+                        Text(
+                            text = dateOnlyFormat.format(Date(tempSelectedMillis)),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(Modifier.height(14.dp))
+
+                        // 2. Month Navigation Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = monthYearFormat.format(currentMonthCal.time),
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = {
+                                        currentMonthCal = (currentMonthCal.clone() as Calendar).apply {
+                                            add(Calendar.MONTH, -1)
+                                        }
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                        contentDescription = "Previous Month",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(2.dp))
+                                IconButton(
+                                    onClick = {
+                                        currentMonthCal = (currentMonthCal.clone() as Calendar).apply {
+                                            add(Calendar.MONTH, 1)
+                                        }
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = "Next Month",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+
+                        // 3. Days of Week Header
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            dayHeaders.forEach { header ->
+                                Box(
+                                    modifier = Modifier.weight(1f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = header,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(6.dp))
+
+                        // 4. Days Grid
+                        val totalCells = leadingEmpty + daysInMonth
+                        val totalRows = (totalCells + 6) / 7
+
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            for (r in 0 until totalRows) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    for (c in 0 until 7) {
+                                        val idx = r * 7 + c
+                                        if (idx < leadingEmpty || idx >= totalCells) {
+                                            Spacer(Modifier.weight(1f))
+                                        } else {
+                                            val dayNum = idx - leadingEmpty + 1
+                                            val isSelected = tempSelectedCal.get(Calendar.YEAR) == year &&
+                                                    tempSelectedCal.get(Calendar.MONTH) == month &&
+                                                    tempSelectedCal.get(Calendar.DAY_OF_MONTH) == dayNum
+                                            val isToday = todayCal.get(Calendar.YEAR) == year &&
+                                                    todayCal.get(Calendar.MONTH) == month &&
+                                                    todayCal.get(Calendar.DAY_OF_MONTH) == dayNum
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .aspectRatio(1f)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+                                                    )
+                                                    .then(
+                                                        if (isToday && !isSelected) {
+                                                            Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                                        } else {
+                                                            Modifier
+                                                        }
+                                                    )
+                                                    .clickable {
+                                                        tempSelectedMillis = Calendar.getInstance().apply {
+                                                            timeInMillis = tempSelectedMillis
+                                                            set(Calendar.YEAR, year)
+                                                            set(Calendar.MONTH, month)
+                                                            set(Calendar.DAY_OF_MONTH, dayNum)
+                                                        }.timeInMillis
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = dayNum.toString(),
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        fontSize = 13.sp,
+                                                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal
+                                                    ),
+                                                    color = if (isSelected) {
+                                                        MaterialTheme.colorScheme.onPrimary
+                                                    } else if (isToday) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurface
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 5. Action Buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { showDatePicker = false }) {
+                            Text(strings.cancel)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            val updatedCal = Calendar.getInstance().apply {
+                                (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+                                val selCal = Calendar.getInstance().apply { timeInMillis = tempSelectedMillis }
+                                set(Calendar.YEAR, selCal.get(Calendar.YEAR))
+                                set(Calendar.MONTH, selCal.get(Calendar.MONTH))
+                                set(Calendar.DAY_OF_MONTH, selCal.get(Calendar.DAY_OF_MONTH))
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            viewModel.setReminderTime(updatedCal.timeInMillis)
+                            viewModel.setReminder(true)
+                            showDatePicker = false
+                        }) {
+                            Text(strings.save, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
             }
         }
     }
@@ -1056,77 +1255,93 @@ fun NoteEditorScreen(
             initialMinute = initialTimeCal.get(Calendar.MINUTE),
             is24Hour = false
         )
-        DatePickerDialog(
+        Dialog(
             onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val updatedCal = Calendar.getInstance().apply {
-                        (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                        set(Calendar.MINUTE, timePickerState.minute)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }
-                    viewModel.setReminderTime(updatedCal.timeInMillis)
-                    viewModel.setReminder(true)
-                    showTimePicker = false
-                }) {
-                    Text(strings.save, fontWeight = FontWeight.SemiBold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(strings.cancel)
-                }
-            }
+            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
-                ReminderHelper.formatRemainingTime(
-                    targetHour = timePickerState.hour,
-                    targetMinute = timePickerState.minute,
-                    baseDateMillis = state.reminderTime,
-                    isAlarm = state.priority == 2,
-                    strings = strings
-                )
-            }
-            Column(
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(top = 16.dp, bottom = 4.dp)
+                    .width(340.dp)
+                    .height(480.dp)
             ) {
-                Text(
-                    text = strings.selectTime,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = remainingText,
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(14.dp))
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TimePicker(
-                        state = timePickerState,
-                        colors = TimePickerDefaults.colors(
-                            timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
-                            timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
-                            periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            selectorColor = MaterialTheme.colorScheme.primary,
-                            clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface
+                    Column {
+                        val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
+                            ReminderHelper.formatRemainingTime(
+                                targetHour = timePickerState.hour,
+                                targetMinute = timePickerState.minute,
+                                baseDateMillis = state.reminderTime,
+                                isAlarm = state.priority == 2,
+                                strings = strings
+                            )
+                        }
+                        Text(
+                            text = strings.selectTime,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
                         )
-                    )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = remainingText,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            TimePicker(
+                                state = timePickerState,
+                                colors = TimePickerDefaults.colors(
+                                    timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    selectorColor = MaterialTheme.colorScheme.primary,
+                                    clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { showTimePicker = false }) {
+                            Text(strings.cancel)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            val updatedCal = Calendar.getInstance().apply {
+                                (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+                                set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                set(Calendar.MINUTE, timePickerState.minute)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            viewModel.setReminderTime(updatedCal.timeInMillis)
+                            viewModel.setReminder(true)
+                            showTimePicker = false
+                        }) {
+                            Text(strings.save, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
         }
