@@ -1050,15 +1050,12 @@ fun NoteEditorScreen(
                 shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
-                modifier = Modifier
-                    .width(340.dp)
-                    .height(480.dp)
+                modifier = Modifier.width(340.dp)
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp, vertical = 20.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 20.dp)
                 ) {
                     Column {
                         // 1. Headline Date
@@ -1212,6 +1209,8 @@ fun NoteEditorScreen(
                         }
                     }
 
+                    Spacer(Modifier.height(16.dp))
+
                     // 5. Action Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1263,15 +1262,12 @@ fun NoteEditorScreen(
                 shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
-                modifier = Modifier
-                    .width(340.dp)
-                    .height(480.dp)
+                modifier = Modifier.width(340.dp)
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp, vertical = 20.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 20.dp)
                 ) {
                     Column {
                         val remainingText = remember(timePickerState.hour, timePickerState.minute, state.reminderTime, state.priority, strings) {
@@ -1317,6 +1313,8 @@ fun NoteEditorScreen(
                             )
                         }
                     }
+
+                    Spacer(Modifier.height(16.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
