@@ -405,7 +405,7 @@ fun NoteEditorScreen(
                         .padding(padding)
                         .padding(vertical = 8.dp)
                 ) {
-                    // 1. Title Input (BasicTextField aligned with 16dp horizontal padding)
+                    // 1. Title Input (BasicTextField aligned with 18dp horizontal padding)
                     BasicTextField(
                         value = state.title,
                         onValueChange = viewModel::updateTitle,
@@ -418,7 +418,7 @@ fun NoteEditorScreen(
                         cursorBrush = SolidColor(noteColors.primary),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                            .padding(horizontal = 18.dp, vertical = 6.dp),
                         decorationBox = { innerTextField ->
                             if (state.title.isEmpty()) {
                                 Text(
@@ -446,7 +446,7 @@ fun NoteEditorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 2.dp)
+                            .padding(horizontal = 18.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = formattedCreated,
@@ -512,7 +512,7 @@ fun NoteEditorScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 2.dp)
+                                        .padding(horizontal = 18.dp, vertical = 2.dp)
                                 ) {
                                     IconButton(
                                         onClick = {
@@ -634,7 +634,7 @@ fun NoteEditorScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp)
+                                    .padding(horizontal = 18.dp)
                                     .clip(RoundedCornerShape(8.dp))
                                     .clickable {
                                         val newItem = ChecklistItem(text = "", isChecked = false)
@@ -659,7 +659,7 @@ fun NoteEditorScreen(
                             }
                         }
                     } else {
-                        // 2. Single Unified Rich Text Canvas
+                        // 2. Single Unified Rich Text Canvas (16dp internal contentPadding + 2dp = 18dp)
                         RichTextEditor(
                             state = richTextState,
                             placeholder = {
@@ -686,6 +686,7 @@ fun NoteEditorScreen(
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .padding(horizontal = 2.dp)
                                 .weight(1f)
                         )
                     }
