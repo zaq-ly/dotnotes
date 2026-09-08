@@ -499,17 +499,15 @@ private fun SelectableNoteCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.Top) {
                 Text(
                     text = note.title.ifEmpty { strings.untitled },
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         letterSpacing = (-0.2).sp
                     ),
                     color = if (hasCustomTheme) noteTheme.onSurface else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 if (isSelectionMode) {
@@ -597,13 +595,13 @@ private fun SelectableNoteCard(
                             Icon(
                                 imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
                                 contentDescription = null,
-                                modifier = Modifier.size(11.dp),
+                                modifier = Modifier.size(10.dp),
                                 tint = badgeContent
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = cardReminderFormat.format(Date(note.reminderTime)),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                 fontWeight = FontWeight.Normal,
                                 color = badgeContent
                             )
@@ -612,7 +610,7 @@ private fun SelectableNoteCard(
                                 Icon(
                                     imageVector = Icons.Default.Repeat,
                                     contentDescription = null,
-                                    modifier = Modifier.size(10.dp),
+                                    modifier = Modifier.size(9.dp),
                                     tint = badgeContent
                                 )
                             }
@@ -631,14 +629,14 @@ private fun SelectableNoteCard(
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = strings.markDone,
-                                modifier = Modifier.size(13.dp),
+                                modifier = Modifier.size(12.dp),
                                 tint = doneColor
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = strings.markDone,
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.5.sp,
+                                    fontSize = 10.5.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
                                 color = doneColor

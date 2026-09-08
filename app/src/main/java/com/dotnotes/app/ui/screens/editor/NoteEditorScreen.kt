@@ -405,27 +405,28 @@ fun NoteEditorScreen(
                         .padding(padding)
                         .padding(vertical = 8.dp)
                 ) {
-                    // 1. Title Input (BasicTextField aligned with 18dp horizontal padding)
+                    // 1. Title Input (BasicTextField aligned with 22dp horizontal padding)
                     BasicTextField(
                         value = state.title,
                         onValueChange = viewModel::updateTitle,
                         textStyle = TextStyle(
                             fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = noteColors.onSurface
                         ),
-                        singleLine = true,
+                        singleLine = false,
+                        maxLines = 4,
                         cursorBrush = SolidColor(noteColors.primary),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 18.dp, vertical = 6.dp),
+                            .padding(horizontal = 22.dp, vertical = 6.dp),
                         decorationBox = { innerTextField ->
                             if (state.title.isEmpty()) {
                                 Text(
                                     strings.noteTitleHint,
                                     style = TextStyle(
                                         fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = noteColors.onSurface.copy(alpha = 0.4f)
                                     )
                                 )
@@ -446,11 +447,11 @@ fun NoteEditorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 18.dp, vertical = 2.dp)
+                            .padding(horizontal = 22.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = formattedCreated,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = noteColors.onSurface.copy(alpha = 0.45f)
                         )
 
@@ -463,19 +464,19 @@ fun NoteEditorScreen(
 
                             Text(
                                 text = "  •  ",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                 color = noteColors.onSurface.copy(alpha = 0.3f)
                             )
                             Icon(
                                 imageVector = if (isAlarm) Icons.Default.Alarm else Icons.Default.Notifications,
                                 contentDescription = null,
-                                modifier = Modifier.size(12.dp),
+                                modifier = Modifier.size(11.dp),
                                 tint = noteColors.onSurface.copy(alpha = 0.55f)
                             )
                             Spacer(Modifier.width(3.dp))
                             Text(
                                 text = formattedReminder,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                 color = noteColors.onSurface.copy(alpha = 0.55f)
                             )
                             if (state.repeatInterval != ReminderHelper.REPEAT_NONE && state.repeatInterval.isNotBlank()) {
@@ -512,7 +513,7 @@ fun NoteEditorScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 18.dp, vertical = 2.dp)
+                                        .padding(horizontal = 22.dp, vertical = 2.dp)
                                 ) {
                                     IconButton(
                                         onClick = {
@@ -634,7 +635,7 @@ fun NoteEditorScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 18.dp)
+                                    .padding(horizontal = 22.dp)
                                     .clip(RoundedCornerShape(8.dp))
                                     .clickable {
                                         val newItem = ChecklistItem(text = "", isChecked = false)
@@ -659,7 +660,7 @@ fun NoteEditorScreen(
                             }
                         }
                     } else {
-                        // 2. Single Unified Rich Text Canvas (16dp internal contentPadding + 2dp = 18dp)
+                        // 2. Single Unified Rich Text Canvas (16dp internal contentPadding + 6dp = 22dp)
                         RichTextEditor(
                             state = richTextState,
                             placeholder = {
@@ -686,7 +687,7 @@ fun NoteEditorScreen(
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 2.dp)
+                                .padding(horizontal = 6.dp)
                                 .weight(1f)
                         )
                     }
