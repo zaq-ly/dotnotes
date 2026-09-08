@@ -996,66 +996,52 @@ fun NoteEditorScreen(
     }
 
     // Google Calendar style separate Date & Time pickers
+    // Google Calendar style native MaterialDatePicker
     if (showDatePicker) {
-        val initialDateCal = remember(showDatePicker) {
-            val localCal = Calendar.getInstance().apply {
-                (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-            }
-            Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                clear()
-                set(localCal.get(Calendar.YEAR), localCal.get(Calendar.MONTH), localCal.get(Calendar.DAY_OF_MONTH))
-            }
-        }
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = initialDateCal.timeInMillis
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { selectedDate ->
-                        val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                            timeInMillis = selectedDate
-                        }
-                        val year = utcCal.get(Calendar.YEAR)
-                        val month = utcCal.get(Calendar.MONTH)
-                        val day = utcCal.get(Calendar.DAY_OF_MONTH)
+        val activity = androidx.compose.ui.platform.LocalContext.current as? androidx.fragment.app.FragmentActivity
+        androidx.compose.runtime.LaunchedEffect(showDatePicker) {
+            if (activity != null) {
+                val existing = activity.supportFragmentManager.findFragmentByTag("MATERIAL_DATE_PICKER")
+                if (existing == null) {
+                    val localCal = Calendar.getInstance().apply {
+                        (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
+                    }
+                    val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                        clear()
+                        set(localCal.get(Calendar.YEAR), localCal.get(Calendar.MONTH), localCal.get(Calendar.DAY_OF_MONTH))
+                    }
+                    val picker = com.google.android.material.datepicker.MaterialDatePicker.Builder.datePicker()
+                        .setTitleText(strings.selectDate)
+                        .setSelection(utcCal.timeInMillis)
+                        .build()
 
+                    picker.addOnPositiveButtonClickListener { selectedUtcMillis ->
+                        val resUtcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                            timeInMillis = selectedUtcMillis
+                        }
                         val updatedCal = Calendar.getInstance().apply {
                             (state.reminderTime ?: System.currentTimeMillis()).let { timeInMillis = it }
-                            set(Calendar.YEAR, year)
-                            set(Calendar.MONTH, month)
-                            set(Calendar.DAY_OF_MONTH, day)
+                            set(Calendar.YEAR, resUtcCal.get(Calendar.YEAR))
+                            set(Calendar.MONTH, resUtcCal.get(Calendar.MONTH))
+                            set(Calendar.DAY_OF_MONTH, resUtcCal.get(Calendar.DAY_OF_MONTH))
                             set(Calendar.SECOND, 0)
                             set(Calendar.MILLISECOND, 0)
                         }
                         viewModel.setReminderTime(updatedCal.timeInMillis)
                         viewModel.setReminder(true)
+                        showDatePicker = false
                     }
-                    showDatePicker = false
-                }) {
-                    Text(strings.save, fontWeight = FontWeight.SemiBold)
+                    picker.addOnDismissListener {
+                        showDatePicker = false
+                    }
+                    picker.addOnCancelListener {
+                        showDatePicker = false
+                    }
+                    picker.show(activity.supportFragmentManager, "MATERIAL_DATE_PICKER")
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(strings.cancel)
-                }
+            } else {
+                showDatePicker = false
             }
-        ) {
-            DatePicker(
-                state = datePickerState,
-                title = null,
-                headline = {
-                    Text(
-                        text = dateOnlyFormat.format(Date(datePickerState.selectedDateMillis ?: initialDateCal.timeInMillis)),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 4.dp)
-                    )
-                },
-                showModeToggle = false
-            )
         }
     }
 
