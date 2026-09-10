@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material3.Button
@@ -53,6 +55,7 @@ import java.util.Locale
 fun AlarmScreen(
     noteTitle: String,
     noteContent: String = "",
+    autoArchive: Boolean = true,
     onDismiss: () -> Unit,
     onSnooze: () -> Unit
 ) {
@@ -178,6 +181,34 @@ fun AlarmScreen(
                             lineHeight = 25.sp
                         )
                     }
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Notice: Auto-Archive vs Keep on Home
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFF1E2024),
+                border = BorderStroke(1.dp, Color(0xFF33353A))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (autoArchive) Icons.Default.Archive else Icons.Default.Bookmark,
+                        contentDescription = null,
+                        tint = if (autoArchive) Color(0xFFA8C7FA) else Color(0xFFC4C7D0),
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = if (autoArchive) strings.alarmAutoArchiveNotice else strings.alarmKeepOnHomeNotice,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (autoArchive) Color(0xFFA8C7FA) else Color(0xFFC4C7D0)
+                    )
                 }
             }
 

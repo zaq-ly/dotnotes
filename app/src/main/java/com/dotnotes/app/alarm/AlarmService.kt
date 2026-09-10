@@ -20,6 +20,7 @@ class AlarmService : Service() {
         val noteTitle = intent?.getStringExtra("note_title")?.ifBlank { "Untitled" } ?: "Untitled"
         val rawContent = intent?.getStringExtra("note_content") ?: ""
         val noteContent = Note.getPreviewText(rawContent)
+        val autoArchive = intent?.getBooleanExtra("auto_archive", true) ?: true
 
         val notifId = Math.abs(noteId.hashCode()) + 1
 
@@ -27,6 +28,7 @@ class AlarmService : Service() {
             putExtra("note_id", noteId)
             putExtra("note_title", noteTitle)
             putExtra("note_content", noteContent)
+            putExtra("auto_archive", autoArchive)
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
                 Intent.FLAG_ACTIVITY_CLEAR_TOP or

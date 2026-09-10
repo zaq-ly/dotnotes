@@ -28,6 +28,7 @@ class AlarmScheduler(private val context: Context) {
             putExtra("note_title", note.title)
             putExtra("note_content", note.content)
             putExtra("priority", note.priority)
+            putExtra("auto_archive", note.autoArchive)
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
 

@@ -79,6 +79,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val rawContent = intent.getStringExtra("note_content") ?: ""
         val noteContent = Note.getPreviewText(rawContent)
         val priority = intent.getIntExtra("priority", 1)
+        val autoArchive = intent.getBooleanExtra("auto_archive", true)
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
             putExtra("note_id", noteId)
@@ -135,6 +136,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 putExtra("note_id", noteId)
                 putExtra("note_title", noteTitle)
                 putExtra("note_content", rawContent)
+                putExtra("auto_archive", autoArchive)
             }
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -149,6 +151,7 @@ class AlarmReceiver : BroadcastReceiver() {
                     putExtra("note_id", noteId)
                     putExtra("note_title", noteTitle)
                     putExtra("note_content", noteContent)
+                    putExtra("auto_archive", autoArchive)
                     addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or

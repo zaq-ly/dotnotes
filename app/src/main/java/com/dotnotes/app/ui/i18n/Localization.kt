@@ -137,6 +137,10 @@ data class AppStrings(
     val googleSignInPrompt: String,
     val signingIn: String,
     val autoSyncActive: String,
+    val autoArchive: String,
+    val autoArchiveDesc: String,
+    val alarmAutoArchiveNotice: String,
+    val alarmKeepOnHomeNotice: String,
     val locale: java.util.Locale = java.util.Locale.ENGLISH
 )
 
@@ -262,7 +266,11 @@ val EnglishStrings = AppStrings(
     newBadge = "NEW",
     googleSignInPrompt = "Sign in with Google to securely back up & sync notes across your devices",
     signingIn = "Connecting...",
-    autoSyncActive = "Auto-Sync Active"
+    autoSyncActive = "Auto-Sync Active",
+    autoArchive = "Archive when completed",
+    autoArchiveDesc = "Hide from home screen once reminder is marked done",
+    alarmAutoArchiveNotice = "Note will be moved to History upon completion",
+    alarmKeepOnHomeNotice = "Note will remain on home screen upon completion"
 )
 
 val IndonesianStrings = AppStrings(
@@ -387,7 +395,11 @@ val IndonesianStrings = AppStrings(
     newBadge = "BARU",
     googleSignInPrompt = "Masuk dengan Google untuk mencadangkan & menyinkronkan catatan secara aman",
     signingIn = "Menghubungkan...",
-    autoSyncActive = "Otomatis Tersinkron"
+    autoSyncActive = "Otomatis Tersinkron",
+    autoArchive = "Arsipkan saat selesai",
+    autoArchiveDesc = "Sembunyikan dari beranda setelah pengingat selesai",
+    alarmAutoArchiveNotice = "Catatan akan dipindahkan ke Riwayat saat selesai",
+    alarmKeepOnHomeNotice = "Catatan tetap disimpan di beranda saat selesai"
 )
 
 val LocalStrings = staticCompositionLocalOf { EnglishStrings }

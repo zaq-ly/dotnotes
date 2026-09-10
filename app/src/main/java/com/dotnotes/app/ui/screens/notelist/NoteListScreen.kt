@@ -119,7 +119,7 @@ fun NoteListScreen(
     val strings = LocalStrings.current
     val notes by viewModel.notes.collectAsState()
     val visibleNotes = remember(notes) {
-        notes.filter { !(it.reminderTime != null && it.isAlarmDismissed) }
+        notes.filter { !(it.reminderTime != null && it.isAlarmDismissed && it.autoArchive) }
     }
     val hasUpdate by viewModel.hasUpdate.collectAsState()
 
@@ -398,7 +398,8 @@ fun NoteListScreen(
                         val dateStr = reminderFeedbackFormat.format(Date(nextTime))
                         Toast.makeText(context, strings.reminderDoneRepeated.format(dateStr), Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, strings.reminderDoneMovedToHistory, Toast.LENGTH_SHORT).show()
+                        val msg = if (note.autoArchive) strings.reminderDoneMovedToHistory else strings.reminderDoneOnce
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
