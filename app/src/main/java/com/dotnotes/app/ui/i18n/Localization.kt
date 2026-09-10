@@ -141,6 +141,8 @@ data class AppStrings(
     val autoArchiveDesc: String,
     val alarmAutoArchiveNotice: String,
     val alarmKeepOnHomeNotice: String,
+    val archive: String,
+    val notesArchived: String,
     val locale: java.util.Locale = java.util.Locale.ENGLISH
 )
 
@@ -235,9 +237,9 @@ val EnglishStrings = AppStrings(
     history = "History",
     reminderHistory = "Reminder History",
     pendingTasks = "Unfinished",
-    completedTasks = "Completed",
+    completedTasks = "Completed & Archived",
     noPendingTasks = "No unfinished reminder tasks",
-    noCompletedTasks = "No completed tasks yet",
+    noCompletedTasks = "No completed tasks or archived notes",
     markDone = "Mark Done",
     reminderDoneRepeated = "Reminder completed. Next: %s",
     reminderDoneOnce = "Reminder marked as done",
@@ -270,7 +272,9 @@ val EnglishStrings = AppStrings(
     autoArchive = "Archive when completed",
     autoArchiveDesc = "Hide from home screen once reminder is marked done",
     alarmAutoArchiveNotice = "Note will be moved to History upon completion",
-    alarmKeepOnHomeNotice = "Note will remain on home screen upon completion"
+    alarmKeepOnHomeNotice = "Note will remain on home screen upon completion",
+    archive = "Archive",
+    notesArchived = "Notes archived"
 )
 
 val IndonesianStrings = AppStrings(
@@ -364,9 +368,9 @@ val IndonesianStrings = AppStrings(
     history = "Riwayat",
     reminderHistory = "Riwayat Pengingat",
     pendingTasks = "Belum Selesai",
-    completedTasks = "Selesai",
+    completedTasks = "Selesai & Arsip",
     noPendingTasks = "Tidak ada tugas pengingat yang belum selesai",
-    noCompletedTasks = "Belum ada tugas yang diselesaikan",
+    noCompletedTasks = "Belum ada tugas selesai atau catatan terarsip",
     markDone = "Tandai Selesai",
     reminderDoneRepeated = "Pengingat selesai. Jadwal berikutnya: %s",
     reminderDoneOnce = "Pengingat ditandai selesai",
@@ -399,7 +403,9 @@ val IndonesianStrings = AppStrings(
     autoArchive = "Arsipkan saat selesai",
     autoArchiveDesc = "Sembunyikan dari beranda setelah pengingat selesai",
     alarmAutoArchiveNotice = "Catatan akan dipindahkan ke Riwayat saat selesai",
-    alarmKeepOnHomeNotice = "Catatan tetap disimpan di beranda saat selesai"
+    alarmKeepOnHomeNotice = "Catatan tetap disimpan di beranda saat selesai",
+    archive = "Arsipkan",
+    notesArchived = "Catatan diarsipkan"
 )
 
 val LocalStrings = staticCompositionLocalOf { EnglishStrings }

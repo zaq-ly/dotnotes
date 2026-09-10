@@ -20,7 +20,7 @@ class DotNotesApp : Application() {
         database = Room.databaseBuilder(
             this, NoteDatabase::class.java, "dotnotes.db"
         )
-            .addMigrations(NoteDatabase.MIGRATION_1_2, NoteDatabase.MIGRATION_2_3, NoteDatabase.MIGRATION_3_4)
+            .addMigrations(NoteDatabase.MIGRATION_1_2, NoteDatabase.MIGRATION_2_3, NoteDatabase.MIGRATION_3_4, NoteDatabase.MIGRATION_4_5)
             .build()
 
         repository = NoteRepository(database.noteDao())

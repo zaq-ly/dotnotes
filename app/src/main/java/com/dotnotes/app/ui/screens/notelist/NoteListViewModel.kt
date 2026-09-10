@@ -75,9 +75,15 @@ class NoteListViewModel(
         }
     }
 
+    fun archiveNotes(noteIds: Collection<String>) {
+        viewModelScope.launch {
+            repository.archiveNotes(noteIds)
+        }
+    }
+
     fun restoreHistoryNotes(noteIds: Collection<String>) {
         viewModelScope.launch {
-            repository.clearReminders(noteIds)
+            repository.restoreNotes(noteIds)
         }
     }
 

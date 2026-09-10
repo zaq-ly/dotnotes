@@ -51,6 +51,16 @@ class NoteRepository(private val dao: NoteDao) {
         syncCloud()
     }
 
+    suspend fun archiveNotes(ids: Collection<String>) {
+        dao.archiveNotes(ids)
+        syncCloud()
+    }
+
+    suspend fun restoreNotes(ids: Collection<String>) {
+        dao.restoreNotes(ids)
+        syncCloud()
+    }
+
     suspend fun clearReminder(id: String) {
         dao.clearReminder(id)
         syncCloud()

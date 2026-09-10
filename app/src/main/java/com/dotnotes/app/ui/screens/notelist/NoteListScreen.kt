@@ -35,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAddCheck
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -119,7 +120,7 @@ fun NoteListScreen(
     val strings = LocalStrings.current
     val notes by viewModel.notes.collectAsState()
     val visibleNotes = remember(notes) {
-        notes.filter { !(it.reminderTime != null && it.isAlarmDismissed && it.autoArchive) }
+        notes.filter { !it.isArchived && !(it.reminderTime != null && it.isAlarmDismissed && it.autoArchive) }
     }
     val hasUpdate by viewModel.hasUpdate.collectAsState()
 
@@ -310,15 +311,15 @@ fun NoteListScreen(
                                         viewModel.togglePinNotes(selectedNoteIds, shouldPin)
                                         selectedNoteIds = emptySet()
                                     }
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.PushPin,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(6.dp))
                                 Text(
                                     text = if (allPinned) strings.unpin else strings.pin,
                                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -329,7 +330,41 @@ fun NoteListScreen(
                             // Vertical Divider
                             Box(
                                 modifier = Modifier
-                                    .height(24.dp)
+                                    .height(20.dp)
+                                    .width(1.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            )
+
+                            // Archive Button
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .clickable {
+                                        viewModel.archiveNotes(selectedNoteIds)
+                                        Toast.makeText(context, strings.notesArchived, Toast.LENGTH_SHORT).show()
+                                        selectedNoteIds = emptySet()
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Archive,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = strings.archive,
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            // Vertical Divider
+                            Box(
+                                modifier = Modifier
+                                    .height(20.dp)
                                     .width(1.dp)
                                     .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                             )
@@ -343,15 +378,15 @@ fun NoteListScreen(
                                         viewModel.deleteNotes(selectedNoteIds)
                                         selectedNoteIds = emptySet()
                                     }
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(6.dp))
                                 Text(
                                     text = "${strings.delete} (${selectedNoteIds.size})",
                                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),

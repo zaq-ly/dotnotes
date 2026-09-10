@@ -102,9 +102,9 @@ fun HistoryScreen(
     var selectedNoteIds by remember { mutableStateOf(setOf<String>()) }
     val isSelectionMode = selectedNoteIds.isNotEmpty()
 
-    val pendingNotes = notes.filter { it.reminderTime != null && !it.isAlarmDismissed }
+    val pendingNotes = notes.filter { it.reminderTime != null && !it.isAlarmDismissed && !it.isArchived }
         .sortedBy { it.reminderTime }
-    val completedNotes = notes.filter { it.reminderTime != null && it.isAlarmDismissed }
+    val completedNotes = notes.filter { it.isArchived || (it.reminderTime != null && it.isAlarmDismissed) }
         .sortedByDescending { it.updatedAt }
 
     val currentList = if (selectedTab == 0) pendingNotes else completedNotes

@@ -17,6 +17,7 @@ data class Note(
     val repeatInterval: String = "NONE",
     val colorTheme: String = "DEFAULT",
     val autoArchive: Boolean = true,
+    val isArchived: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false

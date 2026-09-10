@@ -38,8 +38,14 @@ interface NoteDao {
     @Query("UPDATE notes SET isPinned = :isPinned, updatedAt = :now WHERE id IN (:ids)")
     suspend fun togglePinNotes(ids: Collection<String>, isPinned: Boolean, now: Long = System.currentTimeMillis())
 
-    @Query("UPDATE notes SET isAlarmDismissed = 1, updatedAt = :now WHERE id = :id")
+    @Query("UPDATE notes SET isAlarmDismissed = 1, isArchived = CASE WHEN autoArchive = 1 THEN 1 ELSE isArchived END, updatedAt = :now WHERE id = :id")
     suspend fun dismissAlarm(id: String, now: Long = System.currentTimeMillis())
+
+    @Query("UPDATE notes SET isArchived = 1, updatedAt = :now WHERE id IN (:ids)")
+    suspend fun archiveNotes(ids: Collection<String>, now: Long = System.currentTimeMillis())
+
+    @Query("UPDATE notes SET isArchived = 0, reminderTime = NULL, priority = 0, repeatInterval = 'NONE', isAlarmDismissed = 0, updatedAt = :now WHERE id IN (:ids)")
+    suspend fun restoreNotes(ids: Collection<String>, now: Long = System.currentTimeMillis())
 
     @Query("UPDATE notes SET reminderTime = NULL, priority = 0, repeatInterval = 'NONE', isAlarmDismissed = 0, updatedAt = :now WHERE id = :id")
     suspend fun clearReminder(id: String, now: Long = System.currentTimeMillis())
