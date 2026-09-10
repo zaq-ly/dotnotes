@@ -71,6 +71,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import android.widget.Toast
 import com.dotnotes.app.alarm.ReminderHelper
 import com.dotnotes.app.ui.theme.isAppInDarkTheme
@@ -152,20 +153,11 @@ fun NoteListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var activeSnackbarNoteTheme by remember { mutableStateOf<String?>(null) }
+    var isSnackbarActive by remember { mutableStateOf(false) }
 
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.navigationBarsPadding()
-            ) { data ->
-                PixelSnackbar(
-                    snackbarData = data,
-                    colorThemeKey = activeSnackbarNoteTheme
-                )
-            }
-        },
-        topBar = {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
             if (isSelectionMode) {
                 // TopBar in Selection Mode (Pill Header)
                 TopAppBar(
@@ -421,13 +413,11 @@ fun NoteListScreen(
             }
         },
         floatingActionButton = {
-            val isSnackbarShowing = snackbarHostState.currentSnackbarData != null
-            if (!isSelectionMode && !isSnackbarShowing) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = scaleIn(initialScale = 0.6f) + fadeIn(),
-                    exit = scaleOut(targetScale = 0.6f) + fadeOut()
-                ) {
+            AnimatedVisibility(
+                visible = !isSelectionMode && !isSnackbarActive,
+                enter = scaleIn(initialScale = 0.6f) + fadeIn(),
+                exit = scaleOut(targetScale = 0.6f) + fadeOut()
+            ) {
                     // Pixel-style squircle FAB
                     FloatingActionButton(
                         onClick = onNewNote,
@@ -448,7 +438,6 @@ fun NoteListScreen(
                     }
                 }
             }
-        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -474,6 +463,7 @@ fun NoteListScreen(
                         val titleText = if (noteTitle.isNotBlank()) "${strings.completeThisSession}: $noteTitle" else strings.completeThisSession
                         val message = "$titleText\n${strings.completeThisSessionDesc.format(dateStr)}"
                         scope.launch {
+                            isSnackbarActive = true
                             snackbarHostState.currentSnackbarData?.dismiss()
                             val result = snackbarHostState.showSnackbar(
                                 message = message,
@@ -483,6 +473,8 @@ fun NoteListScreen(
                             if (result == SnackbarResult.ActionPerformed) {
                                 executeStopRecurring(note)
                             }
+                            delay(180)
+                            isSnackbarActive = false
                         }
                     } else {
                         val msg = if (note.autoArchive) strings.reminderDoneMovedToHistory else strings.reminderDoneOnce
@@ -531,6 +523,19 @@ fun NoteListScreen(
                     }
                 }
             }
+        }
+    }
+
+    SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+        ) { data ->
+            PixelSnackbar(
+                snackbarData = data,
+                colorThemeKey = activeSnackbarNoteTheme
+            )
         }
     }
 }
