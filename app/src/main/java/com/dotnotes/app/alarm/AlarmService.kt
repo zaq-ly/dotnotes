@@ -1,31 +1,25 @@
 package com.dotnotes.app.alarm
 
+import android.app.ActivityOptions
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.media.RingtoneManager
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
-import android.os.VibrationEffect
-import android.os.Vibrator
 import androidx.core.app.NotificationCompat
 import com.dotnotes.app.DotNotesApp
-import com.dotnotes.app.MainActivity
+import com.dotnotes.app.data.model.Note
 
 class AlarmService : Service() {
-    private var mediaPlayer: MediaPlayer? = null
-    private var ringtone: android.media.Ringtone? = null
-    private var vibrator: Vibrator? = null
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val noteId = intent?.getStringExtra("note_id") ?: ""
         val noteTitle = intent?.getStringExtra("note_title")?.ifBlank { "Untitled" } ?: "Untitled"
         val rawContent = intent?.getStringExtra("note_content") ?: ""
-        val noteContent = rawContent.replace(Regex("<[^>]*>"), "").trim()
+        val noteContent = Note.getPreviewText(rawContent)
 
         val notifId = Math.abs(noteId.hashCode()) + 1
 
@@ -36,32 +30,33 @@ class AlarmService : Service() {
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
                 Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
             )
-        }
-        val optionsBundle = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            android.app.ActivityOptions.makeBasic().apply {
-                setPendingIntentBackgroundActivityStartMode(
-                    android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                )
-            }.toBundle()
-        } else {
-            null
         }
 
-        val fullScreenPending = if (optionsBundle != null) {
-            PendingIntent.getActivity(
-                this, notifId + 1, alarmIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                optionsBundle
-            )
-        } else {
-            PendingIntent.getActivity(
-                this, notifId + 1, alarmIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+        val options = ActivityOptions.makeBasic()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            try {
+                val method = ActivityOptions::class.java.getMethod(
+                    "setPendingIntentCreatorBackgroundActivityStartMode",
+                    Int::class.javaPrimitiveType
+                )
+                method.invoke(options, 1 /* MODE_BACKGROUND_ACTIVITY_START_ALLOWED */)
+            } catch (_: Throwable) {
+                try {
+                    options.setPendingIntentBackgroundActivityStartMode(
+                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                    )
+                } catch (_: Throwable) {}
+            }
         }
+        val optionsBundle = options.toBundle()
+
+        val fullScreenPending = PendingIntent.getActivity(
+            this, notifId + 4, alarmIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            optionsBundle
+        )
 
         val dismissIntent = Intent(this, AlarmReceiver::class.java).apply {
             action = AlarmReceiver.ACTION_DISMISS
@@ -96,7 +91,7 @@ class AlarmService : Service() {
         val notification = NotificationCompat.Builder(this, DotNotesApp.CHANNEL_ALARM)
             .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
             .setContentTitle(noteTitle)
-            .setContentText(if (noteContent.isNotBlank()) noteContent else "Alarm Catatan")
+            .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Alarm")
             .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -114,11 +109,11 @@ class AlarmService : Service() {
         notification.flags = notification.flags or android.app.Notification.FLAG_ONGOING_EVENT or android.app.Notification.FLAG_NO_CLEAR
 
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
                     notifId,
                     notification,
-                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
                 )
             } else {
                 startForeground(notifId, notification)
@@ -126,100 +121,29 @@ class AlarmService : Service() {
         } catch (_: Exception) {
         }
 
-        startAlarmSound()
-        startVibration()
+        AlarmPlayer.play(this)
 
         try {
-            startActivity(alarmIntent)
+            startActivity(alarmIntent, optionsBundle)
         } catch (_: Exception) {
+            try {
+                startActivity(alarmIntent)
+            } catch (_: Exception) {}
         }
 
         return START_NOT_STICKY
     }
 
-    private fun startAlarmSound() {
-        if (mediaPlayer != null || ringtone != null) return
-        try {
-            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                ?: android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
-
-            if (alarmUri != null) {
-                mediaPlayer = MediaPlayer().apply {
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build()
-                    )
-                    setDataSource(applicationContext, alarmUri)
-                    isLooping = true
-                    prepare()
-                    start()
-                }
-            }
-        } catch (_: Exception) {
-            try {
-                val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                    ?: android.provider.Settings.System.DEFAULT_ALARM_ALERT_URI
-                ringtone = RingtoneManager.getRingtone(applicationContext, ringtoneUri)?.apply {
-                    audioAttributes = AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                        isLooping = true
-                    }
-                    play()
-                }
-            } catch (_: Exception) {
-            }
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun startVibration() {
-        if (vibrator != null) return
-        try {
-            vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            val pattern = longArrayOf(0, 800, 400, 800)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
-            } else {
-                vibrator?.vibrate(pattern, 0)
-            }
-        } catch (_: Exception) {
-        }
-    }
-
     override fun onDestroy() {
-        try {
-            mediaPlayer?.stop()
-            mediaPlayer?.release()
-        } catch (_: Exception) {
-        }
-        mediaPlayer = null
-
-        try {
-            ringtone?.stop()
-        } catch (_: Exception) {
-        }
-        ringtone = null
-
-        try {
-            vibrator?.cancel()
-        } catch (_: Exception) {
-        }
-        vibrator = null
+        AlarmPlayer.stop()
         super.onDestroy()
     }
 
     companion object {
         fun stop(context: Context) {
-            context.stopService(Intent(context, AlarmService::class.java))
+            try {
+                context.stopService(Intent(context, AlarmService::class.java))
+            } catch (_: Exception) {}
         }
     }
 }

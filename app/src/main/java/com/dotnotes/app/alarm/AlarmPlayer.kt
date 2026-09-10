@@ -27,10 +27,18 @@ object AlarmPlayer {
 
         try {
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-            wakeLock = powerManager?.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
-                "dotnotes:AlarmWakeLock"
-            )?.apply {
+            @Suppress("DEPRECATION")
+            wakeLock = try {
+                powerManager?.newWakeLock(
+                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.ON_AFTER_RELEASE,
+                    "dotnotes:AlarmWakeLock"
+                )
+            } catch (_: Throwable) {
+                powerManager?.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    "dotnotes:AlarmWakeLock"
+                )
+            }?.apply {
                 setReferenceCounted(false)
                 acquire(10 * 60 * 1000L) // 10 minutes max
             }

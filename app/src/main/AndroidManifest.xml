@@ -55,11 +55,13 @@
             android:name=".alarm.AlarmActivity"
             android:exported="false"
             android:showWhenLocked="true"
+            android:showOnLockScreen="true"
             android:turnScreenOn="true"
             android:showForAllUsers="true"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
             android:taskAffinity=""
+            android:windowSoftInputMode="stateAlwaysHidden"
             android:theme="@style/Theme.DotNotes" />
 
         <receiver

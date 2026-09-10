@@ -131,78 +131,58 @@ class AlarmReceiver : BroadcastReceiver() {
         )
 
         if (priority == 2) {
-            AlarmPlayer.play(context)
-
-            val alarmActivityIntent = Intent(context, AlarmActivity::class.java).apply {
+            val serviceIntent = Intent(context, AlarmService::class.java).apply {
                 putExtra("note_id", noteId)
                 putExtra("note_title", noteTitle)
-                putExtra("note_content", noteContent)
-                addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                )
+                putExtra("note_content", rawContent)
             }
-
-            val optionsBundle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                ActivityOptions.makeBasic().apply {
-                    setPendingIntentBackgroundActivityStartMode(
-                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent)
+                } else {
+                    context.startService(serviceIntent)
+                }
+            } catch (_: Exception) {
+                // Fallback to direct alert
+                AlarmPlayer.play(context)
+                val alarmActivityIntent = Intent(context, AlarmActivity::class.java).apply {
+                    putExtra("note_id", noteId)
+                    putExtra("note_title", noteTitle)
+                    putExtra("note_content", noteContent)
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
                     )
-                }.toBundle()
-            } else {
-                null
-            }
-
-            val fullScreenPending = if (optionsBundle != null) {
-                PendingIntent.getActivity(
-                    context, notifId + 4, alarmActivityIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                    optionsBundle
-                )
-            } else {
-                PendingIntent.getActivity(
+                }
+                val fullScreenPending = PendingIntent.getActivity(
                     context, notifId + 4, alarmActivityIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-            }
-
-            val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
-                .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
-                .setContentTitle(noteTitle)
-                .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Alarm")
-                .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setFullScreenIntent(fullScreenPending, true)
-                .setContentIntent(fullScreenPending)
-                .addAction(dismissAction)
-                .addAction(snoozeAction)
-                .setColor(0xFFBE123C.toInt())
-                .setDeleteIntent(swipePending)
-                .setNumber(1)
-                .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
-                .build()
-
-            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
-                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                NotificationManagerCompat.from(context).notify(notifId, notification)
-            }
-
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    val options = ActivityOptions.makeBasic().apply {
-                        setPendingIntentBackgroundActivityStartMode(
-                            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                        )
-                    }.toBundle()
-                    context.startActivity(alarmActivityIntent, options)
-                } else {
-                    context.startActivity(alarmActivityIntent)
+                val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
+                    .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
+                    .setContentTitle(noteTitle)
+                    .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Alarm")
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setFullScreenIntent(fullScreenPending, true)
+                    .setContentIntent(fullScreenPending)
+                    .addAction(dismissAction)
+                    .addAction(snoozeAction)
+                    .setColor(0xFFBE123C.toInt())
+                    .setDeleteIntent(swipePending)
+                    .setNumber(1)
+                    .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
+                    .build()
+                if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    NotificationManagerCompat.from(context).notify(notifId, notification)
                 }
-            } catch (_: Exception) {
+                try {
+                    context.startActivity(alarmActivityIntent)
+                } catch (_: Exception) {}
             }
         } else {
             val channelId = getActiveReminderChannelId()

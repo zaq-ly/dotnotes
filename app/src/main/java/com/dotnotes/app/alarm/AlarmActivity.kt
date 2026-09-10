@@ -51,6 +51,17 @@ class AlarmActivity : ComponentActivity() {
         showOnLockScreen()
     }
 
+    override fun onResume() {
+        super.onResume()
+        showOnLockScreen()
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        showOnLockScreen()
+    }
+
     @Suppress("DEPRECATION")
     private fun showOnLockScreen() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
