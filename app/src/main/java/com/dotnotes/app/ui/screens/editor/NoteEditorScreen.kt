@@ -103,6 +103,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -922,7 +923,7 @@ fun NoteEditorScreen(
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(10.dp))
 
                         // Priority Selection (Notification vs Alarm)
                         Row(
@@ -990,11 +991,14 @@ fun NoteEditorScreen(
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .height(44.dp)
                                 .clickable { viewModel.setAutoArchive(!state.autoArchive) }
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 12.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Archive,
@@ -1002,7 +1006,7 @@ fun NoteEditorScreen(
                                     tint = if (state.autoArchive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(Modifier.width(10.dp))
+                                Spacer(Modifier.width(8.dp))
                                 Text(
                                     text = strings.autoArchive,
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
@@ -1012,6 +1016,7 @@ fun NoteEditorScreen(
                                 Switch(
                                     checked = state.autoArchive,
                                     onCheckedChange = { viewModel.setAutoArchive(it) },
+                                    modifier = Modifier.scale(0.8f),
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                                         checkedTrackColor = MaterialTheme.colorScheme.primary,
@@ -1025,7 +1030,7 @@ fun NoteEditorScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(14.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
