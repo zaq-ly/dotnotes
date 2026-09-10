@@ -58,21 +58,23 @@ class NoteListViewModel(
         viewModelScope.launch { repository.softDeleteNote(noteId) }
     }
 
-    fun deleteNotes(noteIds: Collection<String>) {
-        viewModelScope.launch { repository.softDeleteNotes(noteIds) }
+    fun deleteNotes(noteIds: Collection<String>, context: android.content.Context? = null) {
+        viewModelScope.launch {
+            if (context != null) {
+                val scheduler = com.dotnotes.app.alarm.AlarmScheduler(context)
+                val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
+                noteIds.forEach {
+                    scheduler.cancel(it)
+                    notificationManager.cancel(it.hashCode())
+                    notificationManager.cancel(Math.abs(it.hashCode()) + 1)
+                }
+            }
+            repository.softDeleteNotes(noteIds)
+        }
     }
 
     fun deleteHistoryReminders(context: android.content.Context, noteIds: Collection<String>) {
-        viewModelScope.launch {
-            val scheduler = com.dotnotes.app.alarm.AlarmScheduler(context)
-            val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
-            noteIds.forEach {
-                scheduler.cancel(it)
-                notificationManager.cancel(it.hashCode())
-                notificationManager.cancel(Math.abs(it.hashCode()) + 1)
-            }
-            repository.clearReminders(noteIds)
-        }
+        deleteNotes(noteIds, context)
     }
 
     fun archiveNotes(noteIds: Collection<String>) {

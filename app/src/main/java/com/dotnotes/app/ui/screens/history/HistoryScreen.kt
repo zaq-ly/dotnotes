@@ -235,7 +235,7 @@ fun HistoryScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(24.dp))
                                     .clickable {
-                                        viewModel.deleteHistoryReminders(context, selectedNoteIds)
+                                        viewModel.deleteNotes(selectedNoteIds, context)
                                         selectedNoteIds = emptySet()
                                     }
                                     .padding(horizontal = 16.dp, vertical = 10.dp)
