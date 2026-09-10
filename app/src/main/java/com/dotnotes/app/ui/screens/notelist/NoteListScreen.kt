@@ -118,6 +118,9 @@ fun NoteListScreen(
 ) {
     val strings = LocalStrings.current
     val notes by viewModel.notes.collectAsState()
+    val visibleNotes = remember(notes) {
+        notes.filter { !(it.reminderTime != null && it.isAlarmDismissed) }
+    }
     val hasUpdate by viewModel.hasUpdate.collectAsState()
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -159,10 +162,10 @@ fun NoteListScreen(
                         }
                     },
                     actions = {
-                        val isAllSelected = selectedNoteIds.size == notes.size && notes.isNotEmpty()
+                        val isAllSelected = selectedNoteIds.size == visibleNotes.size && visibleNotes.isNotEmpty()
                         Box(modifier = Modifier.padding(end = 6.dp)) {
                             IconButton(onClick = {
-                                selectedNoteIds = if (isAllSelected) emptySet() else notes.map { it.id }.toSet()
+                                selectedNoteIds = if (isAllSelected) emptySet() else visibleNotes.map { it.id }.toSet()
                             }) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
@@ -294,7 +297,7 @@ fun NoteListScreen(
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            val selectedNotesList = notes.filter { selectedNoteIds.contains(it.id) }
+                            val selectedNotesList = visibleNotes.filter { selectedNoteIds.contains(it.id) }
                             val allPinned = selectedNotesList.isNotEmpty() && selectedNotesList.all { it.isPinned }
 
                             // Pin / Unpin Button
@@ -395,12 +398,12 @@ fun NoteListScreen(
                         val dateStr = reminderFeedbackFormat.format(Date(nextTime))
                         Toast.makeText(context, strings.reminderDoneRepeated.format(dateStr), Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, strings.reminderDoneOnce, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, strings.reminderDoneMovedToHistory, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
 
-            if (notes.isEmpty()) {
+            if (visibleNotes.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -417,7 +420,7 @@ fun NoteListScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(notes, key = { it.id }) { note ->
+                    items(visibleNotes, key = { it.id }) { note ->
                         val isSelected = selectedNoteIds.contains(note.id)
                         SelectableNoteCard(
                             note = note,

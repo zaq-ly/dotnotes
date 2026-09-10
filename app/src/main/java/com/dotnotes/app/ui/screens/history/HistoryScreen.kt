@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -184,31 +185,74 @@ fun HistoryScreen(
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         tonalElevation = 6.dp,
                         shadowElevation = 8.dp,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                         modifier = Modifier.wrapContentSize()
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(32.dp))
-                                .clickable {
-                                    viewModel.deleteHistoryReminders(context, selectedNoteIds)
-                                    selectedNoteIds = emptySet()
-                                }
-                                .padding(horizontal = 24.dp, vertical = 12.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = strings.delete,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = "${strings.delete} (${selectedNoteIds.size})",
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.error
-                            )
+                            if (selectedTab == 1) {
+                                // Restore / Tampilkan ke Depan
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .clickable {
+                                            viewModel.restoreHistoryNotes(selectedNoteIds)
+                                            Toast.makeText(context, strings.restoredToNotes, Toast.LENGTH_SHORT).show()
+                                            selectedNoteIds = emptySet()
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Unarchive,
+                                        contentDescription = strings.restore,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = "${strings.restore} (${selectedNoteIds.size})",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                // Vertical Divider
+                                Box(
+                                    modifier = Modifier
+                                        .height(24.dp)
+                                        .width(1.dp)
+                                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                )
+                            }
+
+                            // Delete Button
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .clickable {
+                                        viewModel.deleteHistoryReminders(context, selectedNoteIds)
+                                        selectedNoteIds = emptySet()
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = strings.delete,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "${strings.delete} (${selectedNoteIds.size})",
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }

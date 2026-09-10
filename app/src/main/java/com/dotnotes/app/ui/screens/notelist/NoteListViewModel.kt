@@ -75,6 +75,12 @@ class NoteListViewModel(
         }
     }
 
+    fun restoreHistoryNotes(noteIds: Collection<String>) {
+        viewModelScope.launch {
+            repository.clearReminders(noteIds)
+        }
+    }
+
     fun togglePin(note: Note) {
         viewModelScope.launch { repository.togglePin(note.id, !note.isPinned) }
     }

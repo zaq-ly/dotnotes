@@ -144,6 +144,25 @@ class MainActivity : ComponentActivity() {
                     startActivity(intent)
                 } catch (_: Exception) {
                 }
+            } else {
+                checkFullScreenIntentPermission()
+            }
+        } else {
+            checkFullScreenIntentPermission()
+        }
+    }
+
+    private fun checkFullScreenIntentPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val notificationManager = getSystemService(android.app.NotificationManager::class.java)
+            if (notificationManager?.canUseFullScreenIntent() == false) {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+                try {
+                    startActivity(intent)
+                } catch (_: Exception) {
+                }
             }
         }
     }

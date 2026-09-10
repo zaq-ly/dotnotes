@@ -145,10 +145,28 @@ class AlarmReceiver : BroadcastReceiver() {
                 )
             }
 
-            val fullScreenPending = PendingIntent.getActivity(
-                context, notifId + 4, alarmActivityIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val optionsBundle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ActivityOptions.makeBasic().apply {
+                    setPendingIntentBackgroundActivityStartMode(
+                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                    )
+                }.toBundle()
+            } else {
+                null
+            }
+
+            val fullScreenPending = if (optionsBundle != null) {
+                PendingIntent.getActivity(
+                    context, notifId + 4, alarmActivityIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    optionsBundle
+                )
+            } else {
+                PendingIntent.getActivity(
+                    context, notifId + 4, alarmActivityIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            }
 
             val notification = NotificationCompat.Builder(context, DotNotesApp.CHANNEL_ALARM)
                 .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
@@ -164,7 +182,6 @@ class AlarmReceiver : BroadcastReceiver() {
                 .addAction(snoozeAction)
                 .setColor(0xFFBE123C.toInt())
                 .setDeleteIntent(swipePending)
-                .setSilent(true)
                 .setNumber(1)
                 .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
                 .build()
