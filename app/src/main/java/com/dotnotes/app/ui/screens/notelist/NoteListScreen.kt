@@ -56,12 +56,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import com.dotnotes.app.data.model.previewText
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -147,9 +149,17 @@ fun NoteListScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var activeSnackbarNoteTheme by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                PixelSnackbar(
+                    snackbarData = data,
+                    colorThemeKey = activeSnackbarNoteTheme
+                )
+            }
+        },
         topBar = {
             if (isSelectionMode) {
                 // TopBar in Selection Mode (Pill Header)
@@ -447,10 +457,14 @@ fun NoteListScreen(
                 viewModel.dismissReminder(context, note.id) { nextTime ->
                     if (isRecurring && nextTime != null) {
                         val dateStr = reminderFeedbackFormat.format(Date(nextTime))
+                        activeSnackbarNoteTheme = note.colorTheme
+                        val noteTitle = note.title.ifBlank { note.previewText.ifBlank { "" } }
+                        val titleText = if (noteTitle.isNotBlank()) "${strings.completeThisSession}: $noteTitle" else strings.completeThisSession
+                        val message = "$titleText\n${strings.completeThisSessionDesc.format(dateStr)}"
                         scope.launch {
                             snackbarHostState.currentSnackbarData?.dismiss()
                             val result = snackbarHostState.showSnackbar(
-                                message = strings.reminderDoneRepeated.format(dateStr),
+                                message = message,
                                 actionLabel = strings.stopSchedule,
                                 duration = SnackbarDuration.Short
                             )
@@ -713,4 +727,137 @@ private fun SelectableNoteCard(
         }
     }
 }
+
+@Composable
+fun PixelSnackbar(
+    snackbarData: SnackbarData,
+    colorThemeKey: String? = null,
+    modifier: Modifier = Modifier
+) {
+    val isDark = isAppInDarkTheme()
+    val hasCustomTheme = !colorThemeKey.isNullOrEmpty() && colorThemeKey != NoteColorThemes.DEFAULT
+    val noteTheme = remember(colorThemeKey, isDark) {
+        NoteColorThemes.getThemeColors(colorThemeKey, isDark)
+    }
+
+    val containerColor = if (hasCustomTheme) {
+        noteTheme.surface
+    } else {
+        if (isDark) Color(0xFF282A2F) else Color(0xFFEFF2F8)
+    }
+
+    val contentColor = if (hasCustomTheme) {
+        noteTheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    val accentColor = if (hasCustomTheme) {
+        noteTheme.primary
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+
+    val borderColor = if (hasCustomTheme) {
+        noteTheme.primary.copy(alpha = 0.35f)
+    } else {
+        if (isDark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.08f)
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = containerColor,
+        tonalElevation = 6.dp,
+        shadowElevation = 8.dp,
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val lines = remember(snackbarData.visuals.message) {
+                snackbarData.visuals.message.split("\n")
+            }
+            val title = lines.getOrElse(0) { snackbarData.visuals.message }
+            val subtitle = lines.getOrNull(1)
+
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(accentColor.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.5.sp
+                        ),
+                        color = contentColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (!subtitle.isNullOrBlank()) {
+                        Spacer(Modifier.height(1.5.dp))
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Normal
+                            ),
+                            color = accentColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            snackbarData.visuals.actionLabel?.let { action ->
+                Spacer(Modifier.width(10.dp))
+                FilledTonalButton(
+                    onClick = { snackbarData.performAction() },
+                    shape = RoundedCornerShape(100),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f),
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Text(
+                        text = action,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
 

@@ -116,9 +116,17 @@ fun HistoryScreen(
     val currentList = if (selectedTab == 0) pendingNotes else completedNotes
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var activeSnackbarNoteTheme by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                com.dotnotes.app.ui.screens.notelist.PixelSnackbar(
+                    snackbarData = data,
+                    colorThemeKey = activeSnackbarNoteTheme
+                )
+            }
+        },
         topBar = {
             if (isSelectionMode) {
                 TopAppBar(
@@ -349,10 +357,14 @@ fun HistoryScreen(
                 viewModel.dismissReminder(context, note.id) { nextTime ->
                     if (isRecurring && nextTime != null) {
                         val dateStr = reminderFeedbackFormat.format(Date(nextTime))
+                        activeSnackbarNoteTheme = note.colorTheme
+                        val noteTitle = note.title.ifBlank { note.previewText.ifBlank { "" } }
+                        val titleText = if (noteTitle.isNotBlank()) "${strings.completeThisSession}: $noteTitle" else strings.completeThisSession
+                        val message = "$titleText\n${strings.completeThisSessionDesc.format(dateStr)}"
                         scope.launch {
                             snackbarHostState.currentSnackbarData?.dismiss()
                             val result = snackbarHostState.showSnackbar(
-                                message = strings.reminderDoneRepeated.format(dateStr),
+                                message = message,
                                 actionLabel = strings.stopSchedule,
                                 duration = SnackbarDuration.Short
                             )
