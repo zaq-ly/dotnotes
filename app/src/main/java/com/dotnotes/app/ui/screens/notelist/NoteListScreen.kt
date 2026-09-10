@@ -3,6 +3,8 @@ package com.dotnotes.app.ui.screens.notelist
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -153,7 +155,10 @@ fun NoteListScreen(
 
     Scaffold(
         snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.navigationBarsPadding()
+            ) { data ->
                 PixelSnackbar(
                     snackbarData = data,
                     colorThemeKey = activeSnackbarNoteTheme
@@ -416,24 +421,31 @@ fun NoteListScreen(
             }
         },
         floatingActionButton = {
-            if (!isSelectionMode) {
-                // Pixel-style squircle FAB
-                FloatingActionButton(
-                    onClick = onNewNote,
-                    modifier = Modifier.padding(end = 4.dp, bottom = 4.dp),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 2.dp,
-                        pressedElevation = 4.dp
-                    )
+            val isSnackbarShowing = snackbarHostState.currentSnackbarData != null
+            if (!isSelectionMode && !isSnackbarShowing) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = scaleIn(initialScale = 0.6f) + fadeIn(),
+                    exit = scaleOut(targetScale = 0.6f) + fadeOut()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = strings.newNote,
-                        modifier = Modifier.size(28.dp)
-                    )
+                    // Pixel-style squircle FAB
+                    FloatingActionButton(
+                        onClick = onNewNote,
+                        modifier = Modifier.padding(end = 4.dp, bottom = 4.dp),
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = RoundedCornerShape(20.dp),
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 2.dp,
+                            pressedElevation = 4.dp
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = strings.newNote,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
             }
         }
@@ -767,8 +779,8 @@ fun PixelSnackbar(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(20.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        shape = RoundedCornerShape(22.dp),
         color = containerColor,
         tonalElevation = 6.dp,
         shadowElevation = 8.dp,
@@ -776,7 +788,7 @@ fun PixelSnackbar(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 18.dp, vertical = 16.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -793,7 +805,7 @@ fun PixelSnackbar(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(accentColor.copy(alpha = 0.16f)),
                     contentAlignment = Alignment.Center
@@ -802,29 +814,29 @@ fun PixelSnackbar(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
                         tint = accentColor,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(14.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.5.sp
+                            fontSize = 14.sp
                         ),
                         color = contentColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     if (!subtitle.isNullOrBlank()) {
-                        Spacer(Modifier.height(1.5.dp))
+                        Spacer(Modifier.height(3.dp))
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 11.5.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Normal
                             ),
                             color = accentColor,
@@ -836,7 +848,7 @@ fun PixelSnackbar(
             }
 
             snackbarData.visuals.actionLabel?.let { action ->
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(12.dp))
                 FilledTonalButton(
                     onClick = { snackbarData.performAction() },
                     shape = RoundedCornerShape(100),
@@ -844,14 +856,14 @@ fun PixelSnackbar(
                         containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f),
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
                     ),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                    modifier = Modifier.height(34.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                    modifier = Modifier.height(38.dp)
                 ) {
                     Text(
                         text = action,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            fontSize = 12.5.sp
                         )
                     )
                 }
@@ -859,5 +871,6 @@ fun PixelSnackbar(
         }
     }
 }
+
 
 

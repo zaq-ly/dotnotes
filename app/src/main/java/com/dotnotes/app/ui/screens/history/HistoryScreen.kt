@@ -120,7 +120,10 @@ fun HistoryScreen(
 
     Scaffold(
         snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.navigationBarsPadding()
+            ) { data ->
                 com.dotnotes.app.ui.screens.notelist.PixelSnackbar(
                     snackbarData = data,
                     colorThemeKey = activeSnackbarNoteTheme
