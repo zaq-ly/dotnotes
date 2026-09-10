@@ -55,6 +55,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -65,6 +69,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -108,8 +114,11 @@ fun HistoryScreen(
         .sortedByDescending { it.updatedAt }
 
     val currentList = if (selectedTab == 0) pendingNotes else completedNotes
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             if (isSelectionMode) {
                 TopAppBar(
@@ -327,20 +336,7 @@ fun HistoryScreen(
                     }
                 }
             }
-
-            var recurringNoteToDismiss by remember { mutableStateOf<Note?>(null) }
             val reminderFeedbackFormat = remember(strings.locale) { SimpleDateFormat("d MMM yyyy, HH:mm", strings.locale) }
-
-            val executeDismissSession: (Note) -> Unit = { note ->
-                viewModel.dismissReminder(context, note.id) { nextTime ->
-                    if (nextTime != null) {
-                        val dateStr = reminderFeedbackFormat.format(Date(nextTime))
-                        Toast.makeText(context, strings.reminderDoneRepeated.format(dateStr), Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, strings.reminderDoneOnce, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
 
             val executeStopRecurring: (Note) -> Unit = { note ->
                 viewModel.stopRecurringAndDismiss(context, note.id) {
@@ -349,26 +345,25 @@ fun HistoryScreen(
             }
 
             val handleDismissReminder: (Note) -> Unit = { note ->
-                if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
-                    recurringNoteToDismiss = note
-                } else {
-                    executeDismissSession(note)
-                }
-            }
-
-            recurringNoteToDismiss?.let { note ->
-                com.dotnotes.app.ui.screens.notelist.RecurringReminderDismissBottomSheet(
-                    note = note,
-                    onDismissRequest = { recurringNoteToDismiss = null },
-                    onCompleteThisSession = {
-                        recurringNoteToDismiss = null
-                        executeDismissSession(note)
-                    },
-                    onStopRecurring = {
-                        recurringNoteToDismiss = null
-                        executeStopRecurring(note)
+                val isRecurring = note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()
+                viewModel.dismissReminder(context, note.id) { nextTime ->
+                    if (isRecurring && nextTime != null) {
+                        val dateStr = reminderFeedbackFormat.format(Date(nextTime))
+                        scope.launch {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            val result = snackbarHostState.showSnackbar(
+                                message = strings.reminderDoneRepeated.format(dateStr),
+                                actionLabel = strings.stopSchedule,
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                executeStopRecurring(note)
+                            }
+                        }
+                    } else {
+                        Toast.makeText(context, strings.reminderDoneOnce, Toast.LENGTH_SHORT).show()
                     }
-                )
+                }
             }
 
             if (currentList.isEmpty()) {
