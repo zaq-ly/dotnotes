@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -63,6 +64,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -923,107 +926,90 @@ fun NoteEditorScreen(
                             }
                         }
 
-                        if (state.repeatInterval != ReminderHelper.REPEAT_NONE && state.repeatInterval.isNotBlank()) {
-                            Spacer(Modifier.height(8.dp))
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
-                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable { viewModel.setRepeatInterval(ReminderHelper.REPEAT_NONE) }
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 14.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = strings.stopRecurring,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
-
                         Spacer(Modifier.height(10.dp))
 
-                        // Priority Selection (Notification vs Alarm)
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        // Priority Selection (Pixel Segmented Button: Notification vs Alarm)
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
                         ) {
-                            FilterChip(
-                                selected = state.priority <= 1,
-                                onClick = { viewModel.setPriority(1) },
-                                modifier = Modifier.height(38.dp),
-                                label = {
-                                    Text(
-                                        strings.notification,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = if (state.priority <= 1) FontWeight.Bold else FontWeight.Medium
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                border = null,
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(3.dp),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val isNotifSelected = state.priority <= 1
+                                val isAlarmSelected = state.priority == 2
 
-                            FilterChip(
-                                selected = state.priority == 2,
-                                onClick = { viewModel.setPriority(2) },
-                                modifier = Modifier.height(38.dp),
-                                label = {
-                                    Text(
-                                        strings.alarm,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = if (state.priority == 2) FontWeight.Bold else FontWeight.Medium
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(16.dp))
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                border = null,
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            )
+                                // Notifikasi Option
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isNotifSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { viewModel.setPriority(1) }
+                                ) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Notifications,
+                                            contentDescription = null,
+                                            tint = if (isNotifSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            text = strings.notification,
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = if (isNotifSelected) FontWeight.Bold else FontWeight.Medium
+                                            ),
+                                            color = if (isNotifSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                // Alarm Option
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isAlarmSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { viewModel.setPriority(2) }
+                                ) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Alarm,
+                                            contentDescription = null,
+                                            tint = if (isAlarmSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            text = strings.alarm,
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = if (isAlarmSelected) FontWeight.Bold else FontWeight.Medium
+                                            ),
+                                            color = if (isAlarmSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         Spacer(Modifier.height(10.dp))
@@ -1073,14 +1059,26 @@ fun NoteEditorScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(16.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(onClick = { showReminderDialog = false }) {
-                            Text(strings.save, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
+                            Text(strings.cancel, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelLarge)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            onClick = { showReminderDialog = false },
+                            shape = RoundedCornerShape(100),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text(strings.save, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
