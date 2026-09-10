@@ -12,7 +12,12 @@ Dokumen ini adalah instruksi operasional wajib dan panduan arsitektur lengkap un
    - Fokus 100% pada penjabaran ide, konsep arsitektur, diagram alur, dan analisis teknis.
    - Pengerjaan kode **HANYA BOLEH DIMULAI** setelah user secara eksplisit memberikan instruksi persetujuan (misal: *"oke kerjakan"*, *"terapkan"*, *"lanjut eksekusi"*, atau *"acc"*).
 
-2. **Alur Eksekusi & Rilis Otomatis Pasca-ACC**:
+2. **Wajib Buat Mockup Langsung Saat Ada Opsi / Update UI**:
+   - Setiap kali user meminta memperbaharui/mengubah UI atau AI Agent menyarankan beberapa opsi desain/tampilan:
+   - AI Agent **WAJIB LANGSUNG membuat mockup visual/interaktif (file HTML di direktori artifact)** yang memvisualisasikan perbandingan opsi atau tampilan baru sebelum meminta persetujuan user.
+   - Dilarang hanya menjelaskan opsi desain lewat teks saja tanpa mockup visual.
+
+3. **Alur Eksekusi & Rilis Otomatis Pasca-ACC**:
    - Begitu user menyetujui/ACC hasil diskusi dan menginstruksikan pengerjaan (*"oke kerjakan"*, *"terapkan"*, dsb.):
    - AI Agent menyelesaikan seluruh modifikasi kode dan memverifikasi build (*compile/assemble*).
    - **Setelah pengerjaan dan verifikasi build sukses, AI Agent LANGSUNG melanjutkan prosedur rilis secara otomatis**: bump version (`build.gradle.kts`), build signed release APK, `git commit`, `git push`, dan buat GitHub Release via `gh release create`, lalu cleanup file APK lokal.
@@ -269,5 +274,6 @@ Remove-Item "dotnotes-v.[VERSION_NAME].apk"
 
 ## 9. Aturan Desain & Git Hygiene
 1. **UI Bersih & Seamless**: Hindari border kotak tebal pada teks input; utamakan tipografi modern dan *borderless editor*.
-2. **Penanganan Notifikasi**: Selalu sertakan tombol aksi langsung seperti *"Tandai Selesai"* dan *"Tunda"* pada notifikasi pengingat & alarm.
-3. **Git Hygiene**: Jangan pernah menambahkan file `.apk` ke dalam commit Git biasa (file `.apk` hanya diunggah ke GitHub Releases via `gh`).
+2. **Desain Google Pixel & Warna Adaptif**: Komponen interaktif (dialog, bottom sheet, snackbar, button) wajib mengadopsi estetika Material You Google Pixel: bentuk pill/squircle (`RoundedCornerShape(20.dp)` ke atas), margin mengambang (floating), kontras warna permukaan tonal yang nyaman di mata (bukan balok putih silau di dark mode), dan warna yang adaptif terhadap tema catatan (`note.colorTheme`).
+3. **Penanganan Notifikasi**: Selalu sertakan tombol aksi langsung seperti *"Tandai Selesai"* dan *"Tunda"* pada notifikasi pengingat & alarm.
+4. **Git Hygiene**: Jangan pernah menambahkan file `.apk` ke dalam commit Git biasa (file `.apk` hanya diunggah ke GitHub Releases via `gh`).
