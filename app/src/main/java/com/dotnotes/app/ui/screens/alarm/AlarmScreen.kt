@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -277,31 +278,33 @@ fun AlarmScreen(
             }
 
             if (hasRepeat) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(10.dp))
                 Surface(
                     shape = RoundedCornerShape(100),
-                    color = Color.Transparent,
+                    color = Color(0xFF1C1E24),
+                    border = BorderStroke(0.8.dp, Color(0xFF2C2F38)),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clip(RoundedCornerShape(100))
                         .clickable(onClick = onStopRecurring)
-                        .padding(vertical = 8.dp)
                 ) {
                     Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = null,
-                            tint = Color(0xFFFFB4AB).copy(alpha = 0.85f),
+                            tint = Color(0xFFFFB4AB),
                             modifier = Modifier.size(15.dp)
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             text = strings.stopRecurringPermanently,
-                            fontSize = 13.5.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFFFB4AB).copy(alpha = 0.85f)
+                            color = Color(0xFFFFB4AB)
                         )
                     }
                 }
