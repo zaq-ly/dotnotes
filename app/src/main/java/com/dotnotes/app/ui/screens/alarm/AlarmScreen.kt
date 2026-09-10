@@ -78,29 +78,29 @@ fun AlarmScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF121316))
+            .background(Color(0xFF111215))
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 1. TOP HEADER: Clock & Alarm Pill
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 12.dp),
+                    .padding(top = 6.dp, bottom = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Alarm Pill
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF601410),
-                    border = BorderStroke(1.dp, Color(0xFF8C1D18))
+                    shape = RoundedCornerShape(100),
+                    color = Color(0xFF421412),
+                    border = BorderStroke(1.dp, Color(0xFF6E201B))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -110,7 +110,7 @@ fun AlarmScreen(
                             imageVector = Icons.Default.Alarm,
                             contentDescription = null,
                             tint = Color(0xFFFFB4AB),
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
@@ -129,12 +129,12 @@ fun AlarmScreen(
                         text = currentTime,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFE3E2E6)
+                        color = Color(0xFFE4E6ED)
                     )
                     Text(
                         text = currentDate,
                         fontSize = 12.sp,
-                        color = Color(0xFF8E9099),
+                        color = Color(0xFF8F929D),
                         fontWeight = FontWeight.Normal
                     )
                 }
@@ -145,52 +145,52 @@ fun AlarmScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(vertical = 12.dp),
-                shape = RoundedCornerShape(28.dp),
+                    .padding(vertical = 10.dp),
+                shape = RoundedCornerShape(26.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1B1C20)
+                    containerColor = Color(0xFF191B20)
                 ),
-                border = BorderStroke(1.dp, Color(0xFF33353A))
+                border = BorderStroke(1.dp, Color(0xFF2C2E36))
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp)
+                        .padding(22.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     // Note Title
                     Text(
                         text = noteTitle.ifBlank { strings.untitled },
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFFE3E2E6),
-                        lineHeight = 36.sp
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFE4E6ED),
+                        lineHeight = 34.sp
                     )
 
                     if (noteContent.isNotBlank()) {
-                        Spacer(Modifier.height(16.dp))
-                        HorizontalDivider(color = Color(0xFF33353A))
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(14.dp))
+                        HorizontalDivider(color = Color(0xFF2C2E36), thickness = 0.8.dp)
+                        Spacer(Modifier.height(14.dp))
 
                         // Note Description / Content
                         Text(
                             text = noteContent,
-                            fontSize = 17.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Normal,
-                            color = Color(0xFFC4C6D0),
-                            lineHeight = 25.sp
+                            color = Color(0xFFB8BAC4),
+                            lineHeight = 24.sp
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // Notice: Auto-Archive vs Keep on Home
+            // Notice: Auto-Archive vs Keep on Home (Clean Minimalist Pill)
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = Color(0xFF1E2024),
-                border = BorderStroke(1.dp, Color(0xFF33353A))
+                shape = RoundedCornerShape(100),
+                color = Color(0xFF1C1E24),
+                border = BorderStroke(0.8.dp, Color(0xFF2C2F38))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -200,12 +200,12 @@ fun AlarmScreen(
                         imageVector = if (autoArchive) Icons.Default.Archive else Icons.Default.Bookmark,
                         contentDescription = null,
                         tint = if (autoArchive) Color(0xFFA8C7FA) else Color(0xFFC4C7D0),
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(13.dp)
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(
                         text = if (autoArchive) strings.alarmAutoArchiveNotice else strings.alarmKeepOnHomeNotice,
-                        fontSize = 12.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = if (autoArchive) Color(0xFFA8C7FA) else Color(0xFFC4C7D0)
                     )
@@ -218,8 +218,8 @@ fun AlarmScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    .padding(bottom = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Snooze Button
@@ -227,17 +227,17 @@ fun AlarmScreen(
                     onClick = onSnooze,
                     modifier = Modifier
                         .weight(1f)
-                        .height(58.dp),
-                    shape = RoundedCornerShape(29.dp),
+                        .height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = Color(0xFF2B2C32),
-                        contentColor = Color(0xFFE3E2E6)
+                        containerColor = Color(0xFF26282F),
+                        contentColor = Color(0xFFE4E6ED)
                     )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Snooze,
                         contentDescription = strings.snooze,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
@@ -252,8 +252,8 @@ fun AlarmScreen(
                     onClick = onDismiss,
                     modifier = Modifier
                         .weight(1.1f)
-                        .height(58.dp),
-                    shape = RoundedCornerShape(29.dp),
+                        .height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFFB4AB),
                         contentColor = Color(0xFF690005)
@@ -262,7 +262,7 @@ fun AlarmScreen(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = strings.dismiss,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(

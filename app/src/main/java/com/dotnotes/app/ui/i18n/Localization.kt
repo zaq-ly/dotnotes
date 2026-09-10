@@ -271,8 +271,8 @@ val EnglishStrings = AppStrings(
     autoSyncActive = "Auto-Sync Active",
     autoArchive = "Archive when completed",
     autoArchiveDesc = "Hide from home screen once reminder is marked done",
-    alarmAutoArchiveNotice = "Note will be moved to History & Archive upon completion",
-    alarmKeepOnHomeNotice = "Note will remain on home screen upon completion",
+    alarmAutoArchiveNotice = "Auto-archives on dismiss",
+    alarmKeepOnHomeNotice = "Keeps on home screen",
     archive = "Archive",
     notesArchived = "Notes archived"
 )
@@ -402,8 +402,8 @@ val IndonesianStrings = AppStrings(
     autoSyncActive = "Otomatis Tersinkron",
     autoArchive = "Arsipkan saat selesai",
     autoArchiveDesc = "Sembunyikan dari beranda setelah pengingat selesai",
-    alarmAutoArchiveNotice = "Catatan akan dipindahkan ke Riwayat & Arsip saat selesai",
-    alarmKeepOnHomeNotice = "Catatan tetap disimpan di beranda saat selesai",
+    alarmAutoArchiveNotice = "Otomatis diarsipkan saat selesai",
+    alarmKeepOnHomeNotice = "Tetap disimpan di beranda",
     archive = "Arsipkan",
     notesArchived = "Catatan diarsipkan"
 )
