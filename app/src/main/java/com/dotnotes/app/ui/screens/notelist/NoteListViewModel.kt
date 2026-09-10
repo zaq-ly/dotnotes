@@ -126,6 +126,22 @@ class NoteListViewModel(
         }
     }
 
+    fun stopRecurringAndDismiss(
+        context: android.content.Context,
+        noteId: String,
+        onFeedback: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
+            notificationManager.cancel(noteId.hashCode())
+            notificationManager.cancel(Math.abs(noteId.hashCode()) + 1)
+
+            repository.stopRecurringAndDismissAlarm(noteId)
+            com.dotnotes.app.alarm.AlarmScheduler(context).cancel(noteId)
+            onFeedback?.invoke()
+        }
+    }
+
     class Factory(private val repository: NoteRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =

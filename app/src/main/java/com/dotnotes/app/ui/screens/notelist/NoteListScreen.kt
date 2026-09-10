@@ -61,6 +61,8 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import android.widget.Toast
 import com.dotnotes.app.alarm.ReminderHelper
@@ -426,8 +428,10 @@ fun NoteListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            var recurringNoteToDismiss by remember { mutableStateOf<Note?>(null) }
             val reminderFeedbackFormat = remember(strings.locale) { SimpleDateFormat("d MMM yyyy, hh:mm a", strings.locale) }
-            val handleDismissReminder: (Note) -> Unit = { note ->
+
+            val executeDismissSession: (Note) -> Unit = { note ->
                 viewModel.dismissReminder(context, note.id) { nextTime ->
                     if (nextTime != null) {
                         val dateStr = reminderFeedbackFormat.format(Date(nextTime))
@@ -437,6 +441,36 @@ fun NoteListScreen(
                         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                     }
                 }
+            }
+
+            val executeStopRecurring: (Note) -> Unit = { note ->
+                viewModel.stopRecurringAndDismiss(context, note.id) {
+                    val msg = if (note.autoArchive) strings.reminderDoneMovedToHistory else strings.recurringStopped
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            val handleDismissReminder: (Note) -> Unit = { note ->
+                if (note.repeatInterval != ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                    recurringNoteToDismiss = note
+                } else {
+                    executeDismissSession(note)
+                }
+            }
+
+            recurringNoteToDismiss?.let { note ->
+                RecurringReminderDismissBottomSheet(
+                    note = note,
+                    onDismissRequest = { recurringNoteToDismiss = null },
+                    onCompleteThisSession = {
+                        recurringNoteToDismiss = null
+                        executeDismissSession(note)
+                    },
+                    onStopRecurring = {
+                        recurringNoteToDismiss = null
+                        executeStopRecurring(note)
+                    }
+                )
             }
 
             if (visibleNotes.isEmpty()) {
@@ -683,6 +717,168 @@ private fun SelectableNoteCard(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RecurringReminderDismissBottomSheet(
+    note: Note,
+    onDismissRequest: () -> Unit,
+    onCompleteThisSession: () -> Unit,
+    onStopRecurring: () -> Unit
+) {
+    val strings = LocalStrings.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val nextTime = remember(note) {
+        ReminderHelper.getNextReminderTime(note.reminderTime ?: System.currentTimeMillis(), note.repeatInterval)
+    }
+    val nextTimeFormatted = remember(nextTime, strings.locale) {
+        SimpleDateFormat("d MMM yyyy, hh:mm a", strings.locale).format(Date(nextTime))
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        dragHandle = {
+            Surface(
+                modifier = Modifier.padding(vertical = 12.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Box(Modifier.size(width = 36.dp, height = 4.dp))
+            }
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp)
+        ) {
+            Text(
+                text = strings.markDone,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            val notePreview = note.title.ifBlank { note.previewText.ifBlank { strings.untitled } }
+            Text(
+                text = notePreview,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp, bottom = 18.dp)
+            )
+
+            // Option 1: Complete This Session
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable(onClick = onCompleteThisSession)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = strings.completeThisSession,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = strings.completeThisSessionDesc.format(nextTimeFormatted),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Option 2: Stop Recurring
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable(onClick = onStopRecurring)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = strings.stopRecurring,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = strings.stopRecurringDesc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Cancel Button
+            TextButton(
+                onClick = onDismissRequest,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text(
+                    text = strings.cancel,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

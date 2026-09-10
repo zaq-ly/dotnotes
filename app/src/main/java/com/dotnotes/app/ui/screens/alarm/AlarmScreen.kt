@@ -2,6 +2,7 @@ package com.dotnotes.app.ui.screens.alarm
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,8 +57,10 @@ fun AlarmScreen(
     noteTitle: String,
     noteContent: String = "",
     autoArchive: Boolean = true,
+    hasRepeat: Boolean = false,
     onDismiss: () -> Unit,
-    onSnooze: () -> Unit
+    onSnooze: () -> Unit,
+    onStopRecurring: () -> Unit = onDismiss
 ) {
     val strings = LocalStrings.current
     var currentTime by remember(strings.locale) {
@@ -270,6 +273,37 @@ fun AlarmScreen(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+
+            if (hasRepeat) {
+                Spacer(Modifier.height(6.dp))
+                Surface(
+                    shape = RoundedCornerShape(100),
+                    color = Color.Transparent,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onStopRecurring)
+                        .padding(vertical = 8.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            tint = Color(0xFFFFB4AB).copy(alpha = 0.85f),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = strings.stopRecurringPermanently,
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFFFB4AB).copy(alpha = 0.85f)
+                        )
+                    }
                 }
             }
         }

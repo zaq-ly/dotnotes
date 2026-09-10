@@ -27,6 +27,13 @@ class AlarmActivity : ComponentActivity() {
         val noteTitle = intent.getStringExtra("note_title") ?: "Alarm"
         val noteContent = intent.getStringExtra("note_content") ?: ""
         val autoArchive = intent.getBooleanExtra("auto_archive", true)
+        val repeatInterval = intent.getStringExtra("repeat_interval") ?: ""
+
+        val note = runBlocking {
+            DotNotesApp.instance.repository.getNoteById(noteId)
+        }
+        val effectiveRepeat = note?.repeatInterval ?: repeatInterval
+        val hasRepeat = effectiveRepeat.isNotBlank() && effectiveRepeat != ReminderHelper.REPEAT_NONE
 
         val language = runBlocking {
             DotNotesApp.instance.settingsDataStore.language.first()
@@ -40,8 +47,10 @@ class AlarmActivity : ComponentActivity() {
                         noteTitle = noteTitle,
                         noteContent = noteContent,
                         autoArchive = autoArchive,
+                        hasRepeat = hasRepeat,
                         onDismiss = { dismissAlarm(noteId) },
-                        onSnooze = { snoozeAlarm(noteId) }
+                        onSnooze = { snoozeAlarm(noteId) },
+                        onStopRecurring = { stopRecurringAlarm(noteId) }
                     )
                 }
             }
@@ -85,7 +94,33 @@ class AlarmActivity : ComponentActivity() {
         NotificationManagerCompat.from(this).cancel(notifId)
         NotificationManagerCompat.from(this).cancel(noteId.hashCode())
         runBlocking {
-            DotNotesApp.instance.repository.dismissAlarm(noteId)
+            val note = DotNotesApp.instance.repository.getNoteById(noteId)
+            if (note != null && note.repeatInterval != ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                val nextTime = ReminderHelper.getNextReminderTime(note.reminderTime ?: System.currentTimeMillis(), note.repeatInterval)
+                val updatedNote = note.copy(
+                    reminderTime = nextTime,
+                    isAlarmDismissed = false,
+                    updatedAt = System.currentTimeMillis()
+                )
+                DotNotesApp.instance.repository.upsertNote(updatedNote)
+                AlarmScheduler(this@AlarmActivity).schedule(updatedNote)
+            } else {
+                DotNotesApp.instance.repository.dismissAlarm(noteId)
+                AlarmScheduler(this@AlarmActivity).cancel(noteId)
+            }
+        }
+        finish()
+    }
+
+    private fun stopRecurringAlarm(noteId: String) {
+        AlarmPlayer.stop()
+        AlarmService.stop(this)
+        val notifId = Math.abs(noteId.hashCode()) + 1
+        NotificationManagerCompat.from(this).cancel(notifId)
+        NotificationManagerCompat.from(this).cancel(noteId.hashCode())
+        runBlocking {
+            DotNotesApp.instance.repository.stopRecurringAndDismissAlarm(noteId)
+            AlarmScheduler(this@AlarmActivity).cancel(noteId)
         }
         finish()
     }

@@ -328,8 +328,10 @@ fun HistoryScreen(
                 }
             }
 
+            var recurringNoteToDismiss by remember { mutableStateOf<Note?>(null) }
             val reminderFeedbackFormat = remember(strings.locale) { SimpleDateFormat("d MMM yyyy, HH:mm", strings.locale) }
-            val handleDismissReminder: (Note) -> Unit = { note ->
+
+            val executeDismissSession: (Note) -> Unit = { note ->
                 viewModel.dismissReminder(context, note.id) { nextTime ->
                     if (nextTime != null) {
                         val dateStr = reminderFeedbackFormat.format(Date(nextTime))
@@ -338,6 +340,35 @@ fun HistoryScreen(
                         Toast.makeText(context, strings.reminderDoneOnce, Toast.LENGTH_SHORT).show()
                     }
                 }
+            }
+
+            val executeStopRecurring: (Note) -> Unit = { note ->
+                viewModel.stopRecurringAndDismiss(context, note.id) {
+                    Toast.makeText(context, strings.recurringStopped, Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            val handleDismissReminder: (Note) -> Unit = { note ->
+                if (note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
+                    recurringNoteToDismiss = note
+                } else {
+                    executeDismissSession(note)
+                }
+            }
+
+            recurringNoteToDismiss?.let { note ->
+                com.dotnotes.app.ui.screens.notelist.RecurringReminderDismissBottomSheet(
+                    note = note,
+                    onDismissRequest = { recurringNoteToDismiss = null },
+                    onCompleteThisSession = {
+                        recurringNoteToDismiss = null
+                        executeDismissSession(note)
+                    },
+                    onStopRecurring = {
+                        recurringNoteToDismiss = null
+                        executeStopRecurring(note)
+                    }
+                )
             }
 
             if (currentList.isEmpty()) {

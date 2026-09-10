@@ -41,6 +41,9 @@ interface NoteDao {
     @Query("UPDATE notes SET isAlarmDismissed = 1, isArchived = CASE WHEN autoArchive = 1 THEN 1 ELSE isArchived END, updatedAt = :now WHERE id = :id")
     suspend fun dismissAlarm(id: String, now: Long = System.currentTimeMillis())
 
+    @Query("UPDATE notes SET repeatInterval = 'NONE', isAlarmDismissed = 1, isArchived = CASE WHEN autoArchive = 1 THEN 1 ELSE isArchived END, updatedAt = :now WHERE id = :id")
+    suspend fun stopRecurringAndDismissAlarm(id: String, now: Long = System.currentTimeMillis())
+
     @Query("UPDATE notes SET isArchived = 1, updatedAt = :now WHERE id IN (:ids)")
     suspend fun archiveNotes(ids: Collection<String>, now: Long = System.currentTimeMillis())
 

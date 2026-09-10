@@ -51,6 +51,11 @@ class NoteRepository(private val dao: NoteDao) {
         syncCloud()
     }
 
+    suspend fun stopRecurringAndDismissAlarm(id: String) {
+        dao.stopRecurringAndDismissAlarm(id)
+        syncCloud()
+    }
+
     suspend fun archiveNotes(ids: Collection<String>) {
         dao.archiveNotes(ids)
         syncCloud()
