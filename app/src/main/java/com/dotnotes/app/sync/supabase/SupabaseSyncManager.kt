@@ -1,5 +1,6 @@
 package com.dotnotes.app.sync.supabase
 
+import android.util.Log
 import com.dotnotes.app.data.local.NoteDao
 import com.dotnotes.app.data.model.Note
 import io.github.jan.supabase.auth.auth
@@ -31,7 +32,7 @@ class SupabaseSyncManager(private val noteDao: NoteDao) {
                 .select()
                 .decodeList<SupabaseNoteDto>()
 
-            val remoteNotes = remoteNotesDto.map { it.toNote() }
+            val remoteNotes = remoteNotesDto.map { it.toNote(userId) }
 
             // 2. Fetch local notes
             val localNotes = noteDao.getAllNotesList()
@@ -93,8 +94,12 @@ class SupabaseSyncManager(private val noteDao: NoteDao) {
 
             SyncResult.Success(syncedCount = toUploadToRemote.size + toSaveToLocal.size + deletedIds.size)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Supabase sync error: ${e.message}", e)
             SyncResult.Error(e.localizedMessage ?: "Sync error")
         }
+    }
+
+    companion object {
+        private const val TAG = "SupabaseSyncManager"
     }
 }

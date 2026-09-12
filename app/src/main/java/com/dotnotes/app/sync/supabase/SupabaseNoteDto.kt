@@ -24,42 +24,50 @@ data class SupabaseNoteDto(
     @SerialName("updated_at") val updatedAt: Long? = null,
     @SerialName("is_deleted") val isDeleted: Boolean? = null
 ) {
-    fun toNote(): Note = Note(
-        id = if (id.isNotBlank()) id else UUID.randomUUID().toString(),
-        title = title ?: "",
-        content = content ?: "",
-        isPinned = isPinned ?: false,
-        reminderTime = reminderTime,
-        priority = priority ?: 0,
-        isAlarmDismissed = isAlarmDismissed ?: false,
-        snoozeDurationMin = snoozeDurationMin ?: 5,
-        repeatInterval = repeatInterval ?: "NONE",
-        colorTheme = colorTheme ?: "DEFAULT",
-        autoArchive = autoArchive ?: true,
-        isArchived = isArchived ?: false,
-        createdAt = createdAt ?: System.currentTimeMillis(),
-        updatedAt = updatedAt ?: System.currentTimeMillis(),
-        isDeleted = isDeleted ?: false
-    )
+    fun toNote(userId: String? = null): Note {
+        val decryptedTitle = if (userId != null && title != null) NoteCrypto.decrypt(title, userId) else title ?: ""
+        val decryptedContent = if (userId != null && content != null) NoteCrypto.decrypt(content, userId) else content ?: ""
+        return Note(
+            id = if (id.isNotBlank()) id else UUID.randomUUID().toString(),
+            title = decryptedTitle,
+            content = decryptedContent,
+            isPinned = isPinned ?: false,
+            reminderTime = reminderTime,
+            priority = priority ?: 0,
+            isAlarmDismissed = isAlarmDismissed ?: false,
+            snoozeDurationMin = snoozeDurationMin ?: 5,
+            repeatInterval = repeatInterval ?: "NONE",
+            colorTheme = colorTheme ?: "DEFAULT",
+            autoArchive = autoArchive ?: true,
+            isArchived = isArchived ?: false,
+            createdAt = createdAt ?: System.currentTimeMillis(),
+            updatedAt = updatedAt ?: System.currentTimeMillis(),
+            isDeleted = isDeleted ?: false
+        )
+    }
 
     companion object {
-        fun fromNote(note: Note, userId: String? = null): SupabaseNoteDto = SupabaseNoteDto(
-            id = note.id,
-            userId = userId,
-            title = note.title,
-            content = note.content,
-            isPinned = note.isPinned,
-            reminderTime = note.reminderTime,
-            priority = note.priority,
-            isAlarmDismissed = note.isAlarmDismissed,
-            snoozeDurationMin = note.snoozeDurationMin,
-            repeatInterval = note.repeatInterval,
-            colorTheme = note.colorTheme,
-            autoArchive = note.autoArchive,
-            isArchived = note.isArchived,
-            createdAt = note.createdAt,
-            updatedAt = note.updatedAt,
-            isDeleted = note.isDeleted
-        )
+        fun fromNote(note: Note, userId: String? = null): SupabaseNoteDto {
+            val encTitle = if (userId != null) NoteCrypto.encrypt(note.title, userId) else note.title
+            val encContent = if (userId != null) NoteCrypto.encrypt(note.content, userId) else note.content
+            return SupabaseNoteDto(
+                id = note.id,
+                userId = userId,
+                title = encTitle,
+                content = encContent,
+                isPinned = note.isPinned,
+                reminderTime = note.reminderTime,
+                priority = note.priority,
+                isAlarmDismissed = note.isAlarmDismissed,
+                snoozeDurationMin = note.snoozeDurationMin,
+                repeatInterval = note.repeatInterval,
+                colorTheme = note.colorTheme,
+                autoArchive = note.autoArchive,
+                isArchived = note.isArchived,
+                createdAt = note.createdAt,
+                updatedAt = note.updatedAt,
+                isDeleted = note.isDeleted
+            )
+        }
     }
 }

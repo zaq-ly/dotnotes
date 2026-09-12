@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS public.notes (
     snooze_duration_min INT NOT NULL DEFAULT 5,
     repeat_interval TEXT NOT NULL DEFAULT 'NONE',
     color_theme TEXT NOT NULL DEFAULT 'DEFAULT',
+    auto_archive BOOLEAN NOT NULL DEFAULT TRUE,
+    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
     created_at BIGINT NOT NULL,
     updated_at BIGINT NOT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE
