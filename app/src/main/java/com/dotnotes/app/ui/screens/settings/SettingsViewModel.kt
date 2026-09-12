@@ -146,6 +146,10 @@ class SettingsViewModel(
         }
     }
 
+    fun startLoggingIn() {
+        _isLoggingIn.value = true
+    }
+
     fun cancelLoggingIn() {
         _isLoggingIn.value = false
     }

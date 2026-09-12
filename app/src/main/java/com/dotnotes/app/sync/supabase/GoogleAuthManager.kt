@@ -54,7 +54,6 @@ class GoogleAuthManager(private val context: Context) {
             .requestEmail()
             .build()
         val client = GoogleSignIn.getClient(context, gso)
-        client.signOut()
         return client.signInIntent
     }
 
@@ -74,7 +73,13 @@ class GoogleAuthManager(private val context: Context) {
             Result.success(Unit)
         } catch (e: ApiException) {
             Log.e(TAG, "Google Sign-In ApiException statusCode=${e.statusCode}", e)
-            Result.failure(Exception("Google Sign-In error (Status Code ${e.statusCode}): ${e.localizedMessage ?: e.message}"))
+            val message = when (e.statusCode) {
+                12501 -> "Login Google dibatalkan atau SHA-1 release belum terdaftar di Google Cloud Console (Status Code 12501)"
+                12500 -> "Konfigurasi Google Sign-In tidak valid (Status Code 12500)"
+                12502 -> "Login Google sedang diproses (Status Code 12502)"
+                else -> "Google Sign-In error (Status Code ${e.statusCode}): ${e.localizedMessage ?: e.message}"
+            }
+            Result.failure(Exception(message))
         } catch (e: Exception) {
             Log.e(TAG, "Google Sign-In failed", e)
             Result.failure(e)

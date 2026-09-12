@@ -165,13 +165,17 @@ fun SettingsScreen(
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        viewModel.handleGoogleSignInResult(context, result.data) { success, err ->
-            if (success) {
-                Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
-            } else if (err != null) {
-                signInError = err
-                Toast.makeText(context, err, Toast.LENGTH_LONG).show()
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.handleGoogleSignInResult(context, result.data) { success, err ->
+                if (success) {
+                    Toast.makeText(context, strings.signInWithGoogle, Toast.LENGTH_SHORT).show()
+                } else if (err != null) {
+                    signInError = err
+                    Toast.makeText(context, err, Toast.LENGTH_LONG).show()
+                }
             }
+        } else {
+            viewModel.cancelLoggingIn()
         }
     }
 
@@ -267,8 +271,10 @@ fun SettingsScreen(
                                 .fillMaxWidth()
                                 .clickable(enabled = !isLoggingIn) {
                                     try {
+                                        viewModel.startLoggingIn()
                                         googleSignInLauncher.launch(viewModel.getGoogleSignInIntent(context))
                                     } catch (e: Exception) {
+                                        viewModel.cancelLoggingIn()
                                         Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                                     }
                                 }
