@@ -109,15 +109,16 @@ class NoteEditorViewModel(
             val now = System.currentTimeMillis()
             val isNew = s.id.isEmpty()
 
+            val repeat = if (s.hasReminder) s.repeatInterval else com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE
             val note = Note(
                 id = if (isNew) UUID.randomUUID().toString() else s.id,
                 title = s.title,
                 content = s.content,
                 isPinned = s.isPinned,
-                reminderTime = if (s.hasReminder) s.reminderTime else null,
+                reminderTime = if (s.hasReminder) s.reminderTime?.let { com.dotnotes.app.alarm.ReminderHelper.alignToRepeatDays(it, repeat) } else null,
                 priority = if (s.hasReminder) s.priority else 0,
                 snoozeDurationMin = s.snoozeDurationMin,
-                repeatInterval = if (s.hasReminder) s.repeatInterval else com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE,
+                repeatInterval = repeat,
                 colorTheme = s.colorTheme,
                 autoArchive = s.autoArchive,
                 createdAt = if (isNew) now else s.createdAt,

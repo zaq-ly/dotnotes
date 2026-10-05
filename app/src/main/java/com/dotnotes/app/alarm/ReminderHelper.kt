@@ -9,21 +9,53 @@ object ReminderHelper {
     const val REPEAT_WEEKLY = "WEEKLY"
     const val REPEAT_MONTHLY = "MONTHLY"
     const val REPEAT_YEARLY = "YEARLY"
+    const val REPEAT_DAYS_PREFIX = "DAYS:"
+
+    /** ISO days 1=Mon..7=Sun parsed from "DAYS:1,2,3". Empty if not a days interval. */
+    fun parseDays(repeatInterval: String): Set<Int> =
+        if (!repeatInterval.startsWith(REPEAT_DAYS_PREFIX)) emptySet()
+        else repeatInterval.removePrefix(REPEAT_DAYS_PREFIX).split(',')
+            .mapNotNull { it.trim().toIntOrNull() }.filter { it in 1..7 }.toSet()
+
+    fun daysInterval(days: Set<Int>): String = REPEAT_DAYS_PREFIX + days.sorted().joinToString(",")
+
+    private fun isoDay(cal: Calendar): Int = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7 + 1
 
     fun getNextReminderTime(currentTimeMillis: Long, repeatInterval: String): Long {
         if (repeatInterval == REPEAT_NONE || repeatInterval.isBlank()) return currentTimeMillis
+        val days = parseDays(repeatInterval)
         val cal = Calendar.getInstance().apply { timeInMillis = currentTimeMillis }
         val now = System.currentTimeMillis()
         do {
-            when (repeatInterval) {
+            if (days.isNotEmpty()) cal.add(Calendar.DAY_OF_YEAR, 1)
+            else when (repeatInterval) {
                 REPEAT_DAILY -> cal.add(Calendar.DAY_OF_YEAR, 1)
                 REPEAT_WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
                 REPEAT_MONTHLY -> cal.add(Calendar.MONTH, 1)
                 REPEAT_YEARLY -> cal.add(Calendar.YEAR, 1)
                 else -> return currentTimeMillis
             }
-        } while (cal.timeInMillis <= now)
+        } while (cal.timeInMillis <= now || (days.isNotEmpty() && isoDay(cal) !in days))
         return cal.timeInMillis
+    }
+
+    /** Shift first trigger forward to a selected day if [timeMillis] falls on an unselected day. */
+    fun alignToRepeatDays(timeMillis: Long, repeatInterval: String): Long {
+        val days = parseDays(repeatInterval)
+        if (days.isEmpty()) return timeMillis
+        val cal = Calendar.getInstance().apply { this.timeInMillis = timeMillis }
+        return if (isoDay(cal) in days) timeMillis else getNextReminderTime(timeMillis, repeatInterval)
+    }
+
+    fun getDaysLabel(days: Set<Int>, strings: AppStrings): String {
+        val s = days.sorted()
+        val n = strings.dayShortNames
+        return when {
+            s.size == 7 -> strings.repeatDaily
+            s == listOf(6, 7) -> strings.weekend
+            s.size > 2 && s.last() - s.first() == s.size - 1 -> "${n[s.first() - 1]}–${n[s.last() - 1]}"
+            else -> s.joinToString(", ") { n[it - 1] }
+        }
     }
 
     fun getRepeatLabel(repeatInterval: String, strings: AppStrings): String {
@@ -32,7 +64,8 @@ object ReminderHelper {
             REPEAT_WEEKLY -> strings.repeatWeekly
             REPEAT_MONTHLY -> strings.repeatMonthly
             REPEAT_YEARLY -> strings.repeatYearly
-            else -> strings.repeatNone
+            else -> parseDays(repeatInterval).takeIf { it.isNotEmpty() }
+                ?.let { getDaysLabel(it, strings) } ?: strings.repeatNone
         }
     }
 

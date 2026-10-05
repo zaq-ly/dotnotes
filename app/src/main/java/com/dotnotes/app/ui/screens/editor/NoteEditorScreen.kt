@@ -887,10 +887,13 @@ fun NoteEditorScreen(
                                     ReminderHelper.REPEAT_DAILY to strings.repeatDaily,
                                     ReminderHelper.REPEAT_WEEKLY to strings.repeatWeekly,
                                     ReminderHelper.REPEAT_MONTHLY to strings.repeatMonthly,
-                                    ReminderHelper.REPEAT_YEARLY to strings.repeatYearly
+                                    ReminderHelper.REPEAT_YEARLY to strings.repeatYearly,
+                                    ReminderHelper.REPEAT_DAYS_PREFIX to strings.repeatCustomDays
                                 )
                                 repeatOptions.forEach { (optionKey, optionLabel) ->
-                                    val isSelected = state.repeatInterval == optionKey
+                                    val isDaysOption = optionKey == ReminderHelper.REPEAT_DAYS_PREFIX
+                                    val isSelected = if (isDaysOption) ReminderHelper.parseDays(state.repeatInterval).isNotEmpty()
+                                        else state.repeatInterval == optionKey
                                     DropdownMenuItem(
                                         text = {
                                             Text(
@@ -900,7 +903,11 @@ fun NoteEditorScreen(
                                             )
                                         },
                                         onClick = {
-                                            viewModel.setRepeatInterval(optionKey)
+                                            if (!isSelected) {
+                                                viewModel.setRepeatInterval(
+                                                    if (isDaysOption) ReminderHelper.daysInterval((1..5).toSet()) else optionKey
+                                                )
+                                            }
                                             showRepeatMenu = false
                                         },
                                         trailingIcon = if (isSelected) {
@@ -922,6 +929,61 @@ fun NoteEditorScreen(
                                                 if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
                                             )
                                     )
+                                }
+                            }
+                        }
+
+                        val selectedDays = ReminderHelper.parseDays(state.repeatInterval)
+                        if (selectedDays.isNotEmpty()) {
+                            Spacer(Modifier.height(10.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf(
+                                    (1..5).toSet() to ReminderHelper.getDaysLabel((1..5).toSet(), strings),
+                                    (1..6).toSet() to ReminderHelper.getDaysLabel((1..6).toSet(), strings),
+                                    setOf(6, 7) to strings.weekend
+                                ).forEach { (preset, label) ->
+                                    val active = selectedDays == preset
+                                    Surface(
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                        modifier = Modifier.clip(RoundedCornerShape(20.dp))
+                                            .clickable { viewModel.setRepeatInterval(ReminderHelper.daysInterval(preset)) }
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                strings.dayInitials.forEachIndexed { index, initial ->
+                                    val day = index + 1
+                                    val on = day in selectedDays
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aspectRatio(1f)
+                                            .clip(CircleShape)
+                                            .background(if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                                            .clickable {
+                                                val next = if (on) selectedDays - day else selectedDays + day
+                                                if (next.isNotEmpty()) viewModel.setRepeatInterval(ReminderHelper.daysInterval(next))
+                                            }
+                                    ) {
+                                        Text(
+                                            text = initial,
+                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                            color = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
