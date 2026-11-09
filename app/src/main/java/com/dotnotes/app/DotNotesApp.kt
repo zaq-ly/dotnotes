@@ -12,6 +12,7 @@ class DotNotesApp : Application() {
     lateinit var database: NoteDatabase
     lateinit var repository: NoteRepository
     lateinit var settingsDataStore: SettingsDataStore
+    val appScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()

@@ -4,12 +4,15 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.dotnotes.app.DotNotesApp
 import com.dotnotes.app.alarm.AlarmScheduler
 import com.dotnotes.app.data.model.Note
 import com.dotnotes.app.data.repository.NoteRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 data class EditorState(
@@ -24,6 +27,8 @@ data class EditorState(
     val repeatInterval: String = com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE,
     val colorTheme: String = com.dotnotes.app.ui.theme.NoteColorThemes.DEFAULT,
     val autoArchive: Boolean = true,
+    val isAlarmDismissed: Boolean = false,
+    val isArchived: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val isLoading: Boolean = true
 )
@@ -54,6 +59,8 @@ class NoteEditorViewModel(
                         repeatInterval = note.repeatInterval,
                         colorTheme = note.colorTheme,
                         autoArchive = note.autoArchive,
+                        isAlarmDismissed = note.isAlarmDismissed,
+                        isArchived = note.isArchived,
                         createdAt = note.createdAt,
                         isLoading = false
                     )
@@ -103,34 +110,56 @@ class NoteEditorViewModel(
         _state.value = _state.value.copy(autoArchive = enabled)
     }
 
-    fun save() {
-        viewModelScope.launch {
-            val s = _state.value
-            val now = System.currentTimeMillis()
-            val isNew = s.id.isEmpty()
+    fun save(content: String = _state.value.content, onFinished: (() -> Unit)? = null) {
+        val s = _state.value
+        val isNew = s.id.isEmpty()
+        val isBlank = s.title.isBlank() && content.isBlank() && !s.hasReminder
 
-            val repeat = if (s.hasReminder) s.repeatInterval else com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE
-            val note = Note(
-                id = if (isNew) UUID.randomUUID().toString() else s.id,
-                title = s.title,
-                content = s.content,
-                isPinned = s.isPinned,
-                reminderTime = if (s.hasReminder) s.reminderTime?.let { com.dotnotes.app.alarm.ReminderHelper.alignToRepeatDays(it, repeat) } else null,
-                priority = if (s.hasReminder) s.priority else 0,
-                snoozeDurationMin = s.snoozeDurationMin,
-                repeatInterval = repeat,
-                colorTheme = s.colorTheme,
-                autoArchive = s.autoArchive,
-                createdAt = if (isNew) now else s.createdAt,
-                updatedAt = now
-            )
+        if (isNew && isBlank) {
+            onFinished?.invoke()
+            return
+        }
+
+        val noteId = if (isNew) UUID.randomUUID().toString() else s.id
+        val now = System.currentTimeMillis()
+        _state.value = s.copy(id = noteId, content = content)
+
+        val repeat = if (s.hasReminder) s.repeatInterval else com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE
+        val reminderTime = if (s.hasReminder) {
+            s.reminderTime?.let { com.dotnotes.app.alarm.ReminderHelper.alignToRepeatDays(it, repeat) }
+        } else null
+
+        val isFutureReminder = reminderTime != null && reminderTime > now
+
+        val note = Note(
+            id = noteId,
+            title = s.title,
+            content = content,
+            isPinned = s.isPinned,
+            reminderTime = reminderTime,
+            priority = if (s.hasReminder) s.priority else 0,
+            isAlarmDismissed = if (isFutureReminder) false else s.isAlarmDismissed,
+            snoozeDurationMin = s.snoozeDurationMin,
+            repeatInterval = repeat,
+            colorTheme = s.colorTheme,
+            autoArchive = s.autoArchive,
+            isArchived = if (isFutureReminder) false else s.isArchived,
+            createdAt = if (isNew) now else s.createdAt,
+            updatedAt = now
+        )
+
+        DotNotesApp.instance.appScope.launch {
             repository.upsertNote(note)
 
             val scheduler = AlarmScheduler(app)
-            if (note.reminderTime != null && note.reminderTime > now) {
+            if (isFutureReminder) {
                 scheduler.schedule(note)
             } else {
                 scheduler.cancel(note.id)
+            }
+
+            withContext(Dispatchers.Main) {
+                onFinished?.invoke()
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.dotnotes.app.ui.screens.editor
 
+import androidx.activity.compose.BackHandler
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -199,15 +201,43 @@ fun NoteEditorScreen(
         )
     }
 
-    fun saveAndExit() {
-        val finalContent = if (isChecklistMode) {
+    var isSaving by remember { mutableStateOf(false) }
+
+    fun getCurrentContent(): String {
+        return if (isChecklistMode) {
             checklistToHtml(checklistItems)
         } else {
             richTextState.toHtml()
         }
-        viewModel.updateContent(finalContent)
-        viewModel.save()
-        onBack()
+    }
+
+    fun saveAndExit() {
+        if (isSaving) return
+        isSaving = true
+        val finalContent = getCurrentContent()
+        viewModel.save(finalContent) {
+            onBack()
+        }
+    }
+
+    BackHandler(enabled = !isSaving) {
+        saveAndExit()
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) {
+                if (isContentInitialized) {
+                    val finalContent = getCurrentContent()
+                    viewModel.save(finalContent)
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
@@ -232,6 +262,7 @@ fun NoteEditorScreen(
                     navigationIcon = {
                         IconButton(
                             onClick = { saveAndExit() },
+                            enabled = !isSaving,
                             modifier = Modifier.padding(start = 4.dp)
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back, tint = noteColors.onSurface)
@@ -239,8 +270,9 @@ fun NoteEditorScreen(
                     },
                     actions = {
                         IconButton(onClick = { 
-                            if (state.reminderTime == null) {
+                            if (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis()) {
                                 val nowCal = Calendar.getInstance().apply {
+                                    add(Calendar.MINUTE, 10)
                                     set(Calendar.SECOND, 0)
                                     set(Calendar.MILLISECOND, 0)
                                 }
@@ -255,7 +287,10 @@ fun NoteEditorScreen(
                             )
                         }
                         Box(modifier = Modifier.padding(end = 4.dp)) {
-                            IconButton(onClick = { saveAndExit() }) {
+                            IconButton(
+                                onClick = { saveAndExit() },
+                                enabled = !isSaving
+                            ) {
                                 Icon(Icons.Default.Check, contentDescription = strings.save, tint = noteColors.primary)
                             }
                         }
@@ -751,6 +786,7 @@ fun NoteEditorScreen(
                                 viewModel.setReminder(enabled)
                                 if (enabled && (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis())) {
                                     val nowCal = Calendar.getInstance().apply {
+                                        add(Calendar.MINUTE, 10)
                                         set(Calendar.SECOND, 0)
                                         set(Calendar.MILLISECOND, 0)
                                     }
