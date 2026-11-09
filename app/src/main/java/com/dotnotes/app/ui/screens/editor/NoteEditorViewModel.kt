@@ -26,7 +26,7 @@ data class EditorState(
     val snoozeDurationMin: Int = 5,
     val repeatInterval: String = com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE,
     val colorTheme: String = com.dotnotes.app.ui.theme.NoteColorThemes.DEFAULT,
-    val autoArchive: Boolean = true,
+    val autoArchive: Boolean = false,
     val isAlarmDismissed: Boolean = false,
     val isArchived: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),

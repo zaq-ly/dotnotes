@@ -204,6 +204,9 @@ fun NoteEditorScreen(
     var isSaving by remember { mutableStateOf(false) }
 
     fun getCurrentContent(): String {
+        if (!isContentInitialized) {
+            return state.content
+        }
         return if (isChecklistMode) {
             checklistToHtml(checklistItems)
         } else {
@@ -220,8 +223,51 @@ fun NoteEditorScreen(
         }
     }
 
-    BackHandler(enabled = !isSaving) {
-        saveAndExit()
+    BackHandler(enabled = true) {
+        if (!isSaving) {
+            saveAndExit()
+        }
+    }
+
+    var initialReminderHasReminder by remember { mutableStateOf(false) }
+    var initialReminderTime by remember { mutableStateOf<Long?>(null) }
+    var initialReminderPriority by remember { mutableStateOf(0) }
+    var initialReminderRepeat by remember { mutableStateOf(ReminderHelper.REPEAT_NONE) }
+    var initialReminderAutoArchive by remember { mutableStateOf(false) }
+
+    fun openReminderDialog() {
+        initialReminderHasReminder = state.hasReminder
+        initialReminderTime = state.reminderTime
+        initialReminderPriority = state.priority
+        initialReminderRepeat = state.repeatInterval
+        initialReminderAutoArchive = state.autoArchive
+
+        if (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis()) {
+            val nowCal = Calendar.getInstance().apply {
+                add(Calendar.MINUTE, 10)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            viewModel.setReminderTime(nowCal.timeInMillis)
+        }
+        showReminderDialog = true
+    }
+
+    fun dismissReminderDialog(saveChanges: Boolean) {
+        if (!saveChanges) {
+            viewModel.setReminder(initialReminderHasReminder)
+            if (initialReminderHasReminder && initialReminderTime != null) {
+                viewModel.setReminderTime(initialReminderTime!!)
+            }
+            viewModel.setPriority(initialReminderPriority)
+            viewModel.setRepeatInterval(initialReminderRepeat)
+            viewModel.setAutoArchive(initialReminderAutoArchive)
+            showReminderDialog = false
+        } else {
+            showReminderDialog = false
+            val content = getCurrentContent()
+            viewModel.save(content)
+        }
     }
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -269,17 +315,7 @@ fun NoteEditorScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { 
-                            if (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis()) {
-                                val nowCal = Calendar.getInstance().apply {
-                                    add(Calendar.MINUTE, 10)
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }
-                                viewModel.setReminderTime(nowCal.timeInMillis)
-                            }
-                            showReminderDialog = true 
-                        }) {
+                        IconButton(onClick = { openReminderDialog() }) {
                             Icon(
                                 imageVector = if (state.priority == 2 && state.hasReminder) Icons.Default.Alarm else Icons.Default.Notifications,
                                 contentDescription = strings.reminder,
@@ -744,7 +780,7 @@ fun NoteEditorScreen(
     // Reminder Pop-up Dialog
     if (showReminderDialog) {
         Dialog(
-            onDismissRequest = { showReminderDialog = false },
+            onDismissRequest = { dismissReminderDialog(saveChanges = false) },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(
@@ -1164,12 +1200,12 @@ fun NoteEditorScreen(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = { showReminderDialog = false }) {
+                        TextButton(onClick = { dismissReminderDialog(saveChanges = false) }) {
                             Text(strings.cancel, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelLarge)
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(
-                            onClick = { showReminderDialog = false },
+                            onClick = { dismissReminderDialog(saveChanges = true) },
                             shape = RoundedCornerShape(100),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -1601,6 +1637,8 @@ fun NoteEditorScreen(
                                 .clickable {
                                     viewModel.setColorTheme(colorKey)
                                     showColorPicker = false
+                                    val content = getCurrentContent()
+                                    viewModel.save(content)
                                 }
                                 .padding(vertical = 4.dp)
                         ) {

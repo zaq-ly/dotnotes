@@ -79,7 +79,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val rawContent = intent.getStringExtra("note_content") ?: ""
         val noteContent = Note.getPreviewText(rawContent)
         val priority = intent.getIntExtra("priority", 1)
-        val autoArchive = intent.getBooleanExtra("auto_archive", true)
+        val autoArchive = intent.getBooleanExtra("auto_archive", false)
         val repeatInterval = intent.getStringExtra("repeat_interval") ?: ""
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
