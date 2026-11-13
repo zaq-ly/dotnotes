@@ -234,6 +234,7 @@ fun NoteEditorScreen(
     var initialReminderPriority by remember { mutableStateOf(0) }
     var initialReminderRepeat by remember { mutableStateOf(ReminderHelper.REPEAT_NONE) }
     var initialReminderAutoArchive by remember { mutableStateOf(false) }
+    var activePresetMinutes by remember { mutableStateOf<Int?>(null) }
 
     fun openReminderDialog() {
         initialReminderHasReminder = state.hasReminder
@@ -244,11 +245,14 @@ fun NoteEditorScreen(
 
         if (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis()) {
             val nowCal = Calendar.getInstance().apply {
-                add(Calendar.MINUTE, 10)
+                add(Calendar.MINUTE, 1)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
             viewModel.setReminderTime(nowCal.timeInMillis)
+            activePresetMinutes = 1
+        } else {
+            activePresetMinutes = null
         }
         showReminderDialog = true
     }
@@ -822,11 +826,12 @@ fun NoteEditorScreen(
                                 viewModel.setReminder(enabled)
                                 if (enabled && (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis())) {
                                     val nowCal = Calendar.getInstance().apply {
-                                        add(Calendar.MINUTE, 10)
+                                        add(Calendar.MINUTE, 1)
                                         set(Calendar.SECOND, 0)
                                         set(Calendar.MILLISECOND, 0)
                                     }
                                     viewModel.setReminderTime(nowCal.timeInMillis)
+                                    activePresetMinutes = 1
                                 }
                             },
                             colors = SwitchDefaults.colors(
@@ -902,6 +907,58 @@ fun NoteEditorScreen(
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
                                     )
+                                }
+                            }
+                        }
+
+                        // Quick Time Preset Chips (Desain A: Filled Tonal)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val presets = listOf(
+                                strings.presetNow to 1,
+                                strings.preset5Min to 5,
+                                strings.preset10Min to 10,
+                                strings.preset30Min to 30,
+                                strings.preset1Hour to 60
+                            )
+
+                            presets.forEach { (label, minutes) ->
+                                val isSelected = activePresetMinutes == minutes
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            activePresetMinutes = minutes
+                                            val newCal = Calendar.getInstance().apply {
+                                                add(Calendar.MINUTE, minutes)
+                                                set(Calendar.SECOND, 0)
+                                                set(Calendar.MILLISECOND, 0)
+                                            }
+                                            viewModel.setReminderTime(newCal.timeInMillis)
+                                            viewModel.setReminder(true)
+                                        }
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(vertical = 7.dp, horizontal = 2.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                                fontSize = 11.sp
+                                            ),
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1456,6 +1513,7 @@ fun NoteEditorScreen(
                             }
                             viewModel.setReminderTime(updatedCal.timeInMillis)
                             viewModel.setReminder(true)
+                            activePresetMinutes = null
                             showDatePicker = false
                         }) {
                             Text(strings.save, fontWeight = FontWeight.SemiBold)
@@ -1558,6 +1616,7 @@ fun NoteEditorScreen(
                             }
                             viewModel.setReminderTime(updatedCal.timeInMillis)
                             viewModel.setReminder(true)
+                            activePresetMinutes = null
                             showTimePicker = false
                         }) {
                             Text(strings.save, fontWeight = FontWeight.SemiBold)
