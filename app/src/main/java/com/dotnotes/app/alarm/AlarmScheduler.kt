@@ -47,21 +47,24 @@ class AlarmScheduler(private val context: Context) {
         )
 
         try {
-            if (canScheduleExact()) {
-                alarmManager.setAlarmClock(
-                    AlarmManager.AlarmClockInfo(time, showPending), pending
-                )
-            } else {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pending)
-            }
-        } catch (e: SecurityException) {
-            try {
-                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pending)
-            } catch (e2: Exception) {
-                e2.printStackTrace()
-            }
+            // Priority 1: setAlarmClock (highest priority exact alarm, ignores Doze mode)
+            alarmManager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(time, showPending), pending
+            )
         } catch (e: Exception) {
-            e.printStackTrace()
+            try {
+                if (canScheduleExact()) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pending)
+                } else {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pending)
+                }
+            } catch (e2: Exception) {
+                try {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pending)
+                } catch (e3: Exception) {
+                    e3.printStackTrace()
+                }
+            }
         }
     }
 

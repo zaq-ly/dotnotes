@@ -19,6 +19,15 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+        val wakeLock = powerManager?.newWakeLock(
+            android.os.PowerManager.PARTIAL_WAKE_LOCK,
+            "dotnotes:AlarmReceiverWakeLock"
+        )
+        try {
+            wakeLock?.acquire(10_000L)
+        } catch (_: Exception) {}
+
         val action = intent.action
         val noteId = intent.getStringExtra("note_id") ?: return
 

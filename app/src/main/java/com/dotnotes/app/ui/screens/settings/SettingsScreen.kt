@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.BatterySaver
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DarkMode
@@ -508,6 +509,23 @@ fun SettingsScreen(
                                 alarmSoundPickerLauncher.launch(intent)
                             }
                         )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
+
+                        // Background & Battery Optimization
+                        PixelSettingsItem(
+                            icon = Icons.Default.BatterySaver,
+                            iconBgColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.primary,
+                            title = strings.backgroundAndBattery,
+                            subtitle = strings.backgroundAndBatteryDesc,
+                            onClick = {
+                                openBackgroundBatterySettings(context)
+                            }
+                        )
                     }
                 }
             }
@@ -875,5 +893,27 @@ private fun PixelSettingsItem(
             Spacer(Modifier.width(8.dp))
             trailingContent()
         }
+    }
+}
+
+private fun openBackgroundBatterySettings(context: android.content.Context) {
+    val intents = listOf(
+        // Xiaomi / HyperOS / MIUI Autostart Management
+        Intent().setComponent(android.content.ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")),
+        // Standard Android Ignore Battery Optimization request
+        Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:${context.packageName}")
+        },
+        // Battery Saver / App Details Settings
+        Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:${context.packageName}")
+        }
+    )
+    for (intent in intents) {
+        try {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            return
+        } catch (_: Exception) {}
     }
 }
