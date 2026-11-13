@@ -65,6 +65,19 @@ class AlarmScheduler(private val context: Context) {
         }
     }
 
+    fun triggerNow(note: Note) {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra("note_id", note.id)
+            putExtra("note_title", note.title)
+            putExtra("note_content", note.content)
+            putExtra("priority", note.priority)
+            putExtra("auto_archive", note.autoArchive)
+            putExtra("repeat_interval", note.repeatInterval)
+            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+        }
+        context.sendBroadcast(intent)
+    }
+
     fun cancel(noteId: String) {
         val intent = Intent(context, AlarmReceiver::class.java)
         val pending = PendingIntent.getBroadcast(
