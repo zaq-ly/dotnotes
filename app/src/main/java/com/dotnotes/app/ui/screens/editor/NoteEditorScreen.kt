@@ -245,12 +245,11 @@ fun NoteEditorScreen(
 
         if (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis()) {
             val nowCal = Calendar.getInstance().apply {
-                add(Calendar.MINUTE, 1)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
             viewModel.setReminderTime(nowCal.timeInMillis)
-            activePresetMinutes = 1
+            activePresetMinutes = 0
         } else {
             activePresetMinutes = null
         }
@@ -826,12 +825,11 @@ fun NoteEditorScreen(
                                 viewModel.setReminder(enabled)
                                 if (enabled && (state.reminderTime == null || state.reminderTime!! <= System.currentTimeMillis())) {
                                     val nowCal = Calendar.getInstance().apply {
-                                        add(Calendar.MINUTE, 1)
                                         set(Calendar.SECOND, 0)
                                         set(Calendar.MILLISECOND, 0)
                                     }
                                     viewModel.setReminderTime(nowCal.timeInMillis)
-                                    activePresetMinutes = 1
+                                    activePresetMinutes = 0
                                 }
                             },
                             colors = SwitchDefaults.colors(
@@ -919,7 +917,7 @@ fun NoteEditorScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             val presets = listOf(
-                                strings.presetNow to 1,
+                                strings.presetNow to 0,
                                 strings.preset5Min to 5,
                                 strings.preset10Min to 10,
                                 strings.preset30Min to 30,
@@ -937,7 +935,9 @@ fun NoteEditorScreen(
                                         .clickable {
                                             activePresetMinutes = minutes
                                             val newCal = Calendar.getInstance().apply {
-                                                add(Calendar.MINUTE, minutes)
+                                                if (minutes > 0) {
+                                                    add(Calendar.MINUTE, minutes)
+                                                }
                                                 set(Calendar.SECOND, 0)
                                                 set(Calendar.MILLISECOND, 0)
                                             }

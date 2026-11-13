@@ -130,6 +130,8 @@ class NoteEditorViewModel(
         } else null
 
         val isFutureReminder = reminderTime != null && reminderTime > now
+        val isImmediateCurrentMinute = reminderTime != null && !isFutureReminder && s.hasReminder && (now - reminderTime) < 60_000L && !s.isAlarmDismissed
+        val shouldActivateAlarm = isFutureReminder || isImmediateCurrentMinute
 
         val note = Note(
             id = noteId,
@@ -138,12 +140,12 @@ class NoteEditorViewModel(
             isPinned = s.isPinned,
             reminderTime = reminderTime,
             priority = if (s.hasReminder) s.priority else 0,
-            isAlarmDismissed = if (isFutureReminder) false else s.isAlarmDismissed,
+            isAlarmDismissed = if (shouldActivateAlarm) false else s.isAlarmDismissed,
             snoozeDurationMin = s.snoozeDurationMin,
             repeatInterval = repeat,
             colorTheme = s.colorTheme,
             autoArchive = s.autoArchive,
-            isArchived = if (isFutureReminder) false else s.isArchived,
+            isArchived = if (shouldActivateAlarm) false else s.isArchived,
             createdAt = if (isNew) now else s.createdAt,
             updatedAt = now
         )
@@ -154,6 +156,8 @@ class NoteEditorViewModel(
             val scheduler = AlarmScheduler(app)
             if (isFutureReminder) {
                 scheduler.schedule(note)
+            } else if (isImmediateCurrentMinute) {
+                scheduler.triggerNow(note)
             } else {
                 scheduler.cancel(note.id)
             }
