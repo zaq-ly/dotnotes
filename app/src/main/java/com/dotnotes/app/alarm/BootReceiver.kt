@@ -11,21 +11,20 @@ import kotlinx.coroutines.launch
 /**
  * Restores alarms after a reboot or an app update.
  *
- * Missed reminders are never rung again here:
- * - Upcoming reminders are rescheduled.
- * - Missed recurring reminders are advanced to their next occurrence.
- * - Missed one-time reminders only get a silent notification after a reboot, and only when
- *   they were missed less than [MISSED_WINDOW_MS] ago. App updates never post anything.
+ * - Upcoming reminders are rescheduled as usual.
+ * - Reminders missed while the phone was off (never rang, no matter how long ago) are rung
+ *   a few seconds after boot through AlarmManager, so the full-screen alarm path is allowed.
+ * - Reminders that already rang (and were silenced by the user) are never rung again.
  */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val bootActions = setOf(
+        val validActions = setOf(
             Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
             "android.intent.action.QUICKBOOT_POWERON",
             "com.htc.intent.action.QUICKBOOT_POWERON"
         )
-        val isBoot = intent.action in bootActions
-        if (!isBoot && intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
+        if (intent.action !in validActions) return
 
         val pendingResult = goAsync()
         val appContext = context.applicationContext
@@ -35,28 +34,22 @@ class BootReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val now = System.currentTimeMillis()
-                repo.getNotesWithActiveReminders().forEach { note ->
+                val reminders = repo.getNotesWithActiveReminders()
+                FiredReminderStore.seedIfNeeded(appContext, reminders, now)
+
+                var missedIndex = 0
+                reminders.sortedBy { it.reminderTime }.forEach { note ->
                     try {
                         val time = note.reminderTime ?: return@forEach
-                        val isRecurring = note.repeatInterval.isNotBlank() &&
-                            note.repeatInterval != ReminderHelper.REPEAT_NONE
-                        val missedRecently = isBoot && now - time in 0 until MISSED_WINDOW_MS
-
                         when {
                             time > now -> scheduler.schedule(note)
-                            isRecurring -> {
-                                val nextNote = note.copy(
-                                    reminderTime = ReminderHelper.getNextReminderTime(time, note.repeatInterval),
-                                    isAlarmDismissed = false,
-                                    updatedAt = now
-                                )
-                                repo.upsertNote(nextNote)
-                                scheduler.schedule(nextNote)
-                                if (missedRecently) {
-                                    AlarmReceiver.postStickyReminderNotification(appContext, note)
-                                }
+                            !FiredReminderStore.wasFired(appContext, note.id, time) -> {
+                                // Missed while the phone was off: ring it shortly after boot,
+                                // staggered so several missed reminders don't collide.
+                                val triggerAt = now + MISSED_DELAY_MS + missedIndex * MISSED_STAGGER_MS
+                                scheduler.schedule(note, triggerAt)
+                                missedIndex++
                             }
-                            missedRecently -> AlarmReceiver.postStickyReminderNotification(appContext, note)
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -71,6 +64,7 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        private const val MISSED_WINDOW_MS = 60 * 60 * 1000L
+        private const val MISSED_DELAY_MS = 5_000L
+        private const val MISSED_STAGGER_MS = 3_000L
     }
 }

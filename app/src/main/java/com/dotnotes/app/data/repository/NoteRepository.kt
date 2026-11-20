@@ -24,6 +24,7 @@ class NoteRepository(private val dao: NoteDao) {
         try {
             val scheduler = AlarmScheduler(DotNotesApp.instance)
             ids.forEach { scheduler.cancel(it, stopPlayback = false) }
+            com.dotnotes.app.alarm.FiredReminderStore.remove(DotNotesApp.instance, ids)
         } catch (e: Exception) {
             e.printStackTrace()
         }

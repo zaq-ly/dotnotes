@@ -19,8 +19,12 @@ class AlarmScheduler(private val context: Context) {
         }
     }
 
-    fun schedule(note: Note) {
-        val time = note.reminderTime ?: return
+    /**
+     * Schedules the note's alarm. [triggerAt] defaults to the reminder time; it is set explicitly
+     * only to ring a missed reminder shortly after boot.
+     */
+    fun schedule(note: Note, triggerAt: Long? = note.reminderTime) {
+        val time = triggerAt ?: return
         if (time <= System.currentTimeMillis()) return
 
         val intent = Intent(context, AlarmReceiver::class.java).apply {
@@ -30,7 +34,6 @@ class AlarmScheduler(private val context: Context) {
             putExtra("priority", note.priority)
             putExtra("auto_archive", note.autoArchive)
             putExtra("repeat_interval", note.repeatInterval)
-            putExtra(EXTRA_EXPECTED_TIME, time)
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
 
@@ -77,7 +80,6 @@ class AlarmScheduler(private val context: Context) {
             putExtra("priority", note.priority)
             putExtra("auto_archive", note.autoArchive)
             putExtra("repeat_interval", note.repeatInterval)
-            putExtra(EXTRA_EXPECTED_TIME, note.reminderTime ?: System.currentTimeMillis())
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
         context.sendBroadcast(intent)
@@ -123,8 +125,6 @@ class AlarmScheduler(private val context: Context) {
     }
 
     companion object {
-        const val EXTRA_EXPECTED_TIME = "expected_time"
-
         fun isActiveReminder(note: Note): Boolean =
             note.reminderTime != null && !note.isDeleted && !note.isArchived && !note.isAlarmDismissed
     }

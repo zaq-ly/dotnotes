@@ -99,6 +99,8 @@ class AlarmReceiver : BroadcastReceiver() {
             return
         }
 
+        FiredReminderStore.markFired(context, note.id, reminderTime)
+
         val noteTitle = note.title.ifBlank { "Untitled" }
         val rawContent = note.content
         val noteContent = Note.getPreviewText(rawContent)
