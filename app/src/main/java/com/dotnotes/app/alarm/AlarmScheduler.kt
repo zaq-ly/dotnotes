@@ -50,6 +50,44 @@ class AlarmScheduler(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        setAlarm(time, pending, showPending)
+    }
+
+    /** Separate snooze alarm for a recurring reminder; the main schedule is left untouched. */
+    fun scheduleSnooze(noteId: String, until: Long) {
+        SnoozeStore.set(context, noteId, until)
+        val showIntent = Intent(context, MainActivity::class.java).apply {
+            putExtra("note_id", noteId)
+        }
+        val showPending = PendingIntent.getActivity(
+            context, noteId.hashCode() + 10, showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        setAlarm(until, snoozePending(noteId), showPending)
+    }
+
+    fun cancelSnooze(noteId: String) {
+        SnoozeStore.remove(context, noteId)
+        try {
+            alarmManager.cancel(snoozePending(noteId))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun snoozePending(noteId: String): PendingIntent {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_SNOOZE_FIRE
+            putExtra("note_id", noteId)
+            addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+        }
+        return PendingIntent.getBroadcast(
+            context, noteId.hashCode() + 20, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun setAlarm(time: Long, pending: PendingIntent, showPending: PendingIntent) {
         try {
             // Priority 1: setAlarmClock (highest priority exact alarm, ignores Doze mode)
             alarmManager.setAlarmClock(
@@ -109,6 +147,7 @@ class AlarmScheduler(private val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        cancelSnooze(noteId)
 
         // Dismiss floating notifications and stop alarm audio immediately
         try {

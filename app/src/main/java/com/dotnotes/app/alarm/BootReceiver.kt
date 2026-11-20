@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
  * - Reminders missed while the phone was off (never rang, no matter how long ago) are rung
  *   a few seconds after boot through AlarmManager, so the full-screen alarm path is allowed.
  * - Reminders that already rang (and were silenced by the user) are never rung again.
+ * - Pending snoozes of recurring reminders are restored.
  */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -50,6 +51,24 @@ class BootReceiver : BroadcastReceiver() {
                                 scheduler.schedule(note, triggerAt)
                                 missedIndex++
                             }
+                            // Already rang but was never moved on (older data): advance quietly.
+                            ReminderActions.isRecurring(note) -> ReminderActions.advance(appContext, note)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+                // Restore pending snoozes of recurring reminders.
+                SnoozeStore.all(appContext).forEach { (noteId, until) ->
+                    try {
+                        val note = repo.getNoteById(noteId)
+                        if (note != null && AlarmScheduler.isActiveReminder(note)) {
+                            val minTime = now + MISSED_DELAY_MS + missedIndex * MISSED_STAGGER_MS
+                            if (until < minTime) missedIndex++
+                            scheduler.scheduleSnooze(noteId, maxOf(until, minTime))
+                        } else {
+                            SnoozeStore.remove(appContext, noteId)
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()

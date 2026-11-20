@@ -93,22 +93,7 @@ class AlarmActivity : ComponentActivity() {
         val notifId = Math.abs(noteId.hashCode()) + 1
         NotificationManagerCompat.from(this).cancel(notifId)
         NotificationManagerCompat.from(this).cancel(noteId.hashCode())
-        runBlocking {
-            val note = DotNotesApp.instance.repository.getNoteById(noteId)
-            if (note != null && note.repeatInterval != ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
-                val nextTime = ReminderHelper.getNextReminderTime(note.reminderTime ?: System.currentTimeMillis(), note.repeatInterval)
-                val updatedNote = note.copy(
-                    reminderTime = nextTime,
-                    isAlarmDismissed = false,
-                    updatedAt = System.currentTimeMillis()
-                )
-                DotNotesApp.instance.repository.upsertNote(updatedNote)
-                AlarmScheduler(this@AlarmActivity).schedule(updatedNote)
-            } else {
-                DotNotesApp.instance.repository.dismissAlarm(noteId)
-                AlarmScheduler(this@AlarmActivity).cancel(noteId)
-            }
-        }
+        runBlocking { ReminderActions.dismissRinging(this@AlarmActivity, noteId) }
         finish()
     }
 
@@ -131,19 +116,7 @@ class AlarmActivity : ComponentActivity() {
         val notifId = Math.abs(noteId.hashCode()) + 1
         NotificationManagerCompat.from(this).cancel(notifId)
         NotificationManagerCompat.from(this).cancel(noteId.hashCode())
-        runBlocking {
-            val note = DotNotesApp.instance.repository.getNoteById(noteId)
-            if (note != null) {
-                val snoozeMs = note.snoozeDurationMin * 60 * 1000L
-                val snoozedNote = note.copy(
-                    reminderTime = System.currentTimeMillis() + snoozeMs,
-                    isAlarmDismissed = false,
-                    updatedAt = System.currentTimeMillis()
-                )
-                DotNotesApp.instance.repository.upsertNote(snoozedNote)
-                AlarmScheduler(this@AlarmActivity).schedule(snoozedNote)
-            }
-        }
+        runBlocking { ReminderActions.snooze(this@AlarmActivity, noteId) }
         finish()
     }
 

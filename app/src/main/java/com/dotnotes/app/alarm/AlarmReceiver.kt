@@ -36,28 +36,19 @@ class AlarmReceiver : BroadcastReceiver() {
             AlarmService.stop(context)
             NotificationManagerCompat.from(context).cancel(noteId.hashCode())
             NotificationManagerCompat.from(context).cancel(Math.abs(noteId.hashCode()) + 1)
-            runBlocking {
-                val note = DotNotesApp.instance.repository.getNoteById(noteId)
-                if (note != null && note.repeatInterval != ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
-                    val nextTime = ReminderHelper.getNextReminderTime(note.reminderTime ?: System.currentTimeMillis(), note.repeatInterval)
-                    val updatedNote = note.copy(
-                        reminderTime = nextTime,
-                        isAlarmDismissed = false,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                    DotNotesApp.instance.repository.upsertNote(updatedNote)
-                    AlarmScheduler(context).schedule(updatedNote)
-                } else {
-                    DotNotesApp.instance.repository.dismissAlarm(noteId)
-                }
-            }
+            runBlocking { ReminderActions.dismissRinging(context, noteId) }
             return
         }
 
         if (action == ACTION_SWIPE) {
             runBlocking {
                 val note = DotNotesApp.instance.repository.getNoteById(noteId)
-                if (note != null && !note.isAlarmDismissed && note.reminderTime != null) {
+                val time = note?.reminderTime
+                // Keep the notification only while the occurrence is still unhandled; a recurring
+                // reminder already points at its next occurrence and may be swiped away freely.
+                if (note != null && !note.isAlarmDismissed && time != null &&
+                    time <= System.currentTimeMillis() + STALE_TOLERANCE_MS
+                ) {
                     postStickyReminderNotification(context, note)
                 }
             }
@@ -69,37 +60,36 @@ class AlarmReceiver : BroadcastReceiver() {
             AlarmService.stop(context)
             NotificationManagerCompat.from(context).cancel(noteId.hashCode())
             NotificationManagerCompat.from(context).cancel(Math.abs(noteId.hashCode()) + 1)
-            runBlocking {
-                val note = DotNotesApp.instance.repository.getNoteById(noteId)
-                if (note != null) {
-                    val snoozeMs = note.snoozeDurationMin * 60 * 1000L
-                    val snoozedNote = note.copy(
-                        reminderTime = System.currentTimeMillis() + snoozeMs,
-                        isAlarmDismissed = false,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                    DotNotesApp.instance.repository.upsertNote(snoozedNote)
-                    AlarmScheduler(context).schedule(snoozedNote)
-                }
-            }
+            runBlocking { ReminderActions.snooze(context, noteId) }
             return
         }
 
         // Always validate against the database: the extras are only a snapshot from scheduling
         // time, and the note may since have been deleted, archived, dismissed or rescheduled.
+        val isSnoozeRing = action == ACTION_SNOOZE_FIRE
         val note = runBlocking { DotNotesApp.instance.repository.getNoteById(noteId) }
         if (note == null || !AlarmScheduler.isActiveReminder(note)) {
+            if (isSnoozeRing) SnoozeStore.remove(context, noteId)
             NotificationManagerCompat.from(context).cancel(Math.abs(noteId.hashCode()) + 1)
             return
         }
         val reminderTime = note.reminderTime ?: return
-        if (reminderTime > System.currentTimeMillis() + STALE_TOLERANCE_MS) {
-            // Stale alarm: the reminder was moved to a later time. Make sure the real one is set.
-            AlarmScheduler(context).schedule(note)
-            return
-        }
 
-        FiredReminderStore.markFired(context, note.id, reminderTime)
+        if (isSnoozeRing) {
+            // Snooze of a recurring reminder: ring now, the next occurrence is already scheduled.
+            SnoozeStore.remove(context, noteId)
+        } else {
+            if (reminderTime > System.currentTimeMillis() + STALE_TOLERANCE_MS) {
+                // Stale alarm: the reminder was moved to a later time. Make sure the real one is set.
+                AlarmScheduler(context).schedule(note)
+                return
+            }
+            FiredReminderStore.markFired(context, note.id, reminderTime)
+            if (ReminderActions.isRecurring(note)) {
+                // Prepare the next occurrence right away, whether or not the user taps a button.
+                runBlocking { ReminderActions.advance(context, note) }
+            }
+        }
 
         val noteTitle = note.title.ifBlank { "Untitled" }
         val rawContent = note.content
@@ -246,6 +236,7 @@ class AlarmReceiver : BroadcastReceiver() {
         const val ACTION_DISMISS = "com.dotnotes.app.ACTION_DISMISS"
         const val ACTION_SNOOZE = "com.dotnotes.app.ACTION_SNOOZE"
         const val ACTION_SWIPE = "com.dotnotes.app.ACTION_SWIPE"
+        const val ACTION_SNOOZE_FIRE = "com.dotnotes.app.ACTION_SNOOZE_FIRE"
         private const val STALE_TOLERANCE_MS = 60_000L
 
         fun postStickyReminderNotification(context: Context, note: Note) {

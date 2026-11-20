@@ -108,15 +108,10 @@ class NoteListViewModel(
             notificationManager.cancel(Math.abs(noteId.hashCode()) + 1)
 
             val note = repository.getNoteById(noteId)
-            if (note != null && note.repeatInterval != com.dotnotes.app.alarm.ReminderHelper.REPEAT_NONE && note.repeatInterval.isNotBlank()) {
-                val nextTime = com.dotnotes.app.alarm.ReminderHelper.getNextReminderTime(note.reminderTime ?: System.currentTimeMillis(), note.repeatInterval)
-                val updatedNote = note.copy(
-                    reminderTime = nextTime,
-                    isAlarmDismissed = false,
-                    updatedAt = System.currentTimeMillis()
-                )
-                repository.upsertNote(updatedNote)
-                com.dotnotes.app.alarm.AlarmScheduler(context).schedule(updatedNote)
+            if (note != null && com.dotnotes.app.alarm.ReminderActions.isRecurring(note)) {
+                // In-app "done" explicitly skips the shown occurrence.
+                com.dotnotes.app.alarm.AlarmScheduler(context).cancelSnooze(noteId)
+                val nextTime = com.dotnotes.app.alarm.ReminderActions.advance(context, note)
                 onFeedback?.invoke(nextTime)
             } else {
                 repository.dismissAlarm(noteId)
