@@ -14,7 +14,7 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE id = :id")
     suspend fun getNoteById(id: String): Note?
 
-    @Query("SELECT * FROM notes WHERE reminderTime IS NOT NULL AND isDeleted = 0 AND isAlarmDismissed = 0")
+    @Query("SELECT * FROM notes WHERE reminderTime IS NOT NULL AND isDeleted = 0 AND isArchived = 0 AND isAlarmDismissed = 0")
     suspend fun getNotesWithActiveReminders(): List<Note>
 
     @Upsert

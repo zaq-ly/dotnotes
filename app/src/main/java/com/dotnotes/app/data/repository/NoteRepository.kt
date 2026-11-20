@@ -1,5 +1,7 @@
 package com.dotnotes.app.data.repository
 
+import com.dotnotes.app.DotNotesApp
+import com.dotnotes.app.alarm.AlarmScheduler
 import com.dotnotes.app.data.local.NoteDao
 import com.dotnotes.app.data.model.Note
 import com.dotnotes.app.sync.supabase.SupabaseSyncManager
@@ -17,6 +19,16 @@ class NoteRepository(private val dao: NoteDao) {
         }
     }
 
+    /** Removes pending alarms + notifications so no orphan alarm can ring for these notes. */
+    private fun cancelAlarms(ids: Collection<String>) {
+        try {
+            val scheduler = AlarmScheduler(DotNotesApp.instance)
+            ids.forEach { scheduler.cancel(it, stopPlayback = false) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun getAllNotes() = dao.getAllNotes()
     suspend fun getNoteById(id: String) = dao.getNoteById(id)
     suspend fun getNotesWithActiveReminders() = dao.getNotesWithActiveReminders()
@@ -27,11 +39,13 @@ class NoteRepository(private val dao: NoteDao) {
     }
 
     suspend fun softDeleteNote(id: String) {
+        cancelAlarms(listOf(id))
         dao.softDeleteNote(id)
         syncCloud()
     }
 
     suspend fun softDeleteNotes(ids: Collection<String>) {
+        cancelAlarms(ids)
         dao.softDeleteNotes(ids)
         syncCloud()
     }
@@ -57,21 +71,25 @@ class NoteRepository(private val dao: NoteDao) {
     }
 
     suspend fun archiveNotes(ids: Collection<String>) {
+        cancelAlarms(ids)
         dao.archiveNotes(ids)
         syncCloud()
     }
 
     suspend fun restoreNotes(ids: Collection<String>) {
+        cancelAlarms(ids)
         dao.restoreNotes(ids)
         syncCloud()
     }
 
     suspend fun clearReminder(id: String) {
+        cancelAlarms(listOf(id))
         dao.clearReminder(id)
         syncCloud()
     }
 
     suspend fun clearReminders(ids: Collection<String>) {
+        cancelAlarms(ids)
         dao.clearReminders(ids)
         syncCloud()
     }

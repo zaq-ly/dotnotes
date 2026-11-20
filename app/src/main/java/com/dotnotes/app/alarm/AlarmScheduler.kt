@@ -30,6 +30,7 @@ class AlarmScheduler(private val context: Context) {
             putExtra("priority", note.priority)
             putExtra("auto_archive", note.autoArchive)
             putExtra("repeat_interval", note.repeatInterval)
+            putExtra(EXTRA_EXPECTED_TIME, time)
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
 
@@ -76,12 +77,26 @@ class AlarmScheduler(private val context: Context) {
             putExtra("priority", note.priority)
             putExtra("auto_archive", note.autoArchive)
             putExtra("repeat_interval", note.repeatInterval)
+            putExtra(EXTRA_EXPECTED_TIME, note.reminderTime ?: System.currentTimeMillis())
             addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
         }
         context.sendBroadcast(intent)
     }
 
-    fun cancel(noteId: String) {
+    /**
+     * Schedules the note if it still has an upcoming active reminder, otherwise removes any
+     * pending alarm and its notifications. Used to keep AlarmManager in sync with the database.
+     */
+    fun reconcile(note: Note) {
+        val time = note.reminderTime
+        if (isActiveReminder(note) && time != null && time > System.currentTimeMillis()) {
+            schedule(note)
+        } else {
+            cancel(note.id, stopPlayback = false)
+        }
+    }
+
+    fun cancel(noteId: String, stopPlayback: Boolean = true) {
         val intent = Intent(context, AlarmReceiver::class.java)
         val pending = PendingIntent.getBroadcast(
             context, noteId.hashCode(), intent,
@@ -95,13 +110,22 @@ class AlarmScheduler(private val context: Context) {
 
         // Dismiss floating notifications and stop alarm audio immediately
         try {
-            AlarmPlayer.stop()
-            AlarmService.stop(context)
+            if (stopPlayback) {
+                AlarmPlayer.stop()
+                AlarmService.stop(context)
+            }
             val notifManager = androidx.core.app.NotificationManagerCompat.from(context)
             notifManager.cancel(noteId.hashCode())
             notifManager.cancel(Math.abs(noteId.hashCode()) + 1)
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    companion object {
+        const val EXTRA_EXPECTED_TIME = "expected_time"
+
+        fun isActiveReminder(note: Note): Boolean =
+            note.reminderTime != null && !note.isDeleted && !note.isArchived && !note.isAlarmDismissed
     }
 }

@@ -75,7 +75,8 @@ class AlarmReceiver : BroadcastReceiver() {
                     val snoozeMs = note.snoozeDurationMin * 60 * 1000L
                     val snoozedNote = note.copy(
                         reminderTime = System.currentTimeMillis() + snoozeMs,
-                        isAlarmDismissed = false
+                        isAlarmDismissed = false,
+                        updatedAt = System.currentTimeMillis()
                     )
                     DotNotesApp.instance.repository.upsertNote(snoozedNote)
                     AlarmScheduler(context).schedule(snoozedNote)
@@ -84,12 +85,26 @@ class AlarmReceiver : BroadcastReceiver() {
             return
         }
 
-        val noteTitle = intent.getStringExtra("note_title")?.ifBlank { "Untitled" } ?: "Untitled"
-        val rawContent = intent.getStringExtra("note_content") ?: ""
+        // Always validate against the database: the extras are only a snapshot from scheduling
+        // time, and the note may since have been deleted, archived, dismissed or rescheduled.
+        val note = runBlocking { DotNotesApp.instance.repository.getNoteById(noteId) }
+        if (note == null || !AlarmScheduler.isActiveReminder(note)) {
+            NotificationManagerCompat.from(context).cancel(Math.abs(noteId.hashCode()) + 1)
+            return
+        }
+        val reminderTime = note.reminderTime ?: return
+        if (reminderTime > System.currentTimeMillis() + STALE_TOLERANCE_MS) {
+            // Stale alarm: the reminder was moved to a later time. Make sure the real one is set.
+            AlarmScheduler(context).schedule(note)
+            return
+        }
+
+        val noteTitle = note.title.ifBlank { "Untitled" }
+        val rawContent = note.content
         val noteContent = Note.getPreviewText(rawContent)
-        val priority = intent.getIntExtra("priority", 1)
-        val autoArchive = intent.getBooleanExtra("auto_archive", false)
-        val repeatInterval = intent.getStringExtra("repeat_interval") ?: ""
+        val priority = note.priority
+        val autoArchive = note.autoArchive
+        val repeatInterval = note.repeatInterval
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
             putExtra("note_id", noteId)
@@ -225,101 +240,102 @@ class AlarmReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun postStickyReminderNotification(context: Context, note: Note) {
-        val noteId = note.id
-        val notifId = Math.abs(noteId.hashCode()) + 1
-        val noteTitle = note.title.ifBlank { "Untitled" }
-        val noteContent = Note.getPreviewText(note.content)
-
-        val openIntent = Intent(context, MainActivity::class.java).apply {
-            putExtra("note_id", noteId)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val openPending = PendingIntent.getActivity(
-            context, noteId.hashCode(), openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val dismissIntent = Intent(context, AlarmReceiver::class.java).apply {
-            this.action = ACTION_DISMISS
-            putExtra("note_id", noteId)
-        }
-        val dismissPending = PendingIntent.getBroadcast(
-            context, notifId + 2, dismissIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val dismissAction = NotificationCompat.Action.Builder(
-            com.dotnotes.app.R.drawable.ic_stat_notification,
-            "Tandai Selesai",
-            dismissPending
-        ).build()
-
-        val snoozeIntent = Intent(context, AlarmReceiver::class.java).apply {
-            this.action = ACTION_SNOOZE
-            putExtra("note_id", noteId)
-        }
-        val snoozePending = PendingIntent.getBroadcast(
-            context, notifId + 3, snoozeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val snoozeAction = NotificationCompat.Action.Builder(
-            com.dotnotes.app.R.drawable.ic_stat_notification,
-            "Tunda",
-            snoozePending
-        ).build()
-
-        val swipeIntent = Intent(context, AlarmReceiver::class.java).apply {
-            this.action = ACTION_SWIPE
-            putExtra("note_id", noteId)
-        }
-        val swipePending = PendingIntent.getBroadcast(
-            context, notifId + 5, swipeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val channelId = getActiveReminderChannelId()
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
-            .setContentTitle(noteTitle)
-            .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
-            .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setContentIntent(openPending)
-            .addAction(dismissAction)
-            .addAction(snoozeAction)
-            .setColor(0xFF1D4ED8.toInt())
-            .setDeleteIntent(swipePending)
-            .setSilent(true)
-            .setNumber(1)
-            .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
-            .build()
-
-        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            NotificationManagerCompat.from(context).notify(notifId, notification)
-        }
-    }
-
-    private fun getActiveReminderChannelId(): String {
-        val soundUri = try {
-            runBlocking {
-                withTimeoutOrNull(400L) {
-                    DotNotesApp.instance.settingsDataStore.reminderSoundUri.first()
-                }
-            }
-        } catch (_: Exception) {
-            null
-        }
-        return DotNotesApp.instance.ensureReminderChannel(soundUri)
-    }
-
     companion object {
         const val ACTION_DISMISS = "com.dotnotes.app.ACTION_DISMISS"
         const val ACTION_SNOOZE = "com.dotnotes.app.ACTION_SNOOZE"
         const val ACTION_SWIPE = "com.dotnotes.app.ACTION_SWIPE"
+        private const val STALE_TOLERANCE_MS = 60_000L
+
+        fun postStickyReminderNotification(context: Context, note: Note) {
+            val noteId = note.id
+            val notifId = Math.abs(noteId.hashCode()) + 1
+            val noteTitle = note.title.ifBlank { "Untitled" }
+            val noteContent = Note.getPreviewText(note.content)
+
+            val openIntent = Intent(context, MainActivity::class.java).apply {
+                putExtra("note_id", noteId)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val openPending = PendingIntent.getActivity(
+                context, noteId.hashCode(), openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val dismissIntent = Intent(context, AlarmReceiver::class.java).apply {
+                this.action = ACTION_DISMISS
+                putExtra("note_id", noteId)
+            }
+            val dismissPending = PendingIntent.getBroadcast(
+                context, notifId + 2, dismissIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val dismissAction = NotificationCompat.Action.Builder(
+                com.dotnotes.app.R.drawable.ic_stat_notification,
+                "Tandai Selesai",
+                dismissPending
+            ).build()
+
+            val snoozeIntent = Intent(context, AlarmReceiver::class.java).apply {
+                this.action = ACTION_SNOOZE
+                putExtra("note_id", noteId)
+            }
+            val snoozePending = PendingIntent.getBroadcast(
+                context, notifId + 3, snoozeIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val snoozeAction = NotificationCompat.Action.Builder(
+                com.dotnotes.app.R.drawable.ic_stat_notification,
+                "Tunda",
+                snoozePending
+            ).build()
+
+            val swipeIntent = Intent(context, AlarmReceiver::class.java).apply {
+                this.action = ACTION_SWIPE
+                putExtra("note_id", noteId)
+            }
+            val swipePending = PendingIntent.getBroadcast(
+                context, notifId + 5, swipeIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val channelId = getActiveReminderChannelId()
+            val notification = NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(com.dotnotes.app.R.drawable.ic_stat_notification)
+                .setContentTitle(noteTitle)
+                .setContentText(if (noteContent.isNotBlank()) noteContent else "Pengingat Catatan")
+                .setStyle(NotificationCompat.BigTextStyle().bigText(if (noteContent.isNotBlank()) noteContent else noteTitle))
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setContentIntent(openPending)
+                .addAction(dismissAction)
+                .addAction(snoozeAction)
+                .setColor(0xFF1D4ED8.toInt())
+                .setDeleteIntent(swipePending)
+                .setSilent(true)
+                .setNumber(1)
+                .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
+                .build()
+
+            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED ||
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                NotificationManagerCompat.from(context).notify(notifId, notification)
+            }
+        }
+
+        private fun getActiveReminderChannelId(): String {
+            val soundUri = try {
+                runBlocking {
+                    withTimeoutOrNull(400L) {
+                        DotNotesApp.instance.settingsDataStore.reminderSoundUri.first()
+                    }
+                }
+            } catch (_: Exception) {
+                null
+            }
+            return DotNotesApp.instance.ensureReminderChannel(soundUri)
+        }
     }
 }

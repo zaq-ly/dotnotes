@@ -137,7 +137,8 @@ class AlarmActivity : ComponentActivity() {
                 val snoozeMs = note.snoozeDurationMin * 60 * 1000L
                 val snoozedNote = note.copy(
                     reminderTime = System.currentTimeMillis() + snoozeMs,
-                    isAlarmDismissed = false
+                    isAlarmDismissed = false,
+                    updatedAt = System.currentTimeMillis()
                 )
                 DotNotesApp.instance.repository.upsertNote(snoozedNote)
                 AlarmScheduler(this@AlarmActivity).schedule(snoozedNote)

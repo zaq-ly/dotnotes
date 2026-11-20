@@ -1,6 +1,8 @@
 package com.dotnotes.app.sync.supabase
 
 import android.util.Log
+import com.dotnotes.app.DotNotesApp
+import com.dotnotes.app.alarm.AlarmScheduler
 import com.dotnotes.app.data.local.NoteDao
 import com.dotnotes.app.data.model.Note
 import io.github.jan.supabase.auth.auth
@@ -92,10 +94,23 @@ class SupabaseSyncManager(private val noteDao: NoteDao) {
                 noteDao.upsertNotes(toSaveToLocal)
             }
 
+            // 7. Keep AlarmManager in sync with what changed locally
+            reconcileAlarms(toSaveToLocal, deletedIds)
+
             SyncResult.Success(syncedCount = toUploadToRemote.size + toSaveToLocal.size + deletedIds.size)
         } catch (e: Exception) {
             Log.e(TAG, "Supabase sync error: ${e.message}", e)
             SyncResult.Error(e.localizedMessage ?: "Sync error")
+        }
+    }
+
+    private fun reconcileAlarms(changedNotes: List<Note>, deletedIds: Set<String>) {
+        try {
+            val scheduler = AlarmScheduler(DotNotesApp.instance)
+            deletedIds.forEach { scheduler.cancel(it, stopPlayback = false) }
+            changedNotes.forEach { scheduler.reconcile(it) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Alarm reconcile error: ${e.message}", e)
         }
     }
 

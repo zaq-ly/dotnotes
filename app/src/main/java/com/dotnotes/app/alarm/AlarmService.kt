@@ -112,7 +112,7 @@ class AlarmService : Service() {
             .build()
         notification.flags = notification.flags or android.app.Notification.FLAG_ONGOING_EVENT or android.app.Notification.FLAG_NO_CLEAR
 
-        try {
+        val startedForeground = try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
                     notifId,
@@ -122,7 +122,25 @@ class AlarmService : Service() {
             } else {
                 startForeground(notifId, notification)
             }
+            true
         } catch (_: Exception) {
+            false
+        }
+
+        if (!startedForeground) {
+            // Never ring without a visible notification: fall back to a plain notification
+            // that still carries the full-screen intent and the Dismiss / Snooze actions.
+            try {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                    androidx.core.content.ContextCompat.checkSelfPermission(
+                        this, android.Manifest.permission.POST_NOTIFICATIONS
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    androidx.core.app.NotificationManagerCompat.from(this).notify(notifId, notification)
+                }
+            } catch (_: Exception) {}
+            stopSelf(startId)
+            return START_NOT_STICKY
         }
 
         AlarmPlayer.play(this)
